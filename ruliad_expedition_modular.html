@@ -132,8 +132,14 @@
           </fieldset>
           <fieldset class="workbench-section" id="workbench-section-sources">
             <legend class="workbench-section-title">Source Coverage</legend>
+            <div class="seed-url-row">
+              <div class="field-group" style="flex:1">
+                <label for="seed-url-input">Article URL to explore</label>
+                <input type="url" id="seed-url-input" placeholder="Paste any article URL — we'll find how it's covered across perspectives" spellcheck="false" autocomplete="off">
+              </div>
+            </div>
             <div class="sources-controls-row">
-              <div class="field-group" style="flex:1;min-width:160px">
+              <div class="field-group" style="min-width:140px">
                 <label for="lens-select">Perspective lens</label>
                 <select id="lens-select">
                   <option value="political">Political Spectrum</option>
@@ -146,6 +152,7 @@
               <button class="mini-btn" id="clear-sources-btn" type="button">CLEAR</button>
             </div>
             <div class="source-status" id="source-status" aria-live="polite"></div>
+            <div class="seed-anchor-row" id="seed-anchor-row" style="display:none"></div>
             <div class="source-columns" id="source-columns" style="display:none"></div>
             <div class="source-use-row" id="source-use-row" style="display:none">
               <button class="mini-btn accent" id="use-sources-btn" type="button">USE SELECTED SOURCES</button>

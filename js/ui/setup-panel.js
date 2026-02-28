@@ -1,6 +1,6 @@
 import { COLORS, DEFAULT_DISCS } from '../core/constants.js';
 import { setSourceMaterial } from '../core/state.js';
-import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems } from '../domain/news-sources.js';
+import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems, filterByTemporalProximity, scoreArticleWithSeed } from '../domain/news-sources.js';
 import { discInputsEl } from '../core/refs.js';
 import { clampInt } from '../core/utils.js';
 import { showToast } from './notifications.js';
@@ -619,30 +619,105 @@ function escHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
+async function extractSeedMetadata(seedUrl, rawText, cfg) {
+  const snippet = rawText.slice(0, 4000);
+  try {
+    const resp = await callLLMJSON(
+      "You extract structured metadata from news articles. Return only strict JSON.",
+      `From this news article extract:\n1. Publication date (ISO 8601, best guess)\n2. 5-8 named entities: key people, places, organizations, event names\n3. A 4-8 word descriptive topic label\n\nURL: ${seedUrl}\n\nArticle excerpt:\n"""\n${snippet}\n"""\n\nReturn JSON only:\n{\n  "pubDate": "2026-02-28T00:00:00Z",\n  "entities": ["Netanyahu", "Iran", "Operation Epic Fury"],\n  "topicLabel": "US-Israel joint strikes on Iran"\n}`,
+      cfg
+    );
+    const parsed = extractJSON(resp);
+    return {
+      pubDate: parsed.pubDate ? new Date(parsed.pubDate) : null,
+      entities: Array.isArray(parsed.entities) ? parsed.entities.map(e => String(e).trim()).filter(Boolean) : [],
+      topicLabel: String(parsed.topicLabel || "").trim()
+    };
+  } catch {
+    return { pubDate: null, entities: [], topicLabel: "" };
+  }
+}
+
+function renderAnchorCard({ seedUrl, title, topicLabel, pubDate, entities }) {
+  const row = document.getElementById("seed-anchor-row");
+  if (!row) return;
+  const dateStr = pubDate && !isNaN(pubDate.getTime())
+    ? pubDate.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+    : "date unknown";
+  const safeTitle = (title || seedUrl).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const safeUrl = seedUrl.replace(/"/g, "&quot;");
+  row.innerHTML = `
+    <div class="anchor-card">
+      <div class="anchor-card-meta-row">
+        <span class="anchor-card-badge">ANCHOR</span>
+        <span class="anchor-card-date">${dateStr}</span>
+        <a class="anchor-card-link" href="${safeUrl}" target="_blank" rel="noopener">View original ↗</a>
+      </div>
+      <div class="anchor-card-title">${safeTitle}</div>
+      ${entities.length ? `<div class="anchor-card-entities">Detected: ${entities.slice(0, 6).map(e => e.replace(/</g, "&lt;")).join(" · ")}</div>` : ""}
+      ${topicLabel ? `<div class="anchor-card-topic">Topic → <strong>${topicLabel.replace(/</g, "&lt;")}</strong></div>` : ""}
+      <div class="anchor-card-note">RSS results are filtered to ±7 days of this article's date and scored by entity overlap.</div>
+    </div>`;
+  row.style.display = "block";
+}
+
 export async function findStories() {
-  const topic = document.getElementById("target-input")?.value?.trim() || "";
+  const seedUrl = document.getElementById("seed-url-input")?.value?.trim();
   const lensKey = document.getElementById("lens-select")?.value || "political";
   resetColumns();
   const columns = lensKey === "custom" ? getCustomColumns() : getLensColumns();
-
   if (!columns.length) { showToast("Add at least one column with a feed URL."); return; }
+  if (!seedUrl) { showToast("Paste an article URL to explore first."); return; }
 
   const btn = document.getElementById("find-stories-btn");
   const prev = btn?.textContent;
-  if (btn) { btn.disabled = true; btn.textContent = "FETCHING FEEDS…"; }
-
-  setSourceStatus(`Fetching ${columns.flatMap(c => c.feeds).length} feed(s)…`);
+  if (btn) { btn.disabled = true; btn.textContent = "READING SEED…"; }
+  setSourceStatus("Fetching seed article…");
+  document.getElementById("seed-anchor-row").style.display = "none";
   document.getElementById("source-columns").style.display = "none";
   document.getElementById("source-use-row").style.display = "none";
 
-  const topicTokens = tokenize(topic);
-
   try {
-    // Fetch all RSS feeds in parallel
+    // 1. Fetch seed article
+    const seedResults = await postFetchUrl([seedUrl]);
+    const seedResult = seedResults[0];
+    if (!seedResult?.ok) throw new Error("Could not fetch the seed article. Check the URL and proxy mode.");
+
+    // 2. Extract metadata from seed via LLM (graceful fallback if API not configured)
+    if (btn) btn.textContent = "ANALYZING SEED…";
+    setSourceStatus("Analyzing seed article…");
+    const cfg = readApiConfig();
+    const cfgError = validateApiConfig(cfg);
+    let seedMeta = { pubDate: null, entities: [], topicLabel: "" };
+    if (!cfgError) {
+      seedMeta = await extractSeedMetadata(seedUrl, seedResult.text || "", cfg);
+    }
+
+    // 3. Auto-fill #target-input with extracted topic label
+    const topicLabel = seedMeta.topicLabel || seedResult.title || "";
+    const targetInput = document.getElementById("target-input");
+    if (targetInput && topicLabel) targetInput.value = topicLabel;
+
+    // 4. Render locked anchor card
+    renderAnchorCard({
+      seedUrl,
+      title: seedResult.title || seedUrl,
+      topicLabel,
+      pubDate: seedMeta.pubDate,
+      entities: seedMeta.entities
+    });
+
+    const topic = topicLabel || (targetInput?.value?.trim() || "");
+    const topicTokens = tokenize(topic);
+    const entities = seedMeta.entities;
+
+    // 5. Fetch all RSS feeds
+    if (btn) btn.textContent = "FETCHING FEEDS…";
+    setSourceStatus(`Fetching ${columns.flatMap(c => c.feeds).length} feed(s)…`);
     const allFeedUrls = [...new Set(columns.flatMap(c => c.feeds))];
     const feedResults = await postFetchUrl(allFeedUrls);
 
-    // Parse feed XML into article items per column
+    // 6. Parse + temporally filter articles per column
     const articlesByColumn = {};
     for (const col of columns) {
       const items = [];
@@ -651,30 +726,34 @@ export async function findStories() {
         if (!r?.ok || !r.raw) continue;
         items.push(...parseFeedItems(r.raw));
       }
-      articlesByColumn[col.id] = items;
+      articlesByColumn[col.id] = filterByTemporalProximity(items, seedMeta.pubDate, 7);
     }
 
-    // Score and rank articles per column
+    // 7. Score and rank (entity-aware when entities available, falls back to keyword-only)
     const scoredByColumn = {};
     for (const col of columns) {
       const articles = articlesByColumn[col.id] || [];
       const scored = articles.map(a => ({
         ...a,
-        relevance: scoreArticle(a, topicTokens),
+        relevance: entities.length
+          ? scoreArticleWithSeed(a, topicTokens, entities)
+          : scoreArticle(a, topicTokens),
         recency: parseRecency(a.pubDate),
         mentions: crossMentionCount(a, articlesByColumn, col.id, topicTokens)
       }));
-      // Primary: relevance DESC; secondary: recency ASC (fresher is better)
       scored.sort((a, b) => b.relevance - a.relevance || a.recency.ms - b.recency.ms);
       scoredByColumn[col.id] = scored.slice(0, 5);
     }
 
     renderSourceColumns(columns, scoredByColumn);
     const totalArticles = Object.values(scoredByColumn).reduce((s, a) => s + a.length, 0);
-    setSourceStatus(`${columns.length} perspectives · ${totalArticles} stories found. Check articles to select; double-click to preview.`, "ok");
+    const anchorDateStr = seedMeta.pubDate && !isNaN(seedMeta.pubDate.getTime())
+      ? seedMeta.pubDate.toLocaleDateString()
+      : "seed article";
+    setSourceStatus(`${columns.length} perspectives · ${totalArticles} stories found (anchored to ${anchorDateStr} ±7 days). Check articles to select; double-click to preview.`, "ok");
   } catch (err) {
     setSourceStatus(String(err.message || "Fetch failed. Check proxy mode."), "err");
-    showToast(String(err.message || "Fetch failed. Is proxy mode active?"));
+    showToast(String(err.message || "Fetch failed."));
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = prev; }
   }
@@ -774,6 +853,10 @@ export function clearSources() {
   setSourceMaterial({ urls: [], text: "", titles: [] });
   resetColumns();
   closePopover();
+  const seedInput = document.getElementById("seed-url-input");
+  if (seedInput) seedInput.value = "";
+  const anchorRow = document.getElementById("seed-anchor-row");
+  if (anchorRow) { anchorRow.innerHTML = ""; anchorRow.style.display = "none"; }
   const cols = document.getElementById("source-columns");
   if (cols) { cols.innerHTML = ""; cols.style.display = "none"; }
   const useRow = document.getElementById("source-use-row");

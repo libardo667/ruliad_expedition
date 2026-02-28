@@ -80,11 +80,25 @@ Prompts can be overridden per-run via the "Prompt Workbench" panel. Override key
 
 ### News Lens Mode (Sources)
 
-When the user selects NEWS LENS from the landing page, `js/ui/setup-panel.js` drives the panel:
-- `findStories()` — fetches curated RSS feeds via `/api/fetch-url`, scores/ranks articles per column
-- `useSelectedSources()` — fetches full article text, runs a parallel LLM pre-summarization call per article (400–600 words), groups summaries by column label into `SOURCE_MATERIAL.byDisc`, then auto-populates probe disc inputs with column names+colors
+When the user selects NEWS LENS from the landing page, `js/ui/setup-panel.js` drives the panel. The entry point is a seed URL input ("Article URL to explore"), not a topic string.
+
+**Seed-anchored FIND STORIES flow:**
+1. User pastes a specific article URL and clicks FIND STORIES
+2. `findStories()` fetches the seed article, then calls `extractSeedMetadata()` (LLM) to get `{pubDate, entities[], topicLabel}`
+3. Focus Concept field (`#target-input`) is auto-filled with the extracted topic label
+4. A locked "ANCHOR" card renders showing date, detected entities, and the ±7-day filter note
+5. All RSS feeds are fetched, then filtered by `filterByTemporalProximity(articles, seedDate, 7)` to keep only articles within ±7 days of the seed
+6. Articles are scored via `scoreArticleWithSeed()` (60% topic-keyword + 40% named-entity overlap) when entities were extracted, else falls back to `scoreArticle()` keyword-only
+7. Graceful degradation: if no API key, metadata extraction is skipped — anchor card shows title + "date unknown", temporal filter is skipped, scoring is keyword-only
+
+**USE SELECTED SOURCES:**
+- `useSelectedSources()` fetches full article text, runs parallel LLM pre-summarization per article (400–600 words, `__maxTokens:800`), groups summaries by column label into `SOURCE_MATERIAL.byDisc`, then auto-populates probe disc inputs with column names+colors
 - During fetch+summarize: `#launch-btn` is disabled and `sources-loading` CSS class dims the panel
+
+**Probe routing:**
 - `js/pipeline/launch-expedition.js` reads `cfg.sourceByDisc[disc.name]` to route per-column summaries to the matching probe
+
+**Key functions in `js/domain/news-sources.js`:** `LENS_CONFIGS`, `tokenize`, `scoreArticle`, `scoreArticleWithSeed`, `parseRecency`, `crossMentionCount`, `parseFeedItems`, `filterByTemporalProximity`
 
 ### Default File Resolution
 

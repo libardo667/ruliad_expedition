@@ -248,3 +248,29 @@ export function parseFeedItems(rawXml) {
     return [];
   }
 }
+
+// Filter articles to within ±windowDays of seedDate; keeps articles with unknown/unparseable dates
+export function filterByTemporalProximity(articles, seedDate, windowDays = 7) {
+  if (!seedDate || isNaN(seedDate.getTime())) return articles;
+  const windowMs = windowDays * 24 * 3_600_000;
+  return articles.filter(a => {
+    if (!a.pubDate) return true;
+    const d = new Date(a.pubDate);
+    if (isNaN(d.getTime())) return true;
+    return Math.abs(d.getTime() - seedDate.getTime()) <= windowMs;
+  });
+}
+
+// Enhanced scoring: 60% topic-keyword overlap + 40% named-entity string match
+// Uses .includes() for entities so proper nouns ("Netanyahu", "Operation Epic Fury") survive intact
+export function scoreArticleWithSeed(article, topicTokens, entities) {
+  const haystack = new Set(tokenize((article.title || "") + " " + (article.description || "")));
+  const topicScore = topicTokens.length
+    ? topicTokens.filter(t => haystack.has(t)).length / topicTokens.length
+    : 0;
+  const entityHaystack = ((article.title || "") + " " + (article.description || "")).toLowerCase();
+  const entityScore = entities.length
+    ? entities.filter(e => entityHaystack.includes(e.toLowerCase())).length / entities.length
+    : 0;
+  return Math.round((topicScore * 0.6 + entityScore * 0.4) * 100);
+}
