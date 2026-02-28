@@ -1,9 +1,11 @@
 import { COLORS, DEFAULT_DISCS } from '../core/constants.js';
+import { setSourceMaterial } from '../core/state.js';
+import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems } from '../domain/news-sources.js';
 import { discInputsEl } from '../core/refs.js';
 import { clampInt } from '../core/utils.js';
 import { showToast } from './notifications.js';
 import { refreshPromptPreview, syncPromptPreviewDiscOptions } from './prompt-preview.js';
-import { callLLMJSON, getQualityProfile, readApiConfig, validateApiConfig } from '../api/llm.js';
+import { callLLM, callLLMJSON, getQualityProfile, readApiConfig, validateApiConfig } from '../api/llm.js';
 import { extractJSON } from '../api/json-recovery.js';
 import { buildLensGenerationPrompt, resolvePromptBundleWithOverrides } from '../prompt/prompt-system.js';
 
@@ -11,7 +13,7 @@ import { buildLensGenerationPrompt, resolvePromptBundleWithOverrides } from '../
 // Source: ruliad_expedition_v1.1.html
 // Module: js/ui/setup-panel.js
 
-export function renderDisciplineInputs(count,seeds=[]){const n=clampInt(count,2,12);discInputsEl.innerHTML="";for(let i=0;i<n;i++){const fallback=DEFAULT_DISCS[i%DEFAULT_DISCS.length];const val=(seeds[i]||fallback).trim();const row=document.createElement("div");row.className="disc-row";row.innerHTML=`<span class="disc-num">${i+1}</span><div class="disc-color" style="background:${COLORS[i%COLORS.length]}"></div><input class="disc-input" type="text" data-idx="${i}" value="${val}" placeholder="discipline ${i+1}"/><button class="mini-btn probe-del-btn" type="button" data-probe-del="${i}" title="Delete this probe">DEL</button>`;discInputsEl.appendChild(row);}const countEl=document.getElementById("lens-count-input");if(countEl) countEl.value=String(n);syncPromptPreviewDiscOptions();refreshPromptPreview();}
+export function renderDisciplineInputs(count,seeds=[],colors=[]){const n=clampInt(count,2,12);discInputsEl.innerHTML="";for(let i=0;i<n;i++){const fallback=DEFAULT_DISCS[i%DEFAULT_DISCS.length];const val=(seeds[i]||fallback).trim();const col=colors[i]||COLORS[i%COLORS.length];const row=document.createElement("div");row.className="disc-row";row.innerHTML=`<span class="disc-num">${i+1}</span><div class="disc-color" style="background:${col}"></div><input class="disc-input" type="text" data-idx="${i}" data-color="${col}" value="${val}" placeholder="discipline ${i+1}"/><button class="mini-btn probe-del-btn" type="button" data-probe-del="${i}" title="Delete this probe">DEL</button>`;discInputsEl.appendChild(row);}const countEl=document.getElementById("lens-count-input");if(countEl) countEl.value=String(n);syncPromptPreviewDiscOptions();refreshPromptPreview();}
 
 export function createSetupSection(title,helpText,open=false){
   const details=document.createElement("details");
@@ -61,13 +63,6 @@ export function applySetupTooltips(){
     "embedding-model-input":"Model used to position nodes in semantic space.",
     "web-search-check":"Allows model responses to use web-grounded retrieval when supported.",
     "source-policy-input":"Source preference and exclusion instructions for the model.",
-    "wolfram-grounding-check":"Enables Wolfram-based grounding and interpretation checks.",
-    "wolfram-appid-input":"Required for live Wolfram requests via proxy.",
-    "grounding-mode-select":"Preset profile for grounding strictness.",
-    "grounding-min-score-input":"q_min: minimum snippet quality score.",
-    "grounding-min-alignment-score-input":"a_min: minimum semantic alignment score.",
-    "grounding-annotate-only-check":"Never append WA text to descriptions; keep as metadata only.",
-    "grounding-allow-category-mismatch-check":"Override category mismatch safeguards if explicitly needed.",
     "ca-probe-check":"Enable run-derived computational irreducibility diagnostics.",
     "ca-rule-input":"Optional manual override for rule (blank = auto-derived).",
     "ca-steps-input":"Optional manual override for steps (blank = auto-derived).",
@@ -108,12 +103,6 @@ export function initGenerationPanelQol(){
       help:"Connection mode, model IDs, credentials, and source-policy defaults.",
       open:true,
       ids:["api-mode","api-key-input","embedding-model-input","web-search-check","source-policy-input","api-mode-note"]
-    },
-    {
-      title:"Grounding Rules",
-      help:"Wolfram controls, score thresholds, and safety guards for mismatched interpretations.",
-      open:false,
-      ids:["wolfram-grounding-check","wolfram-appid-input","grounding-mode-select","grounding-min-score-input","grounding-min-alignment-score-input","grounding-annotate-only-check","grounding-allow-category-mismatch-check"]
     },
     {
       title:"Quality & Replication",
@@ -183,10 +172,638 @@ export function clearApiKey(){const input=document.getElementById("api-key-input
 
 export async function generateOrthogonalLenses(){const target=document.getElementById("target-input").value.trim();if(!target){showToast("Enter a target concept first.");return;}const count=clampInt(document.getElementById("lens-count-input")?.value,2,12);const cfg=readApiConfig();const cfgError=validateApiConfig(cfg);if(cfgError){showToast(cfgError);return;}const btn=document.getElementById("gen-lenses-btn");const prev=btn.textContent;btn.disabled=true;btn.textContent="GENERATING...";try{const defaults=buildLensGenerationPrompt(target,count,cfg);const built=resolvePromptBundleWithOverrides("lens_generation",{target,cfg,quality:getQualityProfile(cfg.qualityMode),defaults});const raw=await callLLMJSON(built.systemPrompt,built.userPrompt,cfg);const parsed=extractJSON(raw);let list=[];if(Array.isArray(parsed)) list=parsed;else if(Array.isArray(parsed.disciplines)) list=parsed.disciplines;else if(Array.isArray(parsed.lenses)) list=parsed.lenses;const cleaned=[];const seen=new Set();for(const item of list){const name=String(item||"").replace(/^\d+[\).\-\s]*/,"").trim();const key=name.toLowerCase();if(!name||seen.has(key)) continue;seen.add(key);cleaned.push(name);}while(cleaned.length<count){const fallback=DEFAULT_DISCS[cleaned.length%DEFAULT_DISCS.length];const key=fallback.toLowerCase();if(!seen.has(key)){seen.add(key);cleaned.push(fallback);}else{cleaned.push(`Lens ${cleaned.length+1}`);}}renderDisciplineInputs(count,cleaned.slice(0,count));showToast(`Generated ${count} orthogonal lenses.`);}catch(err){console.error("Lens generation failed:",err);showToast("Lens generation failed. Check key/model and try again.");}finally{btn.disabled=false;btn.textContent=prev;refreshPromptPreview();}}
 
-export function syncApiModeNote(){const mode=document.getElementById("api-mode").value;const note=document.getElementById("api-mode-note");if(mode==="proxy"){note.textContent="Proxy mode is backend-ready. Add server routes at /api/llm/chat/completions, /api/llm/embeddings, and /wa/normalize (or /api/wolfram/query fallback) for Wolfram grounding.";}else{note.textContent="Direct mode sends model requests from this page (tab-memory key only). Wolfram Full Results API is CORS-blocked in direct mode; CA still simulates locally, but Wolfram grounding needs proxy mode.";}}
+export function syncApiModeNote(){const mode=document.getElementById("api-mode").value;const note=document.getElementById("api-mode-note");if(mode==="proxy"){note.textContent="Proxy mode is backend-ready. Add server routes at /api/llm/chat/completions and /api/llm/embeddings.";}else{note.textContent="Direct mode sends model requests from this page (tab-memory key only). CA probe still simulates locally in direct mode.";}}
 
 export function syncCAOverrideUI(){
   const enabled=Boolean(document.getElementById("ca-probe-check")?.checked);
   const group=document.getElementById("ca-override-group");
   if(group) group.style.display=enabled?"flex":"none";
+}
+
+export function initProgressiveDisclosure(){
+  const workbench=document.getElementById("generation-workbench");
+  const setup=document.getElementById("setup");
+  const simpleBtn=document.getElementById("setup-mode-simple-btn");
+  const sourcesBtn=document.getElementById("setup-mode-sources-btn");
+  const advancedBtn=document.getElementById("setup-mode-advanced-btn");
+  const promptToggleBtn=document.getElementById("setup-prompt-pane-btn");
+  if(!workbench||!simpleBtn) return;
+
+  function applyMode(mode,promptVisible){
+    const isSimple=(mode==="simple");
+    const isSources=(mode==="sources");
+    const isAdvanced=(mode==="advanced");
+    const isLanding=(mode==="landing");
+    setup.classList.toggle("mode-landing",isLanding);
+    setup.classList.toggle("simple-mode",isSimple);
+    workbench.classList.toggle("simple-mode",isSimple);
+    workbench.classList.toggle("sources-mode",isSources);
+    workbench.classList.toggle("prompt-pane-hidden",isAdvanced&&!promptVisible);
+    [simpleBtn,sourcesBtn,advancedBtn].forEach(b=>b&&b.classList.remove("mode-active"));
+    if(isSimple) simpleBtn?.classList.add("mode-active");
+    if(isSources) sourcesBtn?.classList.add("mode-active");
+    if(isAdvanced) advancedBtn?.classList.add("mode-active");
+    if(promptToggleBtn){
+      promptToggleBtn.style.display=isAdvanced?"":"none";
+      promptToggleBtn.textContent=promptVisible?"HIDE PROMPT EDITOR":"SHOW PROMPT EDITOR";
+    }
+    sessionStorage.setItem("ruliad_setup_mode",mode);
+    sessionStorage.setItem("ruliad_prompt_pane_visible",String(promptVisible));
+  }
+
+  // Landing card buttons
+  document.querySelectorAll("[data-mode]").forEach(btn=>{
+    btn.addEventListener("click",()=>applyMode(btn.dataset.mode,false));
+  });
+  simpleBtn?.addEventListener("click",()=>applyMode("simple",false));
+  sourcesBtn?.addEventListener("click",()=>applyMode("sources",false));
+  advancedBtn?.addEventListener("click",()=>{
+    const pv=sessionStorage.getItem("ruliad_prompt_pane_visible")==="true";
+    applyMode("advanced",pv);
+  });
+  promptToggleBtn?.addEventListener("click",()=>{
+    const next=sessionStorage.getItem("ruliad_prompt_pane_visible")!=="true";
+    applyMode("advanced",next);
+  });
+
+  // Hard refresh (Ctrl+F5): navigation type is "reload" AND transferSize > 0
+  // (page fetched from network, not cache). Normal F5 hits cache (transferSize 0)
+  // so saved mode is preserved. Hard refresh clears it → landing page.
+  const navEntry=performance?.getEntriesByType?.("navigation")?.[0];
+  if(navEntry?.type==="reload"&&navEntry?.transferSize>0){
+    sessionStorage.removeItem("ruliad_setup_mode");
+    sessionStorage.removeItem("ruliad_prompt_pane_visible");
+  }
+
+  const savedMode=sessionStorage.getItem("ruliad_setup_mode")||"landing";
+  const savedPV=sessionStorage.getItem("ruliad_prompt_pane_visible")==="true";
+  applyMode(savedMode,savedPV);
+}
+
+// ── News Lens: per-column runtime feed state (may be edited by user) ──────────
+// Cloned from LENS_CONFIGS at panel init; user edits are session-only.
+let _activeColumns = null; // [{id, label, color, feeds:[]}]
+let _activePopover = null; // currently open feed-edit popover
+
+function getLensColumns() {
+  if (_activeColumns) return _activeColumns;
+  const key = document.getElementById("lens-select")?.value || "political";
+  if (key === "custom") return getCustomColumns();
+  // Deep-clone so user edits don't mutate the config constant
+  _activeColumns = LENS_CONFIGS[key].columns.map(c => ({ ...c, feeds: [...c.feeds] }));
+  return _activeColumns;
+}
+
+function resetColumns() {
+  _activeColumns = null;
+}
+
+function getCustomColumns() {
+  const rows = document.querySelectorAll(".custom-col-row");
+  const cols = [];
+  rows.forEach((row, i) => {
+    const label = row.querySelector("input[type=text]")?.value.trim() || `Column ${i + 1}`;
+    const feedsRaw = row.querySelector("textarea")?.value || "";
+    const feeds = feedsRaw.split("\n").map(u => u.trim()).filter(u => u.startsWith("http"));
+    if (feeds.length) cols.push({ id: `custom-${i}`, label, color: "#94a3b8", feeds });
+  });
+  return cols;
+}
+
+async function postFetchUrl(urls) {
+  const resp = await fetch("/api/fetch-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ urls })
+  });
+  if (!resp.ok) throw new Error(`Proxy returned ${resp.status}. Is proxy mode active?`);
+  return (await resp.json()).results || [];
+}
+
+function setSourceStatus(msg, cls = "") {
+  const el = document.getElementById("source-status");
+  if (!el) return;
+  el.className = "source-status" + (cls ? ` ${cls}` : "");
+  el.textContent = msg;
+}
+
+function updateSelectionNote() {
+  const columns = getLensColumns();
+  const total = columns.length;
+  const countByCol = {};
+  for (const col of columns) countByCol[col.id] = 0;
+  document.querySelectorAll(".source-pick-card.selected").forEach(el => {
+    if (countByCol[el.dataset.col] !== undefined) countByCol[el.dataset.col]++;
+  });
+  const counts = Object.values(countByCol);
+  const totalSelected = counts.reduce((s, n) => s + n, 0);
+
+  // Update selection note text
+  const note = document.getElementById("source-selection-note");
+  const unrepresented = counts.filter(n => n === 0).length;
+  if (note) {
+    if (totalSelected === 0) {
+      note.textContent = "Select articles to continue.";
+      note.style.color = "var(--muted)";
+    } else if (unrepresented > 0) {
+      note.textContent = `${unrepresented} perspective${unrepresented > 1 ? "s" : ""} unrepresented — coverage may be skewed.`;
+      note.style.color = "#f59e0b";
+    } else {
+      note.textContent = `All ${total} perspectives covered.`;
+      note.style.color = "#16a34a";
+    }
+  }
+
+  // Render balance bar
+  renderBalanceBar(columns, countByCol, counts);
+}
+
+function renderBalanceBar(columns, countByCol, counts) {
+  let bar = document.getElementById("source-balance-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "source-balance-bar";
+    bar.className = "source-balance-bar";
+    const useRow = document.getElementById("source-use-row");
+    if (useRow) useRow.parentNode.insertBefore(bar, useRow.nextSibling);
+  }
+  const max = Math.max(...counts, 1);
+  const mean = counts.reduce((s, n) => s + n, 0) / (counts.length || 1);
+  bar.innerHTML = `<div class="balance-label">Selection balance</div><div class="balance-bars">${
+    columns.map(col => {
+      const n = countByCol[col.id] || 0;
+      const h = Math.round((n / max) * 40);
+      const deviation = Math.abs(n - mean);
+      const barColor = n === 0 ? "#ef4444" : deviation > mean * 0.6 ? "#f59e0b" : col.color;
+      return `<div class="balance-col-wrap">
+        <div class="balance-bar-track"><div class="balance-bar-fill" style="height:${h}px;background:${barColor}"></div></div>
+        <div class="balance-count" style="color:${barColor}">${n}</div>
+        <div class="balance-col-label" style="color:${col.color}">${escHtml(col.label)}</div>
+      </div>`;
+    }).join("")
+  }</div>`;
+  bar.style.display = counts.some(n => n > 0) ? "" : "none";
+}
+
+function openFeedEditPopover(btn, col) {
+  closePopover();
+  const popover = document.createElement("div");
+  popover.className = "source-edit-popover";
+  popover.setAttribute("role", "dialog");
+  popover.innerHTML = `<div class="source-edit-title">FEEDS FOR ${col.label.toUpperCase()}</div>`;
+  const warningShown = { shown: false };
+
+  function showEditWarning() {
+    if (warningShown.shown) return;
+    warningShown.shown = true;
+    showToast("Modifying default sources may reduce balance across perspectives.");
+  }
+
+  function renderFeeds() {
+    const existing = popover.querySelectorAll(".source-feed-row");
+    existing.forEach(el => el.remove());
+    const addRow = popover.querySelector(".source-edit-add-row");
+    for (const feedUrl of col.feeds) {
+      const row = document.createElement("div");
+      row.className = "source-feed-row";
+      const label = document.createElement("span");
+      label.style.flex = "1";
+      label.textContent = feedUrl.replace(/^https?:\/\//, "").slice(0, 40);
+      label.title = feedUrl;
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "mini-btn";
+      removeBtn.textContent = "✕";
+      removeBtn.addEventListener("click", () => {
+        showEditWarning();
+        col.feeds = col.feeds.filter(f => f !== feedUrl);
+        renderFeeds();
+      });
+      row.append(label, removeBtn);
+      popover.insertBefore(row, addRow);
+    }
+  }
+
+  const addRow = document.createElement("div");
+  addRow.className = "source-edit-add-row";
+  const addInput = document.createElement("input");
+  addInput.type = "text";
+  addInput.placeholder = "https://feeds.example.com/rss";
+  const addBtn = document.createElement("button");
+  addBtn.className = "mini-btn";
+  addBtn.textContent = "ADD";
+  addBtn.addEventListener("click", () => {
+    const url = addInput.value.trim();
+    if (!url.startsWith("http")) { showToast("Enter a valid http(s) URL."); return; }
+    if (col.feeds.includes(url)) return;
+    showEditWarning();
+    col.feeds.push(url);
+    addInput.value = "";
+    renderFeeds();
+  });
+  addRow.append(addInput, addBtn);
+  popover.appendChild(addRow);
+  renderFeeds();
+
+  // Position below the edit button
+  const rect = btn.getBoundingClientRect();
+  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  popover.style.left = `${Math.max(4, rect.left + window.scrollX - 60)}px`;
+  document.body.appendChild(popover);
+  _activePopover = popover;
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener("click", closePopoverOnOutside, { once: false });
+  }, 10);
+}
+
+function closePopoverOnOutside(e) {
+  if (_activePopover && !_activePopover.contains(e.target)) {
+    closePopover();
+    document.removeEventListener("click", closePopoverOnOutside);
+  }
+}
+
+function closePopover() {
+  if (_activePopover) { _activePopover.remove(); _activePopover = null; }
+}
+
+function makeSourceCard(art, col) {
+  const card = document.createElement("div");
+  card.className = "evidence-card source-pick-card";
+  card.dataset.col = col.id;
+  card.dataset.colLabel = col.label;
+  card.dataset.link = art.link;
+  card.dataset.title = art.title;
+  card.dataset.description = art.description || "";
+
+  let outlet = "";
+  try { outlet = art.link ? new URL(art.link).hostname.replace(/^www\./, "") : ""; } catch {}
+  const snippetShort = (art.description || "").slice(0, 120);
+  const snippetFull = art.description || "";
+  const hasMore = snippetFull.length > 120;
+
+  card.innerHTML = `
+    <div class="card-select-row">
+      <label class="card-checkbox-wrap" title="Select this article">
+        <input type="checkbox" class="card-checkbox"/>
+        <span class="card-checkbox-box"></span>
+      </label>
+      <div class="evidence-top" style="flex:1;min-width:0">
+        <div class="evidence-title">${escHtml(art.title)}</div>
+        <div class="evidence-meta">${escHtml(outlet)} · ${escHtml(art.recency.label)}</div>
+      </div>
+    </div>
+    <div class="tag-row">
+      <span class="tag ${art.relevance > 50 ? "strong" : ""}">Relevance: ${art.relevance}%</span>
+      <span class="tag">Cross-coverage: ${art.mentions}</span>
+    </div>
+    <div class="source-card-snippet">
+      <span class="snippet-short">${escHtml(snippetShort)}${hasMore ? "…" : ""}</span>
+      <span class="snippet-full" style="display:none">${escHtml(snippetFull)}</span>
+      ${hasMore ? `<button class="source-expand-btn mini-link-btn" type="button">Show more</button>` : ""}
+    </div>`;
+
+  // Checkbox toggles selection (multi-select)
+  const checkbox = card.querySelector(".card-checkbox");
+  checkbox.addEventListener("change", e => {
+    e.stopPropagation();
+    card.classList.toggle("selected", checkbox.checked);
+    updateSelectionNote();
+  });
+
+  // Single click on card body (not checkbox) = expand/collapse snippet
+  card.addEventListener("click", e => {
+    if (e.target.closest(".card-checkbox-wrap") || e.target.closest(".source-expand-btn")) return;
+    if (e.detail === 2) return; // handled by dblclick
+    toggleCardExpand(card);
+  });
+
+  // Expand button
+  card.querySelector(".source-expand-btn")?.addEventListener("click", e => {
+    e.stopPropagation();
+    toggleCardExpand(card);
+  });
+
+  // Double-click = modal
+  card.addEventListener("dblclick", e => {
+    e.stopPropagation();
+    openArticleModal(art, col);
+  });
+
+  return card;
+}
+
+function toggleCardExpand(card) {
+  const short = card.querySelector(".snippet-short");
+  const full = card.querySelector(".snippet-full");
+  const btn = card.querySelector(".source-expand-btn");
+  const expanded = card.classList.toggle("card-expanded");
+  if (short) short.style.display = expanded ? "none" : "";
+  if (full) full.style.display = expanded ? "" : "none";
+  if (btn) btn.textContent = expanded ? "Show less" : "Show more";
+}
+
+function openArticleModal(art, col) {
+  let outlet = "";
+  try { outlet = art.link ? new URL(art.link).hostname.replace(/^www\./, "") : ""; } catch {}
+  const modal = document.getElementById("source-article-modal");
+  const titleEl = document.getElementById("source-article-modal-title");
+  const content = document.getElementById("source-article-modal-content");
+  if (!modal || !content) return;
+  if (titleEl) titleEl.textContent = col.label.toUpperCase();
+  content.innerHTML = `
+    <div class="article-modal-head" style="border-left:3px solid ${col.color};padding-left:10px;margin-bottom:12px">
+      <div class="evidence-title" style="font-size:15px;margin-bottom:4px">${escHtml(art.title)}</div>
+      <div class="evidence-meta">${escHtml(outlet)} · ${escHtml(art.recency.label)}</div>
+    </div>
+    <div class="tag-row" style="margin-bottom:10px">
+      <span class="tag ${art.relevance > 50 ? "strong" : ""}">Relevance: ${art.relevance}%</span>
+      <span class="tag">Cross-coverage: ${art.mentions}</span>
+    </div>
+    <div class="evidence-meta" style="line-height:1.6;white-space:pre-wrap">${escHtml(art.description || "No description available.")}</div>
+    ${art.link ? `<div style="margin-top:14px"><a href="${escHtml(art.link)}" target="_blank" rel="noopener" class="small-btn" style="display:inline-block;padding:4px 12px">OPEN ARTICLE ↗</a></div>` : ""}`;
+  modal.classList.add("open");
+  modal.style.display = "flex";
+}
+
+function renderSourceColumns(columns, scoredByColumn) {
+  const container = document.getElementById("source-columns");
+  if (!container) return;
+  container.innerHTML = "";
+  container.style.display = "grid";
+
+  for (const col of columns) {
+    const colDiv = document.createElement("div");
+    colDiv.className = "source-column";
+
+    // Column header with color dot + label + edit button
+    const header = document.createElement("div");
+    header.className = "source-column-header";
+    const colorDot = document.createElement("span");
+    colorDot.style.cssText = `display:inline-block;width:10px;height:10px;border-radius:50%;background:${col.color};flex-shrink:0`;
+    const lbl = document.createElement("span");
+    lbl.className = "source-column-label";
+    lbl.textContent = col.label;
+    lbl.style.color = col.color;
+    const editBtn = document.createElement("button");
+    editBtn.className = "source-col-edit-btn";
+    editBtn.title = "Edit feeds for this column";
+    editBtn.textContent = "⚙";
+    editBtn.addEventListener("click", e => { e.stopPropagation(); openFeedEditPopover(editBtn, col); });
+    header.append(colorDot, lbl, editBtn);
+    colDiv.appendChild(header);
+
+    const articles = scoredByColumn[col.id] || [];
+    if (!articles.length) {
+      const empty = document.createElement("div");
+      empty.className = "no-stories";
+      empty.textContent = "No recent stories matching this topic.";
+      colDiv.appendChild(empty);
+    } else {
+      const highRel = articles.filter(a => a.relevance > 50);
+      const lowRel = articles.filter(a => a.relevance <= 50);
+
+      // High-relevance cards (always visible)
+      if (highRel.length) {
+        for (const art of highRel) colDiv.appendChild(makeSourceCard(art, col));
+      } else {
+        // All articles are low-relevance — show a persistent warning with opt-in reveal
+        const warn = document.createElement("div");
+        warn.className = "no-stories-warn";
+        const warnText = document.createElement("span");
+        warnText.textContent = "No relevant stories found for this topic.";
+        const showBtn = document.createElement("button");
+        showBtn.className = "mini-link-btn";
+        showBtn.textContent = "Show them anyway";
+        const hiddenSection = document.createElement("div");
+        hiddenSection.style.display = "none";
+        for (const art of lowRel) hiddenSection.appendChild(makeSourceCard(art, col));
+        showBtn.addEventListener("click", () => {
+          hiddenSection.style.display = hiddenSection.style.display === "none" ? "" : "none";
+          showBtn.textContent = hiddenSection.style.display === "none" ? "Show them anyway" : "Hide";
+        });
+        warn.append(warnText, " ", showBtn);
+        colDiv.append(warn, hiddenSection);
+      }
+
+      // Low-relevance collapsible section (only when there are also high-relevance articles)
+      if (lowRel.length && highRel.length < articles.length) {
+        const toggle = document.createElement("button");
+        toggle.className = "mini-link-btn low-rel-toggle";
+        toggle.textContent = `See less relevant stories (${lowRel.length})`;
+        const lowSection = document.createElement("div");
+        lowSection.className = "low-rel-section";
+        lowSection.style.display = "none";
+        for (const art of lowRel) lowSection.appendChild(makeSourceCard(art, col));
+        toggle.addEventListener("click", () => {
+          const open = lowSection.style.display !== "none";
+          lowSection.style.display = open ? "none" : "";
+          toggle.textContent = open
+            ? `See less relevant stories (${lowRel.length})`
+            : `Hide less relevant stories`;
+        });
+        colDiv.append(toggle, lowSection);
+      }
+    }
+    container.appendChild(colDiv);
+  }
+
+  document.getElementById("source-use-row").style.display = "flex";
+  updateSelectionNote();
+}
+
+function escHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export async function findStories() {
+  const topic = document.getElementById("target-input")?.value?.trim() || "";
+  const lensKey = document.getElementById("lens-select")?.value || "political";
+  resetColumns();
+  const columns = lensKey === "custom" ? getCustomColumns() : getLensColumns();
+
+  if (!columns.length) { showToast("Add at least one column with a feed URL."); return; }
+
+  const btn = document.getElementById("find-stories-btn");
+  const prev = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = "FETCHING FEEDS…"; }
+
+  setSourceStatus(`Fetching ${columns.flatMap(c => c.feeds).length} feed(s)…`);
+  document.getElementById("source-columns").style.display = "none";
+  document.getElementById("source-use-row").style.display = "none";
+
+  const topicTokens = tokenize(topic);
+
+  try {
+    // Fetch all RSS feeds in parallel
+    const allFeedUrls = [...new Set(columns.flatMap(c => c.feeds))];
+    const feedResults = await postFetchUrl(allFeedUrls);
+
+    // Parse feed XML into article items per column
+    const articlesByColumn = {};
+    for (const col of columns) {
+      const items = [];
+      for (const feedUrl of col.feeds) {
+        const r = feedResults.find(f => f.url === feedUrl);
+        if (!r?.ok || !r.raw) continue;
+        items.push(...parseFeedItems(r.raw));
+      }
+      articlesByColumn[col.id] = items;
+    }
+
+    // Score and rank articles per column
+    const scoredByColumn = {};
+    for (const col of columns) {
+      const articles = articlesByColumn[col.id] || [];
+      const scored = articles.map(a => ({
+        ...a,
+        relevance: scoreArticle(a, topicTokens),
+        recency: parseRecency(a.pubDate),
+        mentions: crossMentionCount(a, articlesByColumn, col.id, topicTokens)
+      }));
+      // Primary: relevance DESC; secondary: recency ASC (fresher is better)
+      scored.sort((a, b) => b.relevance - a.relevance || a.recency.ms - b.recency.ms);
+      scoredByColumn[col.id] = scored.slice(0, 5);
+    }
+
+    renderSourceColumns(columns, scoredByColumn);
+    const totalArticles = Object.values(scoredByColumn).reduce((s, a) => s + a.length, 0);
+    setSourceStatus(`${columns.length} perspectives · ${totalArticles} stories found. Check articles to select; double-click to preview.`, "ok");
+  } catch (err) {
+    setSourceStatus(String(err.message || "Fetch failed. Check proxy mode."), "err");
+    showToast(String(err.message || "Fetch failed. Is proxy mode active?"));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = prev; }
+  }
+}
+
+export async function useSelectedSources() {
+  const selected = [...document.querySelectorAll(".source-pick-card .card-checkbox:checked")]
+    .map(cb => cb.closest(".source-pick-card"))
+    .filter(Boolean);
+  if (!selected.length) { showToast("Check at least one article to use as source."); return; }
+
+  const columns = getLensColumns();
+  const selectedCols = new Set(selected.map(el => el.dataset.col));
+  const missingCols = columns.filter(c => !selectedCols.has(c.id)).map(c => c.label);
+  if (missingCols.length) {
+    showToast(`Unrepresented: ${missingCols.join(", ")}. Results may reflect narrower coverage.`);
+  }
+
+  // Build url → {colId, colLabel} map before the fetch
+  const urlToCol = {};
+  for (const card of selected) {
+    urlToCol[card.dataset.link] = { colId: card.dataset.col, colLabel: card.dataset.colLabel || card.dataset.col };
+  }
+  const urls = selected.map(el => el.dataset.link).filter(Boolean);
+
+  const btn = document.getElementById("use-sources-btn");
+  const launchBtn = document.getElementById("launch-btn");
+  const sourcesSection = document.getElementById("workbench-section-sources");
+  const prev = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = "FETCHING ARTICLES…"; }
+  if (launchBtn) launchBtn.disabled = true;
+  if (sourcesSection) sourcesSection.classList.add("sources-loading");
+  setSourceStatus(`Fetching ${urls.length} article(s)…`);
+
+  try {
+    const results = await postFetchUrl(urls);
+    const successful = results.filter(r => r.ok && r.text);
+    const failed = results.filter(r => !r.ok);
+
+    // Pre-summarize each article via LLM (parallel, per-article, falls back to raw on error)
+    let summarized = successful;
+    const cfg = readApiConfig();
+    const cfgError = validateApiConfig(cfg);
+    if (!cfgError && successful.length) {
+      if (btn) btn.textContent = `SUMMARIZING ${successful.length} ARTICLE(S)…`;
+      setSourceStatus(`Summarizing ${successful.length} article(s) with LLM…`);
+      summarized = await Promise.all(successful.map(async r => {
+        try {
+          const rawText = String(r.text || "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+          const snippet = rawText.length > 12000 ? rawText.slice(0, 12000).trimEnd() + "\n...[truncated]" : rawText;
+          const systemPrompt = "You are a research summarizer. Produce a structured summary of the provided article. Be factual and precise.";
+          const userPrompt = `Summarize the following article for use as grounding material in a multi-lens research expedition.\n\nURL: ${r.url}\nTitle: ${r.title || "(untitled)"}\n\nArticle:\n"""\n${snippet}\n"""\n\nProvide a 400–600 word summary covering:\n- Main thesis and key findings\n- Key facts, data points, or statistics\n- Up to 3 notable verbatim quotes (≤25 words each)\n- Framing and perspective of the source\n\nEnd with: Source URL: ${r.url}`;
+          const summaryText = await callLLM(systemPrompt, userPrompt, { ...cfg, __maxTokens: 800 });
+          return { ...r, text: summaryText };
+        } catch {
+          return r; // fall back to raw text on error
+        }
+      }));
+    }
+
+    // Group text by column label for per-probe grounding
+    const byDiscTexts = {};
+    for (const r of summarized) {
+      const { colLabel } = urlToCol[r.url] || { colLabel: "Source" };
+      if (!byDiscTexts[colLabel]) byDiscTexts[colLabel] = [];
+      byDiscTexts[colLabel].push(`--- SOURCE: ${r.title || r.url} ---\n${r.text}`);
+    }
+    const byDisc = {};
+    for (const [label, texts] of Object.entries(byDiscTexts)) {
+      byDisc[label] = texts.join("\n\n");
+    }
+
+    const combined = summarized.map(r => `--- SOURCE: ${r.title || r.url} ---\n${r.text}`).join("\n\n");
+    setSourceMaterial({ urls: successful.map(r => r.url), text: combined, byDisc, titles: successful.map(r => r.title || r.url) });
+
+    // Auto-populate probe discipline inputs with column labels (ordered by lens config)
+    const activeCols = columns.filter(c => byDisc[c.label]);
+    if (activeCols.length >= 2) {
+      renderDisciplineInputs(activeCols.length, activeCols.map(c => c.label), activeCols.map(c => c.color));
+      syncPromptPreviewDiscOptions();
+    }
+
+    const wasSummarized = !cfgError && successful.length;
+    const msg = `${successful.length} article(s) ${wasSummarized ? "summarized and loaded" : "loaded"}${failed.length ? ` · ${failed.length} failed` : ""}. Probes set to lens columns. Ready to run.`;
+    setSourceStatus(msg, "ok");
+  } catch (err) {
+    setSourceStatus(String(err.message || "Fetch failed."), "err");
+    showToast(String(err.message || "Fetch failed."));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = prev; }
+    if (launchBtn) launchBtn.disabled = false;
+    if (sourcesSection) sourcesSection.classList.remove("sources-loading");
+  }
+}
+
+export function clearSources() {
+  setSourceMaterial({ urls: [], text: "", titles: [] });
+  resetColumns();
+  closePopover();
+  const cols = document.getElementById("source-columns");
+  if (cols) { cols.innerHTML = ""; cols.style.display = "none"; }
+  const useRow = document.getElementById("source-use-row");
+  if (useRow) useRow.style.display = "none";
+  const balBar = document.getElementById("source-balance-bar");
+  if (balBar) balBar.style.display = "none";
+  setSourceStatus("");
+}
+
+export function initSourcesPanel() {
+  const lensSelect = document.getElementById("lens-select");
+  const customEditor = document.getElementById("custom-lens-editor");
+  if (lensSelect && customEditor) {
+    lensSelect.addEventListener("change", () => {
+      customEditor.style.display = lensSelect.value === "custom" ? "" : "none";
+      resetColumns();
+      clearSources();
+    });
+  }
+
+  document.getElementById("add-custom-column-btn")?.addEventListener("click", () => {
+    const list = document.getElementById("custom-columns-list");
+    if (!list) return;
+    const row = document.createElement("div");
+    row.className = "custom-col-row";
+    row.innerHTML = `
+      <input type="text" placeholder="Column label" value="Column ${list.children.length + 1}"/>
+      <textarea placeholder="https://feeds.example.com/rss&#10;(one URL per line)"></textarea>
+      <button class="mini-btn" type="button" title="Remove column">✕</button>`;
+    row.querySelector("button").addEventListener("click", () => row.remove());
+    list.appendChild(row);
+  });
 }

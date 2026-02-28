@@ -218,3 +218,114 @@ body.plot-zen #sidebar,body.plot-zen #sidebar-resizer{display:none}
 .ca-trajectory-wrap canvas{display:block;width:100%;height:auto}
 @media (max-width:900px){#viz-body{flex-direction:column}#sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border)}#sidebar-resizer{display:none}}
 @media (max-width:700px){.api-row{grid-template-columns:1fr}.prefs-row{grid-template-columns:1fr}.prefs-row-wide{grid-template-columns:1fr}.mini-grid{grid-template-columns:1fr}.lens-gen-row{grid-template-columns:1fr}.disc-grid{grid-template-columns:1fr}.prompt-workbench{grid-template-columns:1fr}.prompt-preview-controls{grid-template-columns:1fr}.controls-pane{max-height:none}.workbench-sticky-nav{position:static}.run-action-strip{position:static;background:none;border-top:none;padding-top:0}#workbench-resizer{display:none}}
+
+/* --- Progressive Disclosure & Landing Page --- */
+/* Landing state */
+#setup-landing{display:none}
+#setup-workbench-area{display:none}
+#setup.mode-landing #setup-landing{display:block}
+#setup:not(.mode-landing) #setup-workbench-area{display:block}
+/* Mode cards */
+.mode-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mode-card{border:1px solid var(--border);border-radius:10px;background:var(--panel);padding:24px 20px;display:flex;flex-direction:column;gap:14px;transition:border-color .2s,box-shadow .2s}
+.mode-card:hover{border-color:var(--accent);box-shadow:0 0 0 2px #60a5fa22}
+.mode-card-title{font-size:14px;letter-spacing:1px;color:var(--accent)}
+.mode-card-desc{font-size:13px;color:var(--muted);line-height:1.6;flex:1}
+.mode-card .launch-btn{align-self:flex-start;font-size:13px;padding:10px 22px}
+@media(max-width:700px){.mode-cards{grid-template-columns:1fr}}
+/* Mode bar (shown inside workbench area) */
+#setup-mode-bar{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+#setup-mode-bar .mini-btn.mode-active{border-color:var(--accent);color:var(--accent);background:var(--panel-soft)}
+/* Simple mode: hide advanced content and sources */
+#setup.simple-mode .workflow-card{display:none}
+#setup.simple-mode .note{display:none}
+#setup.simple-mode>.field-group>label{display:none}
+#generation-workbench.simple-mode{grid-template-columns:1fr}
+#generation-workbench.simple-mode>.prompt-pane:not(#workbench-controls-pane),
+#generation-workbench.simple-mode>#workbench-resizer{display:none}
+#generation-workbench.simple-mode #workbench-section-sources,
+#generation-workbench.simple-mode #workbench-section-lenses,
+#generation-workbench.simple-mode #workbench-section-model,
+#generation-workbench.simple-mode #workbench-section-grounding,
+#generation-workbench.simple-mode #workbench-section-advanced,
+#generation-workbench.simple-mode .workbench-sticky-nav,
+#generation-workbench.simple-mode .workbench-control-stack>.tiny-note{display:none}
+#generation-workbench.simple-mode .controls-pane{max-height:none}
+/* Sources mode: show only sources + focus + readiness */
+#generation-workbench.sources-mode{grid-template-columns:1fr}
+#generation-workbench.sources-mode>.prompt-pane:not(#workbench-controls-pane),
+#generation-workbench.sources-mode>#workbench-resizer{display:none}
+#generation-workbench.sources-mode #workbench-section-lenses,
+#generation-workbench.sources-mode #workbench-section-model,
+#generation-workbench.sources-mode #workbench-section-grounding,
+#generation-workbench.sources-mode #workbench-section-advanced,
+#generation-workbench.sources-mode .workbench-sticky-nav,
+#generation-workbench.sources-mode .workbench-control-stack>.tiny-note{display:none}
+#generation-workbench.sources-mode .controls-pane{max-height:none}
+/* Advanced mode: prompt pane hidden until toggled */
+#generation-workbench.prompt-pane-hidden>.prompt-pane:not(#workbench-controls-pane),
+#generation-workbench.prompt-pane-hidden>#workbench-resizer{display:none}
+#generation-workbench.prompt-pane-hidden{grid-template-columns:1fr}
+/* News Lens — source columns grid */
+.sources-controls-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.source-status{font-size:12px;padding:4px 0;min-height:20px;color:var(--muted)}
+.source-status.ok{color:#16a34a}
+.source-status.err{color:#dc2626}
+.source-columns{display:grid;gap:12px;margin-top:10px}
+@media (min-width:1200px){.source-columns{grid-template-columns:repeat(5,1fr)}}
+@media (min-width:900px) and (max-width:1199px){.source-columns{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:600px) and (max-width:899px){.source-columns{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:599px){.source-columns{grid-template-columns:1fr}}
+.source-column-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.source-column-label{font-size:11px;letter-spacing:1px;font-weight:600;color:var(--text)}
+.source-col-edit-btn{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:1px 4px;border-radius:4px;line-height:1}
+.source-col-edit-btn:hover{color:var(--text);background:var(--panel-soft)}
+.no-stories{font-size:12px;color:var(--muted);padding:12px 10px;text-align:center;border:1px dashed var(--border);border-radius:8px}
+.no-stories-warn{font-size:12px;padding:10px 12px;border:1px solid #f59e0b44;border-radius:8px;background:#f59e0b11;color:var(--text);line-height:1.5}
+.source-pick-card{cursor:pointer;transition:border-color .15s,box-shadow .15s;user-select:none}
+.source-pick-card:hover{border-color:var(--border)}
+.source-pick-card.selected{border-color:var(--accent);border-left:3px solid var(--accent);box-shadow:0 0 0 2px #60a5fa22;background:var(--panel-soft)}
+.source-pick-card.selected .evidence-title{color:var(--accent)}
+.source-use-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.source-selection-note{font-size:12px;color:var(--muted)}
+.mini-btn.accent{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.mini-btn.accent:hover{opacity:.88}
+.mini-btn.accent:disabled{cursor:default;opacity:1}
+.sources-loading .sources-controls-row,.sources-loading .source-columns{pointer-events:none;opacity:.45;transition:opacity .15s}
+.source-edit-popover{position:absolute;z-index:300;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:260px;box-shadow:0 4px 16px #0003}
+.source-edit-popover .source-edit-title{font-size:11px;letter-spacing:1px;margin-bottom:8px;color:var(--muted)}
+.source-edit-popover .source-feed-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;word-break:break-all}
+.source-edit-popover .source-feed-row button{font-size:11px;padding:1px 5px;flex-shrink:0}
+.source-edit-add-row{display:flex;gap:6px;margin-top:8px}
+.source-edit-add-row input{flex:1;font-size:12px;padding:4px 8px}
+.custom-lens-editor{margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--panel-soft)}
+.custom-col-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--panel)}
+.custom-col-row input[type=text]{font-size:12px;padding:4px 8px;width:120px}
+.custom-col-row textarea{font-size:12px;padding:4px 8px;min-height:60px;resize:vertical;flex:1;min-width:180px}
+/* Card selection row with checkbox */
+.card-select-row{display:flex;gap:8px;align-items:flex-start}
+.card-checkbox-wrap{flex-shrink:0;display:flex;align-items:center;padding-top:2px;cursor:pointer}
+.card-checkbox{position:absolute;opacity:0;width:0;height:0}
+.card-checkbox-box{width:15px;height:15px;border:1.5px solid var(--border);border-radius:3px;display:inline-block;flex-shrink:0;transition:background .1s,border-color .1s}
+.card-checkbox:checked+.card-checkbox-box{background:var(--accent);border-color:var(--accent)}
+.card-checkbox:checked+.card-checkbox-box::after{content:"✓";font-size:10px;color:#fff;display:block;text-align:center;line-height:14px}
+/* Card expand / snippet */
+.source-card-snippet{font-size:11px;color:var(--muted);line-height:1.5;margin-top:3px}
+.source-pick-card.card-expanded{border-style:dashed}
+.mini-link-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--accent);padding:0;text-decoration:underline;text-underline-offset:2px}
+.mini-link-btn:hover{opacity:.75}
+/* Low-relevance collapsible */
+.low-rel-toggle{margin:6px 0 2px;display:block;color:var(--muted)}
+.low-rel-section{border-top:1px dashed var(--border);margin-top:4px;padding-top:4px;display:flex;flex-direction:column;gap:8px}
+/* Balance bar */
+.source-balance-bar{display:none;margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--panel-soft)}
+.balance-label{font-size:10px;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.balance-bars{display:flex;gap:12px;align-items:flex-end;height:60px}
+.balance-col-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+.balance-bar-track{width:100%;height:40px;display:flex;align-items:flex-end;background:var(--panel-alt);border-radius:3px;overflow:hidden}
+.balance-bar-fill{width:100%;border-radius:3px;transition:height .25s,background .25s}
+.balance-count{font-size:11px;font-weight:600}
+.balance-col-label{font-size:9px;letter-spacing:.05em;text-align:center;word-break:break-word;max-width:52px}
+/* Article preview modal */
+#source-article-modal{display:none}
+#source-article-modal.open{display:flex}

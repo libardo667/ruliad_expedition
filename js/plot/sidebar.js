@@ -1,13 +1,10 @@
 import { TYPE_CFG } from '../core/constants.js';
-import { CITATIONS, DISCS, LAST_RUN, RUN_STATE, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS, activeSlices, activeTab, activeTypes, nodeColorMode, plotInited, showGroundingOverlays, showSurfaces, surfaceOpacity } from '../core/state.js';
+import { CITATIONS, DISCS, LAST_RUN, RUN_STATE, TERMS, activeSlices, activeTab, activeTypes, nodeColorMode, plotInited, showSurfaces, surfaceOpacity } from '../core/state.js';
 import { clampInt, escapeHtml } from '../core/utils.js';
 import { switchMainTab } from '../ui/tabs.js';
 import { rerunProbe } from '../pipeline/reruns.js';
-import { buildGroundingHealthWarnings, computeGroundingStats, computeSourceTypeBreakdown, renderGenericInterpretationHotspotAudit } from '../grounding/wolfram-score.js';
-import { waTermStatusLabel } from '../grounding/wolfram-grounding.js';
-import { getPendingAmbiguityCount } from '../grounding/ambiguity-queue.js';
 import { sourceTypeLabel } from '../domain/citations.js';
-import { getNodeGroundingConfidenceScore, getTermGroundingOutcome, getTermSignalModel, refreshTermSignalFields, termGroundingOutcomeColor, termGroundingOutcomeLabel } from '../domain/grounding-status.js';
+import { getTermSignalModel, refreshTermSignalFields } from '../domain/grounding-status.js';
 import { renderCAPanel } from '../ca/render-ca-panel.js';
 import { renderEmbeddingDiagnostics } from '../embedding/diagnostics.js';
 import { renderPlot } from './plot-render.js';
@@ -18,13 +15,13 @@ import { showTermDetail } from './term-detail.js';
 // Source: ruliad_expedition_v1.1.html
 // Module: js/plot/sidebar.js
 
-export function getNodeFilterState(){return {search:String(document.getElementById("node-search-input")?.value||"").trim(),type:String(document.getElementById("node-type-filter")?.value||"all"),grounding:String(document.getElementById("node-grounding-filter")?.value||"all"),minProbes:clampInt(document.getElementById("node-min-probe-filter")?.value||0,0,99),minCitations:clampInt(document.getElementById("node-min-citation-filter")?.value||0,0,999),sort:String(document.getElementById("node-sort-select")?.value||"probe_coverage")};}
+export function getNodeFilterState(){return {search:String(document.getElementById("node-search-input")?.value||"").trim(),type:String(document.getElementById("node-type-filter")?.value||"all"),minProbes:clampInt(document.getElementById("node-min-probe-filter")?.value||0,0,99),minCitations:clampInt(document.getElementById("node-min-citation-filter")?.value||0,0,999),sort:String(document.getElementById("node-sort-select")?.value||"probe_coverage")};}
 
 export function fuzzyLabelMatch(label,query){const text=String(label||"").toLowerCase();const q=String(query||"").toLowerCase().trim();if(!q) return true;if(text.includes(q)) return true;const parts=q.split(/\s+/).filter(Boolean);if(parts.length>1&&parts.every(part=>text.includes(part))) return true;let i=0;for(const ch of text){if(ch===q[i]) i++;if(i>=q.length) return true;}return false;}
 
-export function matchesNodeFilters(term,state){if(!term) return false;if(!activeTypes.has(term.type)) return false;if(!(term.slices.length===0||term.slices.some(s=>activeSlices.has(s)))) return false;if(state.type!=="all"&&term.type!==state.type) return false;const outcome=getTermGroundingOutcome(term);if(state.grounding==="grounded"&&outcome!=="grounded") return false;if((state.grounding==="metadata_only"||state.grounding==="partial")&&outcome!=="metadata_only") return false;if((state.grounding==="rejected"||state.grounding==="failed")&&outcome!=="rejected") return false;if(state.grounding==="local_defined"&&outcome!=="local_defined") return false;if(state.grounding==="not_attempted"&&outcome!=="not_attempted") return false;if(state.grounding==="weak"&&!["metadata_only","rejected"].includes(outcome)) return false;if(state.minProbes>0&&((term.slices||[]).length<state.minProbes)) return false;if(state.minCitations>0&&((term.citations||[]).length<state.minCitations)) return false;if(state.search&&!fuzzyLabelMatch(term.label,state.search)) return false;return true;}
+export function matchesNodeFilters(term,state){if(!term) return false;if(!activeTypes.has(term.type)) return false;if(!(term.slices.length===0||term.slices.some(s=>activeSlices.has(s)))) return false;if(state.type!=="all"&&term.type!==state.type) return false;if(state.minProbes>0&&((term.slices||[]).length<state.minProbes)) return false;if(state.minCitations>0&&((term.citations||[]).length<state.minCitations)) return false;if(state.search&&!fuzzyLabelMatch(term.label,state.search)) return false;return true;}
 
-export function sortNodes(terms,sortMode){const arr=[...(terms||[])];arr.sort((a,b)=>{if(sortMode==="alphabetical"){return String(a.label||"").localeCompare(String(b.label||""));}if(sortMode==="citation_count"){const diff=(b.citations?.length||0)-(a.citations?.length||0);if(diff!==0) return diff;return String(a.label||"").localeCompare(String(b.label||""));}if(sortMode==="grounding_confidence"){const diff=getNodeGroundingConfidenceScore(b)-getNodeGroundingConfidenceScore(a);if(diff!==0) return diff;return String(a.label||"").localeCompare(String(b.label||""));}const probeDiff=(b.slices?.length||0)-(a.slices?.length||0);if(probeDiff!==0) return probeDiff;const citeDiff=(b.citations?.length||0)-(a.citations?.length||0);if(citeDiff!==0) return citeDiff;return String(a.label||"").localeCompare(String(b.label||""));});return arr;}
+export function sortNodes(terms,sortMode){const arr=[...(terms||[])];arr.sort((a,b)=>{if(sortMode==="alphabetical"){return String(a.label||"").localeCompare(String(b.label||""));}if(sortMode==="citation_count"){const diff=(b.citations?.length||0)-(a.citations?.length||0);if(diff!==0) return diff;return String(a.label||"").localeCompare(String(b.label||""));}const probeDiff=(b.slices?.length||0)-(a.slices?.length||0);if(probeDiff!==0) return probeDiff;const citeDiff=(b.citations?.length||0)-(a.citations?.length||0);if(citeDiff!==0) return citeDiff;return String(a.label||"").localeCompare(String(b.label||""));});return arr;}
 
 export function getVisibleNodeTerms(){const state=getNodeFilterState();return sortNodes(TERMS.filter(term=>matchesNodeFilters(term,state)),state.sort);}
 
@@ -44,21 +41,19 @@ export function renderNodeFilterResults(){
     row.type="button";
     row.className="node-hit";
     const signal=getTermSignalModel(term);
-    const outcome=signal.outcome;
-    const waStatus=waTermStatusLabel(signal.waGroundingStatus);
     const relevance=Number(signal.relevanceScore).toFixed(2);
     const evidence=Number(signal.evidenceSupportScore).toFixed(2);
-    row.innerHTML=`<div>${escapeHtml(term.label)}</div><div class="node-hit-meta">${escapeHtml(term.type)} | probes ${(term.slices||[]).length} | citations ${(term.citations||[]).length} | outcome ${escapeHtml(termGroundingOutcomeLabel(outcome))} | WA ${escapeHtml(waStatus)} | relevance ${relevance} (${escapeHtml(signal.relevanceBand)}) | evidence ${evidence} (${escapeHtml(signal.evidenceBand)})</div>`;
+    row.innerHTML=`<div>${escapeHtml(term.label)}</div><div class="node-hit-meta">${escapeHtml(term.type)} | probes ${(term.slices||[]).length} | citations ${(term.citations||[]).length} | relevance ${relevance} (${escapeHtml(signal.relevanceBand)}) | evidence ${evidence} (${escapeHtml(signal.evidenceBand)})</div>`;
     row.addEventListener("click",()=>{if(activeTab!=="plot"){switchMainTab("plot",{focusTarget:false});}showTermDetail(term);});
     list.appendChild(row);
   }
 }
 
-export function clearNodeFilters(){const set=(id,val)=>{const el=document.getElementById(id);if(!el) return;el.value=val;};set("node-search-input","");set("node-type-filter","all");set("node-grounding-filter","all");set("node-min-probe-filter","0");set("node-min-citation-filter","0");set("node-sort-select","probe_coverage");}
+export function clearNodeFilters(){const set=(id,val)=>{const el=document.getElementById(id);if(!el) return;el.value=val;};set("node-search-input","");set("node-type-filter","all");set("node-min-probe-filter","0");set("node-min-citation-filter","0");set("node-sort-select","probe_coverage");}
 
-export function initNodeFilterControls(){const ids=["node-search-input","node-type-filter","node-grounding-filter","node-min-probe-filter","node-min-citation-filter","node-sort-select"];for(const id of ids){const el=document.getElementById(id);if(!el) continue;const evt=(id==="node-search-input"||id==="node-min-probe-filter"||id==="node-min-citation-filter")?"input":"change";el.addEventListener(evt,()=>{if(plotInited&&activeTab==="plot"){renderPlot();}renderNodeFilterResults();});}const clearBtn=document.getElementById("node-filter-clear-btn");if(clearBtn){clearBtn.addEventListener("click",()=>{clearNodeFilters();if(plotInited&&activeTab==="plot"){renderPlot();}renderNodeFilterResults();});}}
+export function initNodeFilterControls(){const ids=["node-search-input","node-type-filter","node-min-probe-filter","node-min-citation-filter","node-sort-select"];for(const id of ids){const el=document.getElementById(id);if(!el) continue;const evt=(id==="node-search-input"||id==="node-min-probe-filter"||id==="node-min-citation-filter")?"input":"change";el.addEventListener(evt,()=>{if(plotInited&&activeTab==="plot"){renderPlot();}renderNodeFilterResults();});}const clearBtn=document.getElementById("node-filter-clear-btn");if(clearBtn){clearBtn.addEventListener("click",()=>{clearNodeFilters();if(plotInited&&activeTab==="plot"){renderPlot();}renderNodeFilterResults();});}}
 
-export function renderGroundingLegend(){const modeSel=document.getElementById("node-color-mode-select");if(modeSel&&modeSel.value!==nodeColorMode) modeSel.value=nodeColorMode;const overlayCheck=document.getElementById("grounding-overlay-check");if(overlayCheck&&overlayCheck.checked!==showGroundingOverlays) overlayCheck.checked=showGroundingOverlays;const modeLabel=document.getElementById("color-mode-label");if(modeLabel) modeLabel.textContent=nodeColorMode==="grounding"?"NODE COLOR: GROUNDING QUALITY":"NODE COLOR: TYPE";const note=document.getElementById("grounding-encoding-note");if(note){note.textContent=nodeColorMode==="grounding"?"Grounding color mode active. Green/teal = WA grounded or local-defined; amber = WA metadata-only; red = WA unresolved; gray = WA not attempted.":"Node type color mode active. Enable grounding color mode to spotlight WA-unresolved clusters without affecting relevance.";if(showGroundingOverlays){note.textContent+= " Halos/rings are enabled.";}else{note.textContent+= " Halos/rings are hidden.";}}}
+export function renderGroundingLegend(){const modeSel=document.getElementById("node-color-mode-select");if(modeSel&&modeSel.value!==nodeColorMode) modeSel.value=nodeColorMode;const modeLabel=document.getElementById("color-mode-label");if(modeLabel) modeLabel.textContent=nodeColorMode==="citations"?"NODE COLOR: CITATION COUNT":"NODE COLOR: TYPE";const note=document.getElementById("grounding-encoding-note");if(note){note.textContent=nodeColorMode==="citations"?"Citation count color mode active. Gray = no citations; blue → green → amber → red = increasing citation depth (max scale: 10).":"Node type color mode active. Switch to citation count mode to highlight well-supported nodes.";}}
 
 export function buildSidebar(){const dl=document.getElementById("disc-list");dl.innerHTML="";for(const d of DISCS){const btn=document.createElement("div");btn.className="disc-btn";btn.dataset.id=d.id;btn.innerHTML=`<div class="disc-btn-dot" style="background:${d.col}"></div><span class="disc-btn-abbr" style="color:${d.col}">${d.abbr}</span><span class="disc-btn-name">${d.name}</span><button class="small-btn" data-rerun="${d.id}" type="button">RERUN</button>`;btn.addEventListener("click",()=>{if(activeSlices.has(d.id)) activeSlices.delete(d.id);else activeSlices.add(d.id);btn.classList.toggle("off");renderPlot();});btn.querySelector("[data-rerun]").addEventListener("click",e=>{e.stopPropagation();rerunProbe(d.id);});dl.appendChild(btn);}const tl=document.getElementById("type-list");tl.innerHTML="";for(const [tp,cfg] of Object.entries(TYPE_CFG)){const btn=document.createElement("div");btn.className="type-btn";btn.dataset.type=tp;btn.innerHTML=`<div style="width:10px;height:10px;background:${cfg.col};margin-top:2px;flex-shrink:0;border-radius:2px"></div><div><div style="font-size:13px;letter-spacing:.4px;color:${cfg.col}">${cfg.label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${cfg.desc}</div></div>`;btn.addEventListener("click",()=>{if(activeTypes.has(tp)) activeTypes.delete(tp);else activeTypes.add(tp);btn.classList.toggle("off");renderPlot();});tl.appendChild(btn);}const surfCheck=document.getElementById("surf-check");const surfOpacityRange=document.getElementById("surf-opacity-range");const surfOpacityValue=document.getElementById("surf-opacity-value");const syncSurfaceControls=()=>{const pct=Math.round(clampSurfaceOpacity(surfaceOpacity)*100);if(surfOpacityRange&&surfOpacityRange.value!==String(pct)) surfOpacityRange.value=String(pct);if(surfOpacityValue) surfOpacityValue.textContent=`${pct}%`;if(surfOpacityRange) surfOpacityRange.disabled=!showSurfaces;};if(surfCheck){surfCheck.checked=showSurfaces;surfCheck.onchange=e=>{showSurfaces=Boolean(e.target.checked);syncSurfaceControls();renderPlot();};}if(surfOpacityRange){surfOpacityRange.oninput=e=>{surfaceOpacity=clampSurfaceOpacity(Number(e.target.value)/100);syncSurfaceControls();if(showSurfaces) renderPlot();};}syncSurfaceControls();renderGroundingLegend();}
 
@@ -81,66 +76,31 @@ export function buildStats(){
     addRow(cfg.label,n,cfg.col);
   }
   if(TERMS.length){
-    const groundingStats=computeGroundingStats(TERMS);
-    const sourceTypeBreakdown=computeSourceTypeBreakdown(CITATIONS);
-    const warnings=buildGroundingHealthWarnings(groundingStats,sourceTypeBreakdown);
     const signalRows=TERMS.map(getTermSignalModel);
-    const groundedPct=(groundingStats.groundedNodesPct*100).toFixed(1);
-    const outcomeCoveragePct=((Number(groundingStats.term_outcome_coverage_pct||0))*100).toFixed(1);
-    const noCitePct=(groundingStats.nodesWithNoCitationsPct*100).toFixed(1);
-    const groundedCol=groundingStats.groundedNodesPct>=0.6?"#16a34a":groundingStats.groundedNodesPct>=0.35?"#d97706":"#dc2626";
-    const outcomeCoverageCol=Number(groundingStats.term_outcome_coverage_pct||0)>=0.75?"#16a34a":Number(groundingStats.term_outcome_coverage_pct||0)>=0.5?"#d97706":"#dc2626";
-    const ambiguousCol=groundingStats.ambiguousWaMatches===0?"#16a34a":groundingStats.ambiguousWaMatches<=Math.max(1,Math.floor(groundingStats.totalNodes*0.1))?"#d97706":"#dc2626";
-    const attemptedRejectedTerms=Number((groundingStats.attempted_rejected_terms??groundingStats.waFailures)||0);
-    const failureCol=attemptedRejectedTerms===0?"#16a34a":"#dc2626";
-    const outcomeBreakdown=groundingStats.termOutcomeBreakdown&&typeof groundingStats.termOutcomeBreakdown==="object"?groundingStats.termOutcomeBreakdown:{};
-    const researchSupportedWaUnresolved=signalRows.filter(row=>Boolean(row?.researchSupported)&&String(row?.waGroundingStatus||"").startsWith("wa_unresolved")).length;
-    const highRelevanceWaUnresolved=signalRows.filter(row=>Number(row?.relevanceScore)>=0.72&&String(row?.waGroundingStatus||"").startsWith("wa_unresolved")).length;
-    const localNoWaExpectation=signalRows.filter(row=>row?.waGroundingStatus==="wa_not_suitable").length;
+    const totalNodes=TERMS.length;
+    const nodesWithNoCitations=TERMS.filter(t=>!(t.citations||[]).length).length;
+    const avgCitationsPerNode=totalNodes?TERMS.reduce((s,t)=>s+(t.citations||[]).length,0)/totalNodes:0;
     const avgRelevance=signalRows.length?signalRows.reduce((sum,row)=>sum+Number(row?.relevanceScore||0),0)/signalRows.length:0;
     const avgEvidenceSupport=signalRows.length?signalRows.reduce((sum,row)=>sum+Number(row?.evidenceSupportScore||0),0)/signalRows.length:0;
-    addRow("TOTAL NODES",groundingStats.totalNodes,"var(--accent)");
-    addRow("WA GROUNDED NODES %",`${groundedPct}%`,groundedCol);
-    addRow("WA OUTCOME COVERAGE %",`${outcomeCoveragePct}%`,outcomeCoverageCol);
-    addRow("WA OUTCOME: GROUNDED (APPLIED)",Number(outcomeBreakdown.grounded||0),termGroundingOutcomeColor("grounded"));
-    addRow("WA OUTCOME: GROUNDED (METADATA-ONLY)",Number(outcomeBreakdown.metadata_only||0),termGroundingOutcomeColor("metadata_only"));
-    addRow("WA OUTCOME: UNRESOLVED",Number(outcomeBreakdown.rejected||0),termGroundingOutcomeColor("rejected"));
-    addRow("WA OUTCOME: NOT SUITABLE (LOCAL)",Number(outcomeBreakdown.local_defined||0),termGroundingOutcomeColor("local_defined"));
-    addRow("WA OUTCOME: NOT ATTEMPTED",Number(outcomeBreakdown.not_attempted||0),termGroundingOutcomeColor("not_attempted"));
-    addRow("AMBIGUOUS WA MATCHES",groundingStats.ambiguousWaMatches,ambiguousCol);
-    addRow("WA UNRESOLVED AFTER ATTEMPTS",attemptedRejectedTerms,failureCol);
-    addRow("RESEARCH-SUPPORTED + WA UNRESOLVED",researchSupportedWaUnresolved,researchSupportedWaUnresolved>0?"#d97706":"#16a34a");
-    addRow("HIGH RELEVANCE + WA UNRESOLVED",highRelevanceWaUnresolved,highRelevanceWaUnresolved>0?"#d97706":"#16a34a");
-    addRow("LOCAL CONSTRUCTS (NO WA EXPECTATION)",localNoWaExpectation,localNoWaExpectation>0?"#0ea5e9":"#64748b");
+    const noCitePct=(nodesWithNoCitations/totalNodes*100).toFixed(1);
+    addRow("TOTAL NODES",totalNodes,"var(--accent)");
+    addRow("AVG CITATIONS / NODE",avgCitationsPerNode.toFixed(2),avgCitationsPerNode>=1?"#16a34a":"#d97706");
+    addRow("NODES W/ NO CITATIONS",`${nodesWithNoCitations} (${noCitePct}%)`,nodesWithNoCitations===0?"#16a34a":"#d97706");
     addRow("AVG RELEVANCE SCORE",avgRelevance.toFixed(2),avgRelevance>=0.65?"#16a34a":avgRelevance>=0.45?"#d97706":"#dc2626");
     addRow("AVG EVIDENCE SUPPORT SCORE",avgEvidenceSupport.toFixed(2),avgEvidenceSupport>=0.65?"#16a34a":avgEvidenceSupport>=0.45?"#d97706":"#dc2626");
-    const pendingAmbiguity=getPendingAmbiguityCount();
-    addRow("AMBIGUITY QUEUE (PENDING)",pendingAmbiguity,pendingAmbiguity>0?"#d97706":"#16a34a");
-    addRow("WA ACCEPTED",Number(groundingStats.accepted_wolfram||0),Number(groundingStats.accepted_wolfram||0)>0?"#16a34a":"#64748b");
-    addRow("WA UNRESOLVED",Number(groundingStats.rejected_wolfram||0),Number(groundingStats.rejected_wolfram||0)===0?"#16a34a":"#dc2626");
-    addRow("ACCEPTED BUT LOW ALIGN",Number(groundingStats.accepted_but_low_alignment||0),Number(groundingStats.accepted_but_low_alignment||0)===0?"#16a34a":"#d97706");
-    addRow("DICT-ONLY GROUNDINGS",Number(groundingStats.dictionary_only_groundings||0),Number(groundingStats.dictionary_only_groundings||0)===0?"#16a34a":"#d97706");
-    addRow("LIKELY CAT MISMATCH",Number(groundingStats.likely_category_mismatch||0),Number(groundingStats.likely_category_mismatch||0)===0?"#16a34a":"#d97706");
-    addRow("METADATA-ONLY TERMS",Number(groundingStats.metadata_only_terms||0),Number(groundingStats.metadata_only_terms||0)===0?"#16a34a":"#d97706");
-    addRow("AVG CITATIONS / NODE",groundingStats.avgCitationsPerNode.toFixed(2),groundingStats.avgCitationsPerNode>=1?"#16a34a":"#d97706");
-    addRow("NODES W/ NO CITATIONS",`${groundingStats.nodesWithNoCitations} (${noCitePct}%)`,groundingStats.nodesWithNoCitations===0?"#16a34a":"#d97706");
-    const topSources=Object.entries(sourceTypeBreakdown).slice(0,3).map(([k,v])=>`${sourceTypeLabel(k)}:${v}`).join(" | ");
-    if(topSources){
-      const srcNote=document.createElement("div");
-      srcNote.className="matrix-note";
-      srcNote.style.marginTop="6px";
-      srcNote.textContent=`Source mix: ${topSources}`;
-      sr.appendChild(srcNote);
-    }
-    if(warnings.length){
-      const warn=document.createElement("div");
-      warn.className="matrix-note";
-      warn.style.marginTop="6px";
-      warn.textContent=`Grounding diagnostics: ${warnings.slice(0,3).join(" | ")}${warnings.length>3?" ...":""}`;
-      sr.appendChild(warn);
+    if(CITATIONS.length){
+      const sourceTypeCounts={};
+      for(const c of CITATIONS){const t=String(c.source_type||"untyped");sourceTypeCounts[t]=(sourceTypeCounts[t]||0)+1;}
+      const topSources=Object.entries(sourceTypeCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${sourceTypeLabel(k)}:${v}`).join(" | ");
+      if(topSources){
+        const srcNote=document.createElement("div");
+        srcNote.className="matrix-note";
+        srcNote.style.marginTop="6px";
+        srcNote.textContent=`Source mix: ${topSources}`;
+        sr.appendChild(srcNote);
+      }
     }
   }
-  renderGenericInterpretationHotspotAudit(WOLFRAM_GROUNDING_DIAGNOSTICS);
   renderEmbeddingDiagnostics();
   renderCAPanel();
 }

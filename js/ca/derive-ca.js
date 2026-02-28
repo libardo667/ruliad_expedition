@@ -1,10 +1,6 @@
 import { PROJECTION_BASE_SEED } from '../core/constants.js';
-import { CA_PROBE_OUTPUT, CITATIONS, DISCS, DISC_SIM_MATRIX, PROJECTION_STABILITY, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS, setCAProbeOutput } from '../core/state.js';
+import { CA_PROBE_OUTPUT, CITATIONS, DISCS, DISC_SIM_MATRIX, PROJECTION_STABILITY, TERMS, setCAProbeOutput } from '../core/state.js';
 import { RNG, clampInt, structuredCloneSafe } from '../core/utils.js';
-import { normalizeMode } from '../api/provider.js';
-import { extractWolframStructured, fetchWolframJSON, selectWolframSnippetFromParsed } from '../grounding/wolfram-parse.js';
-import { computeGroundingStats } from '../grounding/wolfram-score.js';
-import { mergeGroundingBlocks, normalizeGroundingBlock } from '../grounding/wolfram-grounding.js';
 import { inferDescriptionSourceFromLayers, mergeDescription, mergeTermDescriptions, mergeType, normalizeTermDescriptions } from '../domain/terms.js';
 import { toCanonicalKey } from '../domain/aliases.js';
 import { mergeDescriptionProvenance, mergeDescriptionSource } from '../domain/citations.js';
@@ -119,16 +115,15 @@ export async function deriveReplicationCAFingerprint(target,cfg,probeResults,syn
       discSimilarityMatrix=null;
     }
   }
-  const groundingStats=computeGroundingStats(runTerms,runCitations,[]);
+  const groundingStats={avgCitationsPerNode:runTerms.length?runTerms.reduce((s,t)=>s+(Array.isArray(t?.citations)?t.citations.length:0),0)/runTerms.length:0};
   const prevCAOutput=CA_PROBE_OUTPUT;
   try{
-    const caCfg={...cfg,wolframAppId:""};
+    const caCfg={...cfg};
     const caResult=await deriveCAFromRun(target,caCfg,probeResults,synthResult,{
       discSimilarityMatrix,
       groundingStats,
       terms:runTerms,
       citations:runCitations,
-      groundingDiagnostics:[],
       discs:llmDiscs
     });
     if(!caResult||typeof caResult!=="object") return null;
@@ -280,7 +275,6 @@ export function buildCATermsFromMetrics(caOutput){
   const density=Number.isFinite(Number(metrics?.density))?Number(metrics.density):0;
   const volatility=Number.isFinite(Number(metrics?.volatility))?Number(metrics.volatility):0;
   const spread=Number.isFinite(Number(metrics?.spread))?Number(metrics.spread):0;
-  const syntheticGrounding=normalizeGroundingBlock({groundingEligibility:"synthetic_local",groundingSkipReason:"Run-derived CA diagnostic term computed locally from expedition outputs."},{defaultStatus:"not_attempted"});
   return [
     {
       label:`Rule ${rule} Local Interaction Dynamics`,
@@ -288,8 +282,7 @@ export function buildCATermsFromMetrics(caOutput){
       description:"Run-derived elementary update rule where each cell depends on nearest-neighbor state.",
       descriptions:{synthesisSummary:"Run-derived elementary update rule where each cell depends on nearest-neighbor state."},
       description_source:"synthesis",
-      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from post-synthesis CA diagnostic fingerprint."}],
-      grounding:syntheticGrounding
+      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from post-synthesis CA diagnostic fingerprint."}]
     },
     {
       label:"Diffusion Bandwidth",
@@ -297,8 +290,7 @@ export function buildCATermsFromMetrics(caOutput){
       description:`Active-cell spread ratio across rows: ${(spread*100).toFixed(1)}%.`,
       descriptions:{synthesisSummary:`Active-cell spread ratio across rows: ${(spread*100).toFixed(1)}%.`},
       description_source:"synthesis",
-      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from run CA spread metric."}],
-      grounding:syntheticGrounding
+      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from run CA spread metric."}]
     },
     {
       label:"Transition Volatility",
@@ -306,8 +298,7 @@ export function buildCATermsFromMetrics(caOutput){
       description:`Adjacent-state transition ratio: ${(volatility*100).toFixed(1)}%.`,
       descriptions:{synthesisSummary:`Adjacent-state transition ratio: ${(volatility*100).toFixed(1)}%.`},
       description_source:"synthesis",
-      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from run CA volatility metric."}],
-      grounding:syntheticGrounding
+      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from run CA volatility metric."}]
     },
     {
       label:"Computational Irreducibility",
@@ -315,8 +306,7 @@ export function buildCATermsFromMetrics(caOutput){
       description:`Run-derived CA regime density ${(density*100).toFixed(1)}%, indicating iterative interaction effects dominate closed-form shortcuts.`,
       descriptions:{synthesisSummary:`Run-derived CA regime density ${(density*100).toFixed(1)}%, indicating iterative interaction effects dominate closed-form shortcuts.`},
       description_source:"synthesis",
-      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from run-level CA diagnostic commentary."}],
-      grounding:syntheticGrounding
+      description_provenance:[{source:"synthesis",stage:"ca_diagnostic",note:"Derived from run-level CA diagnostic commentary."}]
     }
   ];
 }
@@ -343,8 +333,7 @@ export function appendDerivedCATermsToTerms(caTerms){
       citations:[],
       aliases:[],
       description_source:inferDescriptionSourceFromLayers(descriptions,baseSource),
-      description_provenance:mergeDescriptionProvenance(raw?.description_provenance,[{source:baseSource,stage:"ca_diagnostic",note:"Run-derived CA diagnostic term appended post-synthesis."}]),
-      grounding:normalizeGroundingBlock(raw?.grounding,{defaultStatus:"not_attempted"})
+      description_provenance:mergeDescriptionProvenance(raw?.description_provenance,[{source:baseSource,stage:"ca_diagnostic",note:"Run-derived CA diagnostic term appended post-synthesis."}])
     };
     if(existing){
       existing.descriptions=mergeTermDescriptions(existing.descriptions,node.descriptions,node.label);
@@ -353,7 +342,6 @@ export function appendDerivedCATermsToTerms(caTerms){
       existing.type=mergeType(existing.type,node.type);
       existing.description_source=inferDescriptionSourceFromLayers(existing.descriptions,mergeDescriptionSource(existing.description_source,node.description_source));
       existing.description_provenance=mergeDescriptionProvenance(existing.description_provenance,node.description_provenance);
-      existing.grounding=mergeGroundingBlocks(existing.grounding,node.grounding);
       continue;
     }
     TERMS.push(node);
@@ -372,8 +360,7 @@ export async function deriveCAFromRun(target,cfg,probeResults,synthResult,embedd
   const llmDiscs=(Array.isArray(diagnostics?.discs)?diagnostics.discs:DISCS).filter(d=>d?.kind!=="ca");
   const runTerms=Array.isArray(diagnostics?.terms)?diagnostics.terms:TERMS;
   const runCitations=Array.isArray(diagnostics?.citations)?diagnostics.citations:CITATIONS;
-  const runGroundingDiagnostics=Array.isArray(diagnostics?.groundingDiagnostics)?diagnostics.groundingDiagnostics:WOLFRAM_GROUNDING_DIAGNOSTICS;
-  const groundingStats=diagnostics?.groundingStats&&typeof diagnostics.groundingStats==="object"?diagnostics.groundingStats:computeGroundingStats(runTerms,runCitations,runGroundingDiagnostics);
+  const groundingStats=diagnostics?.groundingStats&&typeof diagnostics.groundingStats==="object"?diagnostics.groundingStats:{avgCitationsPerNode:runTerms.length?runTerms.reduce((s,t)=>s+(Array.isArray(t?.citations)?t.citations.length:0),0)/runTerms.length:0};
   const similarityMatrix=diagnostics?.discSimilarityMatrix&&typeof diagnostics.discSimilarityMatrix==="object"
     ?diagnostics.discSimilarityMatrix
     :diagnostics?.similarityMatrix&&typeof diagnostics.similarityMatrix==="object"
@@ -402,22 +389,7 @@ export async function deriveCAFromRun(target,cfg,probeResults,synthResult,embedd
   const metrics=computeAutomataMetrics(sim,rowDerivation.probeSegments);
   const imageUrl=renderAutomataDataUrl(sim,rowDerivation.probeSegments);
   const query=`CellularAutomaton[${sim.rule}, {${Array.from(rowDerivation.initialRow).join(",")}}, {${sim.steps}, ${sim.width}}]`;
-  let wolframNote="";
-  if(cfg?.wolframAppId&&normalizeMode(cfg)==="proxy"){
-    try{
-      const data=await fetchWolframJSON(query,cfg,{target,discName:"Computational Irreducibility",termLabel:`Rule ${sim.rule} Local Interaction Dynamics`,resolutionLabel:"ca_run_derived"});
-      const parsed=extractWolframStructured(data);
-      const selected=selectWolframSnippetFromParsed(parsed);
-      const txt=String(selected?.snippet||"").trim();
-      if(txt) wolframNote=` Wolfram returned: ${txt.slice(0,180)}.`;
-      if(Array.isArray(parsed.didYouMeans)&&parsed.didYouMeans.length) wolframNote+=` Interpretation alternatives: ${parsed.didYouMeans.slice(0,3).join(", ")}.`;
-    }catch(err){
-      wolframNote=` Wolfram call failed: ${err.message||err}.`;
-    }
-  }else if(cfg?.wolframAppId&&normalizeMode(cfg)!=="proxy"){
-    wolframNote=" Wolfram lookup skipped in direct mode (CORS).";
-  }
-  const commentary=`${buildRunDerivedCommentary({
+  const commentary=buildRunDerivedCommentary({
     rule:sim.rule,
     ruleDerivation,
     wolframClass:ruleDerivation?.wolframClass,
@@ -444,7 +416,7 @@ export async function deriveCAFromRun(target,cfg,probeResults,synthResult,embedd
     discNames:llmDiscs.map(d=>d?.name).filter(Boolean),
     synthResult,
     groundingStats
-  })}${wolframNote}`.trim();
+  }).trim();
   const toNumberSeries=(series)=>ArrayBuffer.isView(series)?Array.from(series,value=>Number(value)||0):Array.isArray(series)?series.map(value=>Number(value)||0):[];
   const toSeriesMap=(input)=>{
     const out={};

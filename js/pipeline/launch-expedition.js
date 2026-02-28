@@ -1,8 +1,8 @@
 import { COLORS, PROJECTION_BASE_SEED, PROJECTION_STABILITY_RUNS } from '../core/constants.js';
-import { ACTIVE_ARTIFACT_KEY, AMBIGUITY_QUEUE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setAmbiguityQueue, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSessionConfig, setTerms, setWolframGroundingDiagnostics, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
+import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, TERMS, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSessionConfig, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
 import { progressEl } from '../core/refs.js';
 import { clampInt } from '../core/utils.js';
-import { setProbeState, showToast, updateAmbiguityQueueUIState } from '../ui/notifications.js';
+import { setProbeState, showToast } from '../ui/notifications.js';
 import { switchMainTab } from '../ui/tabs.js';
 import { getCurrentProbeSpecs, renderDisciplineInputs } from '../ui/setup-panel.js';
 import { closeModal } from '../ui/modals.js';
@@ -12,8 +12,6 @@ import { getSynthesisResultWithRecovery, normalizeSynthesisResult } from './synt
 import { normalizeMode } from '../api/provider.js';
 import { getQualityProfile, readApiConfig, validateApiConfig } from '../api/llm.js';
 import { buildEmbeddingText, callEmbeddings } from '../api/embeddings.js';
-import { computeRunGroundingStats } from '../grounding/wolfram-score.js';
-import { groundProbeTermsWithWolfram } from '../grounding/wolfram-grounding.js';
 import { buildTerms, makeAbbr } from '../domain/terms.js';
 import { collectCitations } from '../domain/citations.js';
 import { applySecondPassCleanup, buildRunSnapshot, computeRunId, safeConfigForRun } from '../domain/run-metadata.js';
@@ -44,16 +42,14 @@ export async function launchExpedition(){
   setSessionConfig(cfg);
   setCallLogs([]);
   setCitations([]);
-  setWolframGroundingDiagnostics([]);
-  setAmbiguityQueue([]);
-  updateAmbiguityQueueUIState();
   setDiscSimMatrix(null);
   setProjectionStability(null);
   setCAProbeOutput(null);
   initArtifactStore();
-  const discNames=Array.from(document.querySelectorAll(".disc-input")).map(el=>el.value.trim()).filter(Boolean);
+  const discInputEls=Array.from(document.querySelectorAll(".disc-input")).filter(el=>el.value.trim());
+  const discNames=discInputEls.map(el=>el.value.trim());
   if(discNames.length<2){showToast("Please fill in at least 2 disciplines.");return;}
-  const discSpecs=[...discNames.map(name=>({name,kind:"llm"}))];
+  const discSpecs=discInputEls.map(el=>({name:el.value.trim(),color:el.dataset.color||"",kind:"llm"}));
   const probeSystemDefault=buildProbeSystemPrompt(cfg);
   const probeSystemBundle=resolvePromptBundleWithOverrides("probe_system",{target,cfg,quality,defaults:{systemPrompt:probeSystemDefault,userPrompt:""}});
   const probeSystem=probeSystemBundle.systemPrompt||probeSystemDefault;
@@ -65,23 +61,25 @@ export async function launchExpedition(){
   const redTeamBundle=resolvePromptBundleWithOverrides("artifact_red_team",{target,cfg,quality,defaults:redTeamDefaults});
   const runFingerprint={target,probes:discSpecs.map(x=>x.name),config:safeConfigForRun(cfg),prompts:{probeSystem,probeUserTemplate:probeTemplateBundle.userPrompt,synthTemplate:synthesisBundle.userPrompt,redTeamTemplate:redTeamBundle.userPrompt}};
   setCurrentRunId(computeRunId(runFingerprint));
-  setRunState({runId:CURRENT_RUN_ID,target,config:cfg,probeResults:[],synthResult:{convergent:[],contradictory:[],emergent:[]},generatedAt:new Date().toISOString(),caProbe:null,wolframGroundingDiagnostics:[],ambiguityQueue:[]});
-  setDiscs(discSpecs.map((spec,i)=>({id:i,name:spec.name,abbr:makeAbbr(spec.name),col:COLORS[i%COLORS.length],kind:spec.kind})));
+  setRunState({runId:CURRENT_RUN_ID,target,config:cfg,probeResults:[],synthResult:{convergent:[],contradictory:[],emergent:[]},generatedAt:new Date().toISOString(),caProbe:null});
+  setDiscs(discSpecs.map((spec,i)=>({id:i,name:spec.name,abbr:makeAbbr(spec.name),col:spec.color||COLORS[i%COLORS.length],kind:spec.kind})));
   setIsGenerating(true);
   switchMainTab("plot",{silent:true});
   const prog=progressEl;
   prog.style.display="flex";
-  document.getElementById("prog-target-label").textContent=`TARGET: ${target.toUpperCase()} | CHAT MODEL: ${cfg.researchModel} | EMBED MODEL: ${cfg.embeddingModel} | QUALITY: ${quality.id.toUpperCase()} | WEB: ${cfg.webSearch?"ON":"OFF"} | WOLFRAM: ${(cfg.wolframEntityGrounding||cfg.enableComputationalIrreducibility)?"ON":"OFF"}`;
+  const sourceLabel=cfg.sourceUrls?.length?` | SOURCES: ${cfg.sourceUrls.length} URL(s)`:"";
+  document.getElementById("prog-target-label").textContent=`TARGET: ${target.toUpperCase()} | CHAT MODEL: ${cfg.researchModel} | EMBED MODEL: ${cfg.embeddingModel} | QUALITY: ${quality.id.toUpperCase()} | WEB: ${cfg.webSearch?"ON":"OFF"} | CA: ${cfg.enableComputationalIrreducibility?"ON":"OFF"}${sourceLabel}`;
   const probeListEl=document.getElementById("probe-list");
   probeListEl.innerHTML="";
   for(const d of DISCS){const el=document.createElement("div");el.className="probe-item";el.innerHTML=`<div class="probe-dot idle" id="dot-${d.id}"></div><span class="probe-name" style="color:${d.col}">${d.name}</span><span class="probe-status" id="status-${d.id}">QUEUED</span>`;probeListEl.appendChild(el);}
   const probePromises=DISCS.map(async(d)=>{
     setProbeState(d.id,"running","RESEARCHING...");
     try{
-      const probeDefaults={systemPrompt:probeSystem,userPrompt:buildProbeUserPrompt(target,d.name,quality,cfg)};
-      const probeBundle=resolvePromptBundleWithOverrides("probe_user",{discName:d.name,target,cfg,quality,defaults:probeDefaults});
-      let norm=await getProbeResultWithRecovery({target,discName:d.name,probeSystem:probeBundle.systemPrompt||probeSystem,userMsg:probeBundle.userPrompt,cfg});
-      norm=await groundProbeTermsWithWolfram(norm,target,d.name,cfg);
+      const discSourceText=cfg.sourceByDisc?.[d.name]||cfg.sourceText||"";
+      const discCfg=discSourceText!==cfg.sourceText?{...cfg,sourceText:discSourceText}:cfg;
+      const probeDefaults={systemPrompt:probeSystem,userPrompt:buildProbeUserPrompt(target,d.name,quality,discCfg)};
+      const probeBundle=resolvePromptBundleWithOverrides("probe_user",{discName:d.name,target,cfg:discCfg,quality,defaults:probeDefaults});
+      const norm=await getProbeResultWithRecovery({target,discName:d.name,probeSystem:probeBundle.systemPrompt||probeSystem,userMsg:probeBundle.userPrompt,cfg:discCfg});
       setProbeState(d.id,"done",`${norm.terms?.length||0} TERMS`);
       return {discId:d.id,summary:norm.summary,terms:Array.isArray(norm.terms)?norm.terms:[],claims_or_findings:norm.claims_or_findings,citations:norm.citations,confidence_notes:norm.confidence_notes};
     }catch(err){
@@ -142,8 +140,7 @@ export async function launchExpedition(){
     try{
       const caResult=await deriveCAFromRun(target,cfg,probeResults,synthResult,{
         discSimilarityMatrix:DISC_SIM_MATRIX,
-        projectionStability:PROJECTION_STABILITY,
-        groundingStats:computeRunGroundingStats(TERMS,CITATIONS)
+        projectionStability:PROJECTION_STABILITY
       });
       setCAProbeOutput(caResult);
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caResult));
@@ -173,4 +170,4 @@ export async function launchExpedition(){
 
 export async function assignSemanticPositions(target,cfg,setStatus){const notify=(msg)=>{if(typeof setStatus==="function") setStatus(msg);};setDiscSimMatrix(null);setProjectionStability(null);const embeddingInputs=TERMS.map(term=>buildEmbeddingText(term,target));const embedModel=String(cfg?.embeddingModel||"").trim()||"(unspecified embedding model)";const vectors=await callEmbeddings(embeddingInputs,cfg,(batchNo,total)=>{notify(`VECTOR LAYOUT - ${embedModel} batch ${batchNo}/${total}...`);});const normalizedVectors=vectors.map(normalizeEmbeddingVector);setDiscSimMatrix(computeDiscSimilarityMatrix(normalizedVectors));notify("VECTOR LAYOUT - projecting semantic manifold to 3D...");const basePoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,PROJECTION_BASE_SEED),1.45);for(let i=0;i<TERMS.length;i++){TERMS[i].pos=basePoints[i]||[0,0,0];}const rerunCount=Math.max(0,Math.min(4,PROJECTION_STABILITY_RUNS-1));const reruns=[];for(let idx=0;idx<rerunCount;idx++){const seed=PROJECTION_BASE_SEED+idx+1;notify(`VECTOR LAYOUT - projection stability check ${idx+1}/${rerunCount}...`);const runPoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,seed),1.45);reruns.push({seed,points:runPoints});}setProjectionStability(computeProjectionStability(basePoints,reruns));renderEmbeddingDiagnostics();}
 
-export function resetToSetup(){if(plotInited) Plotly.purge("plot");setPlotInited(false);setTerms([]);setDiscs([]);setCitations([]);setCallLogs([]);setRunState(null);setCurrentRunId(null);setActiveSlices(new Set());setActiveTypes(new Set());setSessionConfig(null);setLastRun(null);setDiscSimMatrix(null);setProjectionStability(null);setCAProbeOutput(null);setWolframGroundingDiagnostics([]);setAmbiguityQueue([]);setCitationUnmappedSupportingTerms([]);setLastReportText("");setLastClaimsText("");setLastOutlineText("");setLastCritiqueText("");setLastMarkdownText("");setActiveArtifactKey("");setIsGenerating(false);setEvidenceFilterState({sourceType:"all",termLabel:"",provider:"all"});clearNodeFilters();document.getElementById("evidence-filter-bar").innerHTML="";document.getElementById("evidence-modal-content").innerHTML="";document.getElementById("ambiguity-modal-content").innerHTML="";document.getElementById("detail").style.display="none";updateAmbiguityQueueUIState();renderCAPanel();renderNodeFilterResults();closeModal("raw-modal");closeModal("report-modal");closeModal("evidence-modal");closeModal("ambiguity-modal");closeModal("claims-modal");closeModal("outline-modal");closeModal("critique-modal");closeModal("replication-modal");closeModal("artifact-modal");setArtifactDrawer(false);setExportMenu(false);initArtifactStore();renderDisciplineInputs(clampInt(document.getElementById("lens-count-input")?.value||7,2,12),getCurrentProbeSpecs());switchMainTab("generator",{silent:true});}
+export function resetToSetup(){if(plotInited) Plotly.purge("plot");setPlotInited(false);setTerms([]);setDiscs([]);setCitations([]);setCallLogs([]);setRunState(null);setCurrentRunId(null);setActiveSlices(new Set());setActiveTypes(new Set());setSessionConfig(null);setLastRun(null);setDiscSimMatrix(null);setProjectionStability(null);setCAProbeOutput(null);setCitationUnmappedSupportingTerms([]);setLastReportText("");setLastClaimsText("");setLastOutlineText("");setLastCritiqueText("");setLastMarkdownText("");setActiveArtifactKey("");setIsGenerating(false);setEvidenceFilterState({sourceType:"all",termLabel:""});clearNodeFilters();document.getElementById("evidence-filter-bar").innerHTML="";document.getElementById("evidence-modal-content").innerHTML="";document.getElementById("detail").style.display="none";renderCAPanel();renderNodeFilterResults();closeModal("raw-modal");closeModal("report-modal");closeModal("evidence-modal");closeModal("claims-modal");closeModal("outline-modal");closeModal("critique-modal");closeModal("replication-modal");closeModal("artifact-modal");setArtifactDrawer(false);setExportMenu(false);initArtifactStore();renderDisciplineInputs(clampInt(document.getElementById("lens-count-input")?.value||7,2,12),getCurrentProbeSpecs());switchMainTab("generator",{silent:true});}

@@ -58,19 +58,7 @@ export let PROJECTION_STABILITY=null;
 
 export let CA_PROBE_OUTPUT=null;
 
-export let WOLFRAM_GROUNDING_DIAGNOSTICS=[];
-
-export let AMBIGUITY_QUEUE=[];
-
-export let EVIDENCE_FILTER_STATE={sourceType:"all",termLabel:"",provider:"all"};
-
-export const WOLFRAM_QUERY_CACHE_MEM=new Map();
-
-export const WOLFRAM_TERM_CACHE_MEM=new Map();
-
-export let WOLFRAM_CACHE_STORAGE_ENABLED=true;
-
-export let WOLFRAM_CACHE_LAST_SAVE=0;
+export let EVIDENCE_FILTER_STATE={sourceType:"all",termLabel:""};
 
 export let PROMPT_TEMPLATE_OVERRIDES={};
 
@@ -83,6 +71,8 @@ export let ARTIFACT_BUSY=false;
 export let ACTIVE_ARTIFACT_KEY="";
 
 export let ACTIVE_MODAL_ID="";
+
+export let SOURCE_MATERIAL={urls:[],text:"",titles:[],byDisc:{}};
 
 // Setters — the only way to reassign these bindings from outside this module.
 // ES modules create read-only live bindings for importers; reassignment must
@@ -115,14 +105,11 @@ export const setCitationUnmappedSupportingTerms = v => { CITATION_UNMAPPED_SUPPO
 export const setDiscSimMatrix = v => { DISC_SIM_MATRIX = v; };
 export const setProjectionStability = v => { PROJECTION_STABILITY = v; };
 export const setCAProbeOutput = v => { CA_PROBE_OUTPUT = v; };
-export const setWolframGroundingDiagnostics = v => { WOLFRAM_GROUNDING_DIAGNOSTICS = v; };
-export const setAmbiguityQueue = v => { AMBIGUITY_QUEUE = v; };
 export const setEvidenceFilterState = v => { EVIDENCE_FILTER_STATE = v; };
-export const setWolframCacheStorageEnabled = v => { WOLFRAM_CACHE_STORAGE_ENABLED = v; };
-export const setWolframCacheLastSave = v => { WOLFRAM_CACHE_LAST_SAVE = v; };
 export const setPromptPreviewRendering = v => { PROMPT_PREVIEW_RENDERING = v; };
 export const setArtifactStore = v => { ARTIFACT_STORE = v; };
 export const setArtifactBusy = v => { ARTIFACT_BUSY = v; };
 export const setActiveArtifactKey = v => { ACTIVE_ARTIFACT_KEY = v; };
 export const setActiveModalId = v => { ACTIVE_MODAL_ID = v; };
 export const setPromptTemplateOverrides = v => { PROMPT_TEMPLATE_OVERRIDES = v; };
+export const setSourceMaterial = v => { SOURCE_MATERIAL = v; };

@@ -24,18 +24,6 @@ export const PROJECTION_BASE_SEED=20260218;
 
 export const PROJECTION_STABILITY_RUNS=4;
 
-export const WOLFRAM_CACHE_VERSION=1;
-
-export const WOLFRAM_QUERY_CACHE_TTL_MS=1000*60*60*24;
-
-export const WOLFRAM_TERM_CACHE_TTL_MS=1000*60*60*12;
-
-export const WOLFRAM_QUERY_CACHE_MAX=500;
-
-export const WOLFRAM_TERM_CACHE_MAX=800;
-
-export const WOLFRAM_CACHE_STORAGE_KEY="ruliad_wolfram_cache";
-
 export const SIDEBAR_WIDTH_STORAGE_KEY="ruliad_sidebar_width_px";
 
 export const SIDEBAR_WIDTH_DEFAULT=320;
@@ -50,18 +38,6 @@ export const GENERATION_WORKBENCH_LEFT_MIN=320;
 
 export const GENERATION_WORKBENCH_RIGHT_MIN=320;
 
-export const GROUNDING_MODE_DEFAULTS={
-  conservative:{minQualityScore:0.8,minAlignmentScore:0.7,minApplyConfidence:"high"},
-  balanced:{minQualityScore:0.58,minAlignmentScore:0.55,minApplyConfidence:"medium"},
-  aggressive:{minQualityScore:0.5,minAlignmentScore:0.45,minApplyConfidence:"low"}
-};
-
-export const NAME_LIKE_METADATA_ALIGNMENT_MIN=0.92;
-
-export const NAME_LIKE_OVERRIDE_ALIGNMENT_MIN=0.97;
-
-export const NAME_LIKE_OVERRIDE_QUALITY_MIN=0.8;
-
 export const SOURCE_TYPE_LABELS={
   "peer-reviewed":"Peer-reviewed",
   "preprint":"Preprint",
@@ -72,8 +48,5 @@ export const SOURCE_TYPE_LABELS={
   "reference":"Reference",
   "computational":"Computational",
   "api":"API",
-  "wolfram":"Wolfram|Alpha (reference)",
   "untyped":"Untyped"
 };
-
-export const GROUNDING_ELIGIBILITY_VALUES=new Set(["eligible","synthetic_local","skipped_budget","ca_bypassed","missing_api"]);

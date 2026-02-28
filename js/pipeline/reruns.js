@@ -4,8 +4,6 @@ import { assignSemanticPositions } from './launch-expedition.js';
 import { getProbeResultWithRecovery } from './probes.js';
 import { getSynthesisResultWithRecovery } from './synthesis.js';
 import { getQualityProfile, readApiConfig, validateApiConfig } from '../api/llm.js';
-import { computeRunGroundingStats } from '../grounding/wolfram-score.js';
-import { groundProbeTermsWithWolfram } from '../grounding/wolfram-grounding.js';
 import { buildTerms } from '../domain/terms.js';
 import { collectCitations } from '../domain/citations.js';
 import { buildRunSnapshot } from '../domain/run-metadata.js';
@@ -41,7 +39,6 @@ export async function rerunSynthesis(){
       const caOutput=await deriveCAFromRun(RUN_STATE.target,cfg,RUN_STATE.probeResults,synthResult,{
         discSimilarityMatrix:DISC_SIM_MATRIX,
         projectionStability:PROJECTION_STABILITY,
-        groundingStats:computeRunGroundingStats(TERMS,CITATIONS)
       });
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caOutput));
       RUN_STATE.caProbe=caOutput;
@@ -81,7 +78,6 @@ export async function rerunProbe(discId){
       const caOutput=await deriveCAFromRun(target,cfg,RUN_STATE.probeResults,RUN_STATE.synthResult||{convergent:[],contradictory:[],emergent:[]},{
         discSimilarityMatrix:DISC_SIM_MATRIX,
         projectionStability:PROJECTION_STABILITY,
-        groundingStats:computeRunGroundingStats(TERMS,CITATIONS)
       });
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caOutput));
       RUN_STATE.caProbe=caOutput;
@@ -96,8 +92,7 @@ export async function rerunProbe(discId){
     }
     const probeDefaults={systemPrompt:probeSystemBundle.systemPrompt||probeSystemDefault,userPrompt:buildProbeUserPrompt(target,disc.name,quality,cfg)};
     const probeBundle=resolvePromptBundleWithOverrides("probe_user",{discName:disc.name,target,cfg,quality,defaults:probeDefaults});
-    let norm=await getProbeResultWithRecovery({target,discName:disc.name,probeSystem:probeBundle.systemPrompt||probeSystemBundle.systemPrompt||probeSystemDefault,userMsg:probeBundle.userPrompt,cfg});
-    norm=await groundProbeTermsWithWolfram(norm,target,disc.name,cfg);
+    const norm=await getProbeResultWithRecovery({target,discName:disc.name,probeSystem:probeBundle.systemPrompt||probeSystemBundle.systemPrompt||probeSystemDefault,userMsg:probeBundle.userPrompt,cfg});
     const updated={discId,summary:norm.summary,terms:Array.isArray(norm.terms)?norm.terms:[],claims_or_findings:norm.claims_or_findings,citations:norm.citations,confidence_notes:norm.confidence_notes};
     const idx=RUN_STATE.probeResults.findIndex(r=>r.discId===discId);
     if(idx>=0){RUN_STATE.probeResults[idx]=updated;}else{RUN_STATE.probeResults.push(updated);}
@@ -108,7 +103,6 @@ export async function rerunProbe(discId){
       const caOutput=await deriveCAFromRun(target,cfg,RUN_STATE.probeResults,RUN_STATE.synthResult||{convergent:[],contradictory:[],emergent:[]},{
         discSimilarityMatrix:DISC_SIM_MATRIX,
         projectionStability:PROJECTION_STABILITY,
-        groundingStats:computeRunGroundingStats(TERMS,CITATIONS)
       });
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caOutput));
       RUN_STATE.caProbe=caOutput;

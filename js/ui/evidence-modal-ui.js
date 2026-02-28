@@ -2,7 +2,7 @@ import { CITATIONS, EVIDENCE_FILTER_STATE, setEvidenceFilterState as _setEvidenc
 import { escapeHtml, safeHttpUrl } from '../core/utils.js';
 import { showToast } from './notifications.js';
 import { openModal } from './modals.js';
-import { normalizeSourceType } from '../grounding/wolfram-grounding.js';
+import { normalizeSourceType } from '../domain/citations.js';
 import { toCanonicalKey } from '../domain/aliases.js';
 import { collectCitations, dedupeCasefold, sourceTypeLabel } from '../domain/citations.js';
 
@@ -10,44 +10,14 @@ import { collectCitations, dedupeCasefold, sourceTypeLabel } from '../domain/cit
 // Source: ruliad_expedition_v1.1.html
 // Module: js/ui/evidence-modal-ui.js
 
-export function buildWolframCitationContext(cite){
-  const lines=[];
-  if(cite?.wolfram_input_interpretation) lines.push(`Interpretation: ${cite.wolfram_input_interpretation}`);
-  if(Array.isArray(cite?.wolfram_did_you_means)&&cite.wolfram_did_you_means.length) lines.push(`Alternatives: ${cite.wolfram_did_you_means.slice(0,4).join(", ")}`);
-  if(Array.isArray(cite?.wolfram_assumptions)&&cite.wolfram_assumptions.length) lines.push(`Assumptions: ${cite.wolfram_assumptions.slice(0,3).join(" | ")}`);
-  if(Array.isArray(cite?.wolfram_warnings)&&cite.wolfram_warnings.length) lines.push(`Warnings: ${cite.wolfram_warnings.slice(0,2).join(" | ")}`);
-  return lines.join("\n");
-}
-
-export function formatWolframGroundingStatusLabel(status){
-  const key=String(status||"").trim().toLowerCase();
-  if(!key) return "";
-  if(key==="accepted") return "WA grounded (applied)";
-  if(key==="accepted_metadata_only"||key==="accepted_annotation_only") return "WA grounded (metadata-only)";
-  if(key==="rejected_category_mismatch") return "WA mismatch";
-  if(key==="no_plaintext"||key==="no_plaintext_after_fallbacks"||key==="cache_hit_term_no_match") return "WA no plaintext";
-  if(key==="rejected_low_confidence") return "WA low-confidence";
-  if(key==="error") return "WA unresolved (request error)";
-  return key.replace(/_/g," ");
-}
-
-export function detectCitationProvider(cite){
-  const sourceType=normalizeSourceType(cite?.source_type,cite?.publisher);
-  if(sourceType==="wolfram") return "wolfram";
-  const publisher=String(cite?.publisher||"").toLowerCase();
-  const url=String(cite?.url||"").toLowerCase();
-  if(publisher.includes("wolfram")||url.includes("wolfram")) return "wolfram";
-  return "web";
-}
-
 export function getEvidenceFilterState(){
   const state=EVIDENCE_FILTER_STATE&&typeof EVIDENCE_FILTER_STATE==="object"?EVIDENCE_FILTER_STATE:{};
-  return {sourceType:String(state.sourceType||"all"),termLabel:String(state.termLabel||"").trim(),provider:String(state.provider||"all")};
+  return {sourceType:String(state.sourceType||"all"),termLabel:String(state.termLabel||"").trim()};
 }
 
 export function setEvidenceFilterState(nextState){
   const prev=getEvidenceFilterState();
-  _setEvidenceFilterState({sourceType:String(nextState?.sourceType||prev.sourceType||"all"),termLabel:String(nextState?.termLabel||prev.termLabel||"").trim(),provider:String(nextState?.provider||prev.provider||"all")});
+  _setEvidenceFilterState({sourceType:String(nextState?.sourceType||prev.sourceType||"all"),termLabel:String(nextState?.termLabel||prev.termLabel||"").trim()});
 }
 
 export function citationSupportsTerm(cite,termLabel){
@@ -59,10 +29,8 @@ export function citationSupportsTerm(cite,termLabel){
 }
 
 export function citationMatchesEvidenceFilters(cite,state){
-  const sourceType=normalizeSourceType(cite?.source_type,cite?.publisher)||"untyped";
+  const sourceType=normalizeSourceType(cite?.source_type)||"untyped";
   if(state.sourceType!=="all"&&sourceType!==state.sourceType) return false;
-  const provider=detectCitationProvider(cite);
-  if(state.provider!=="all"&&provider!==state.provider) return false;
   if(!citationSupportsTerm(cite,state.termLabel)) return false;
   return true;
 }
@@ -87,10 +55,9 @@ export function buildEvidenceSnippetText(cite,{variant="full"}={}){
   if(variant==="compact"){
     return base.length>220?`${base.slice(0,217)}...`:base;
   }
-  const wolframContext=buildWolframCitationContext(cite);
   const mapContext=(Array.isArray(cite?.supporting_term_mappings)&&cite.supporting_term_mappings.length)?`Alias mapping: ${cite.supporting_term_mappings.slice(0,4).map(m=>`${m.supporting_term} => ${m.mapped_term} (${m.strategy}${Number.isFinite(Number(m.confidence))?`, ${Number(m.confidence).toFixed(2)}`:""})`).join(" | ")}`:"";
   const unmappedContext=(Array.isArray(cite?.unmapped_supporting_terms)&&cite.unmapped_supporting_terms.length)?`Unmapped supporting terms: ${cite.unmapped_supporting_terms.slice(0,6).join(", ")}`:"";
-  return [base,mapContext,unmappedContext,wolframContext].filter(Boolean).join("\n");
+  return [base,mapContext,unmappedContext].filter(Boolean).join("\n");
 }
 
 export function renderEvidenceCard(cite,{variant="full",currentTermLabel=""}={}){
@@ -109,13 +76,9 @@ export function renderEvidenceCard(cite,{variant="full",currentTermLabel=""}={})
   card.appendChild(top);
   const tags=document.createElement("div");
   tags.className="tag-row";
-  const sourceType=normalizeSourceType(cite?.source_type,cite?.publisher);
+  const sourceType=normalizeSourceType(cite?.source_type);
   if(sourceType){
     tags.appendChild(createEvidenceTag(sourceTypeLabel(sourceType,cite?.publisher),{strong:true}));
-  }
-  tags.appendChild(createEvidenceTag(`provider: ${detectCitationProvider(cite)}`));
-  if(cite?.grounding_status){
-    tags.appendChild(createEvidenceTag(`grounding: ${formatWolframGroundingStatusLabel(cite.grounding_status)}`));
   }
   const supportingTerms=getCitationSupportingTerms(cite,variant==="compact"?5:12);
   if(supportingTerms.length){
@@ -176,25 +139,22 @@ export function renderEvidenceModalContent(){
   const bar=document.getElementById("evidence-filter-bar");
   if(!list||!bar) return;
   const state=getEvidenceFilterState();
-  const sourceTypes=dedupeCasefold(CITATIONS.map(c=>normalizeSourceType(c.source_type,c.publisher)||"untyped"),40).sort((a,b)=>sourceTypeLabel(a).localeCompare(sourceTypeLabel(b)));
+  const sourceTypes=dedupeCasefold(CITATIONS.map(c=>normalizeSourceType(c.source_type)||"untyped"),40).sort((a,b)=>sourceTypeLabel(a).localeCompare(sourceTypeLabel(b)));
   const termOptions=dedupeCasefold(CITATIONS.flatMap(c=>[...(Array.isArray(c?.supporting_terms)?c.supporting_terms:[]),...(Array.isArray(c?.supporting_terms_raw)?c.supporting_terms_raw:[]),...((Array.isArray(c?.supporting_term_mappings)?c.supporting_term_mappings:[]).flatMap(m=>[m?.supporting_term,m?.mapped_term,m?.via_alias]))]),220);
   const sourceOptions=sourceTypes.map(type=>`<option value="${escapeHtml(type)}">${escapeHtml(sourceTypeLabel(type))}</option>`).join("");
   const termDatalist=termOptions.length?`<datalist id="evidence-term-options">${termOptions.map(term=>`<option value="${escapeHtml(term)}"></option>`).join("")}</datalist>`:"";
   bar.innerHTML=`<div class="sec-label">EVIDENCE FILTERS</div>
   <div class="filter-grid" style="margin-top:6px">
     <div class="field-group"><label for="evidence-source-filter">Source type</label><select id="evidence-source-filter"><option value="all">All</option>${sourceOptions}</select></div>
-    <div class="field-group"><label for="evidence-provider-filter">Provider</label><select id="evidence-provider-filter"><option value="all">All</option><option value="wolfram">Wolfram</option><option value="web">Web</option></select></div>
     <div class="field-group"><label for="evidence-term-filter">Term label</label><input id="evidence-term-filter" list="evidence-term-options" type="text" value="${escapeHtml(state.termLabel)}" placeholder="Filter by term label"/></div>
   </div>
   ${termDatalist}
   <div class="row-inline" style="margin-top:6px"><button class="small-btn" id="evidence-filter-clear-btn" type="button">CLEAR</button><div class="matrix-note" id="evidence-filter-summary"></div></div>`;
   const sourceEl=document.getElementById("evidence-source-filter");
-  const providerEl=document.getElementById("evidence-provider-filter");
   const termEl=document.getElementById("evidence-term-filter");
   if(sourceEl) sourceEl.value=sourceTypes.includes(state.sourceType)||state.sourceType==="all"?state.sourceType:"all";
-  if(providerEl) providerEl.value=state.provider==="wolfram"||state.provider==="web"?state.provider:"all";
   if(termEl) termEl.value=state.termLabel;
-  const activeState={sourceType:sourceEl?.value||"all",provider:providerEl?.value||"all",termLabel:String(termEl?.value||"").trim()};
+  const activeState={sourceType:sourceEl?.value||"all",termLabel:String(termEl?.value||"").trim()};
   setEvidenceFilterState(activeState);
   const filtered=CITATIONS.filter(cite=>citationMatchesEvidenceFilters(cite,activeState));
   const summaryEl=document.getElementById("evidence-filter-summary");
@@ -208,9 +168,8 @@ export function renderEvidenceModalContent(){
     }
   }
   sourceEl?.addEventListener("change",()=>{setEvidenceFilterState({sourceType:sourceEl.value});renderEvidenceModalContent();});
-  providerEl?.addEventListener("change",()=>{setEvidenceFilterState({provider:providerEl.value});renderEvidenceModalContent();});
   termEl?.addEventListener("input",()=>{setEvidenceFilterState({termLabel:termEl.value});renderEvidenceModalContent();});
-  document.getElementById("evidence-filter-clear-btn")?.addEventListener("click",()=>{setEvidenceFilterState({sourceType:"all",provider:"all",termLabel:""});renderEvidenceModalContent();});
+  document.getElementById("evidence-filter-clear-btn")?.addEventListener("click",()=>{setEvidenceFilterState({sourceType:"all",termLabel:""});renderEvidenceModalContent();});
 }
 
 export function showEvidenceModal(){

@@ -1,8 +1,5 @@
 import { TYPE_PRIORITY } from '../core/constants.js';
 import { DISCS, TERMS, setTerms } from '../core/state.js';
-import { scoreWolframSnippet } from '../grounding/wolfram-parse.js';
-import { clampGroundingSnippetScore, hasExactConceptPhraseMatch, hasHighAlignmentConceptMatch, isCompositeSyntheticTermLabel } from '../grounding/wolfram-score.js';
-import { buildWolframEntityRef, mergeGroundingBlocks, normalizeGroundingBlock } from '../grounding/wolfram-grounding.js';
 import { jaccardSimilarity, toCanonicalKey, tokenSet } from './aliases.js';
 import { mergeDescriptionProvenance, mergeDescriptionSource } from './citations.js';
 import { clamp01 } from '../plot/plot-overlays.js';
@@ -21,23 +18,22 @@ export function buildTermsForReplicationRun(probeResults,synthResult){
     if(!disc) continue;
     for(const term of (Array.isArray(probe?.terms)?probe.terms:[])){
       const source=String(term?.description_source||"").trim().toLowerCase()||"llm";
-      const fallbackNote=source==="wolfram"?"Wolfram grounding applied to description":"Probe model description";
-      const provenance=mergeDescriptionProvenance(term?.description_provenance,[{source,stage:"probe",discId,discName:disc.name,note:fallbackNote}]);
-      addRawTerm(raw,{label:term?.label,description:term?.description,descriptions:term?.descriptions,centrality:term?.centrality,slices:[discId],type:"unique",description_source:source,description_provenance:provenance,wolfram_entity:term?.wolfram_entity,grounding:normalizeGroundingBlock(term?.grounding,{entityRef:buildWolframEntityRef(term?.wolfram_entity),defaultStatus:"not_attempted"})});
+      const provenance=mergeDescriptionProvenance(term?.description_provenance,[{source,stage:"probe",discId,discName:disc.name,note:"Probe model description"}]);
+      addRawTerm(raw,{label:term?.label,description:term?.description,descriptions:term?.descriptions,centrality:term?.centrality,slices:[discId],type:"unique",description_source:source,description_provenance:provenance});
     }
   }
   for(const item of (Array.isArray(safeSynth?.convergent)?safeSynth.convergent:[])){
     const ids=(Array.isArray(item?.disciplines)?item.disciplines:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<DISCS.length);
     if(!ids.length) continue;
-    addRawTerm(raw,{label:item?.label,description:item?.description,descriptions:{synthesisSummary:String(item?.description||"")},centrality:0.6,slices:ids,type:"convergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe convergence"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
+    addRawTerm(raw,{label:item?.label,description:item?.description,descriptions:{synthesisSummary:String(item?.description||"")},centrality:0.6,slices:ids,type:"convergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe convergence"}]});
   }
   for(const item of (Array.isArray(safeSynth?.contradictory)?safeSynth.contradictory:[])){
     const ids=(Array.isArray(item?.disciplines)?item.disciplines:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<DISCS.length);
     if(!ids.length) continue;
-    addRawTerm(raw,{label:item?.label,description:item?.description,descriptions:{synthesisSummary:String(item?.description||"")},centrality:0.5,slices:ids,type:"contradictory",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe contradiction"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
+    addRawTerm(raw,{label:item?.label,description:item?.description,descriptions:{synthesisSummary:String(item?.description||"")},centrality:0.5,slices:ids,type:"contradictory",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe contradiction"}]});
   }
   for(const item of (Array.isArray(safeSynth?.emergent)?safeSynth.emergent:[])){
-    addRawTerm(raw,{label:item?.label,description:item?.description,descriptions:{synthesisSummary:String(item?.description||"")},centrality:0.5,slices:[],type:"emergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Emergent synthesis insight"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
+    addRawTerm(raw,{label:item?.label,description:item?.description,descriptions:{synthesisSummary:String(item?.description||"")},centrality:0.5,slices:[],type:"emergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Emergent synthesis insight"}]});
   }
   return mergeRawTerms(raw);
 }
@@ -52,62 +48,21 @@ export function pickBetterLabel(current,next){if(!current) return next;if(!next)
 
 export function mergeDescription(a,b){const chunks=[String(a||"").trim(),String(b||"").trim()].filter(Boolean);if(!chunks.length) return "";if(chunks.length===1) return chunks[0];if(chunks[0].toLowerCase()===chunks[1].toLowerCase()) return chunks[0];return `${chunks[0]} ${chunks[1]}`.trim();}
 
-export function defaultDescriptionLayers(){return {probeSummary:"",synthesisSummary:"",wolframGrounding:"",displayDescription:"",displayDescriptionReason:"",wolframDisplayMode:"auto",wolframMinScore:null,wolframMinAlignmentScore:null};}
-
-export function normalizeWolframDisplayMode(value){const mode=String(value||"").trim().toLowerCase();if(mode==="append"||mode==="metadata_only"||mode==="auto") return mode;return "auto";}
-
-export function mergeWolframDisplayMode(left,right){const a=normalizeWolframDisplayMode(left);const b=normalizeWolframDisplayMode(right);if(a==="metadata_only"||b==="metadata_only") return "metadata_only";if(a==="append"||b==="append") return "append";return "auto";}
+export function defaultDescriptionLayers(){return {probeSummary:"",synthesisSummary:"",displayDescription:"",displayDescriptionReason:""};}
 
 export function inferDescriptionSourceFromLayers(descriptions,fallbackSource){
   const reason=String(descriptions?.displayDescriptionReason||"").toLowerCase();
-  if(reason.includes("metadata_only")){
-    if(reason.includes("synthesissummary")) return "synthesis";
-    if(reason.includes("probesummary")) return "llm";
-  }
-  if(reason.includes("synthesissummary")&&reason.includes("wolframgrounding")) return "mixed";
-  if(reason.includes("probesummary")&&reason.includes("wolframgrounding")) return "mixed";
   if(reason.includes("synthesissummary")) return "synthesis";
   if(reason.includes("probesummary")) return "llm";
-  if(reason.includes("wolframgrounding")) return "wolfram";
   return String(fallbackSource||"").trim().toLowerCase()||"llm";
 }
 
-export function computeDisplayDescriptionFromLayers(label,descriptions){
+export function computeDisplayDescriptionFromLayers(descriptions){
   const probeSummary=String(descriptions?.probeSummary||"").trim();
   const synthesisSummary=String(descriptions?.synthesisSummary||"").trim();
-  const wolframGrounding=String(descriptions?.wolframGrounding||"").trim();
-  const wolframDisplayMode=normalizeWolframDisplayMode(descriptions?.wolframDisplayMode||"auto");
-  const wolframMinScore=clampGroundingSnippetScore(descriptions?.wolframMinScore,0.58);
-  const wolframMinAlignmentScore=clampGroundingSnippetScore(descriptions?.wolframMinAlignmentScore,0.55);
-  let display=synthesisSummary||probeSummary||"";
-  let reason=synthesisSummary?"synthesisSummary":probeSummary?"probeSummary":"";
-  if(!display&&wolframGrounding){
-    if(wolframDisplayMode==="metadata_only"){
-      return {displayDescription:"",displayDescriptionReason:"wolframGrounding_metadata_only"};
-    }
-    return {displayDescription:wolframGrounding,displayDescriptionReason:"wolframGrounding_fallback"};
-  }
-  if(display&&wolframGrounding){
-    const scoring=scoreWolframSnippet(wolframGrounding,label||"",wolframMinScore,wolframMinAlignmentScore);
-    const canonDisplay=toCanonicalKey(display);
-    const canonWolfram=toCanonicalKey(wolframGrounding);
-    const isDuplicate=Boolean(canonDisplay&&canonWolfram&&(canonDisplay===canonWolfram||canonDisplay.includes(canonWolfram)||canonWolfram.includes(canonDisplay)));
-    const compositeConservative=isCompositeSyntheticTermLabel(label||"");
-    const exactConceptMatch=hasExactConceptPhraseMatch(label||"",[wolframGrounding]);
-    const highAlignmentMatch=hasHighAlignmentConceptMatch(scoring);
-    const compositeAppendSafe=!compositeConservative||exactConceptMatch||highAlignmentMatch;
-    const shouldAppend=(wolframDisplayMode==="append"||(wolframDisplayMode==="auto"&&scoring.accept))&&compositeAppendSafe;
-    if(shouldAppend&&!isDuplicate){
-      display=mergeDescription(display,wolframGrounding);
-      reason=`${reason}+wolframGrounding`;
-    }else{
-      reason=`${reason||"base"};${!compositeAppendSafe?"wolframGrounding_composite_metadata_only":"wolframGrounding_metadata_only"}`;
-    }
-  }
-  if(!display){
-    return {displayDescription:"",displayDescriptionReason:"none"};
-  }
-  return {displayDescription:display,displayDescriptionReason:reason||"probeSummary"};
+  const display=synthesisSummary||probeSummary||"";
+  const reason=synthesisSummary?"synthesisSummary":probeSummary?"probeSummary":"none";
+  return {displayDescription:display,displayDescriptionReason:reason};
 }
 
 export function normalizeTermDescriptions(raw,{fallbackDescription="",fallbackSource="",label=""}={}){
@@ -115,38 +70,24 @@ export function normalizeTermDescriptions(raw,{fallbackDescription="",fallbackSo
   const src=raw&&typeof raw==="object"?raw:{};
   base.probeSummary=String(src.probeSummary||"").trim();
   base.synthesisSummary=String(src.synthesisSummary||"").trim();
-  base.wolframGrounding=String(src.wolframGrounding||"").trim();
-  base.wolframDisplayMode=normalizeWolframDisplayMode(src.wolframDisplayMode||src.wolfram_display_mode||"auto");
-  base.wolframMinScore=Number.isFinite(Number(src.wolframMinScore))?clampGroundingSnippetScore(src.wolframMinScore,0.58):Number.isFinite(Number(src.wolfram_min_score))?clampGroundingSnippetScore(src.wolfram_min_score,0.58):null;
-  base.wolframMinAlignmentScore=Number.isFinite(Number(src.wolframMinAlignmentScore))?clampGroundingSnippetScore(src.wolframMinAlignmentScore,0.55):Number.isFinite(Number(src.wolfram_min_alignment_score))?clampGroundingSnippetScore(src.wolfram_min_alignment_score,0.55):null;
   const fallback=String(fallbackDescription||"").trim();
   const source=String(fallbackSource||"").trim().toLowerCase();
   if(fallback){
     if(source==="synthesis") base.synthesisSummary=mergeDescription(base.synthesisSummary,fallback);
-    else if(source==="wolfram") base.wolframGrounding=mergeDescription(base.wolframGrounding,fallback);
     else base.probeSummary=mergeDescription(base.probeSummary,fallback);
   }
-  const selected=computeDisplayDescriptionFromLayers(label,base);
+  const selected=computeDisplayDescriptionFromLayers(base);
   base.displayDescription=selected.displayDescription||String(src.displayDescription||"").trim();
   base.displayDescriptionReason=selected.displayDescriptionReason||String(src.displayDescriptionReason||"").trim();
-  if(base.displayDescription&&!base.displayDescriptionReason){
-    base.displayDescriptionReason=selected.displayDescriptionReason||"derived";
-  }
   return base;
 }
 
 export function mergeTermDescriptions(left,right,label){
   const a=normalizeTermDescriptions(left||{},{label});
   const b=normalizeTermDescriptions(right||{},{label});
-  const mergedMinScore=Number.isFinite(Number(a.wolframMinScore))&&Number.isFinite(Number(b.wolframMinScore))?Math.max(Number(a.wolframMinScore),Number(b.wolframMinScore)):Number.isFinite(Number(a.wolframMinScore))?Number(a.wolframMinScore):Number.isFinite(Number(b.wolframMinScore))?Number(b.wolframMinScore):null;
-  const mergedMinAlignmentScore=Number.isFinite(Number(a.wolframMinAlignmentScore))&&Number.isFinite(Number(b.wolframMinAlignmentScore))?Math.max(Number(a.wolframMinAlignmentScore),Number(b.wolframMinAlignmentScore)):Number.isFinite(Number(a.wolframMinAlignmentScore))?Number(a.wolframMinAlignmentScore):Number.isFinite(Number(b.wolframMinAlignmentScore))?Number(b.wolframMinAlignmentScore):null;
   return normalizeTermDescriptions({
     probeSummary:mergeDescription(a.probeSummary,b.probeSummary),
-    synthesisSummary:mergeDescription(a.synthesisSummary,b.synthesisSummary),
-    wolframGrounding:mergeDescription(a.wolframGrounding,b.wolframGrounding),
-    wolframDisplayMode:mergeWolframDisplayMode(a.wolframDisplayMode,b.wolframDisplayMode),
-    wolframMinScore:mergedMinScore,
-    wolframMinAlignmentScore:mergedMinAlignmentScore
+    synthesisSummary:mergeDescription(a.synthesisSummary,b.synthesisSummary)
   },{label});
 }
 
@@ -164,9 +105,8 @@ export function addRawTerm(raw,node){
   const slices=Array.isArray(node.slices)?node.slices.filter(i=>Number.isInteger(i)&&i>=0&&i<DISCS.length):[];
   const source=String(node.description_source||"").trim().toLowerCase()||(node.type==="emergent"||node.description_source==="synthesis"?"synthesis":"llm");
   const provenance=mergeDescriptionProvenance(node.description_provenance,[]);
-  const grounding=normalizeGroundingBlock(node.grounding,{entityRef:buildWolframEntityRef(node.wolfram_entity),defaultStatus:"not_attempted"});
   const descriptions=normalizeTermDescriptions(node.descriptions,{fallbackDescription:String(node.description||"").trim(),fallbackSource:source,label});
-  raw.push({label,descriptions,description:String(descriptions.displayDescription||node.description||"").trim(),centrality:clamp01(Number(node.centrality||0.5)),slices:[...new Set(slices)],type:node.type||"unique",pos:[0,0,0],description_source:inferDescriptionSourceFromLayers(descriptions,source),description_provenance:provenance,grounding});
+  raw.push({label,descriptions,description:String(descriptions.displayDescription||node.description||"").trim(),centrality:clamp01(Number(node.centrality||0.5)),slices:[...new Set(slices)],type:node.type||"unique",pos:[0,0,0],description_source:inferDescriptionSourceFromLayers(descriptions,source),description_provenance:provenance});
 }
 
 export function mergeRawTerms(rawTerms){
@@ -180,7 +120,7 @@ export function mergeRawTerms(rawTerms){
     }
     if(!match){
       const descriptions=normalizeTermDescriptions(node.descriptions,{fallbackDescription:node.description,fallbackSource:node.description_source,label:node.label});
-      merged.push({key,tokens,label:node.label,descriptions,description:descriptions.displayDescription||node.description,centrality:node.centrality,slices:[...node.slices],type:node.type,pos:[0,0,0],description_source:inferDescriptionSourceFromLayers(descriptions,node.description_source||""),description_provenance:mergeDescriptionProvenance(node.description_provenance,[]),grounding:normalizeGroundingBlock(node.grounding)});
+      merged.push({key,tokens,label:node.label,descriptions,description:descriptions.displayDescription||node.description,centrality:node.centrality,slices:[...node.slices],type:node.type,pos:[0,0,0],description_source:inferDescriptionSourceFromLayers(descriptions,node.description_source||""),description_provenance:mergeDescriptionProvenance(node.description_provenance,[])});
       continue;
     }
     match.label=pickBetterLabel(match.label,node.label);
@@ -191,7 +131,6 @@ export function mergeRawTerms(rawTerms){
     match.type=mergeType(match.type,node.type);
     match.description_source=inferDescriptionSourceFromLayers(match.descriptions,mergeDescriptionSource(match.description_source,node.description_source));
     match.description_provenance=mergeDescriptionProvenance(match.description_provenance,node.description_provenance);
-    match.grounding=mergeGroundingBlocks(match.grounding,node.grounding);
     match.key=toCanonicalKey(match.label);
     match.tokens=tokenSet(match.label);
   }
@@ -199,7 +138,6 @@ export function mergeRawTerms(rawTerms){
     if(term.type==="unique"&&term.slices.length>1) term.type="convergent";
     if(!term.description_source) term.description_source=term.type==="emergent"?"synthesis":"llm";
     applyDisplayDescriptionForTerm(term,{fallbackDescription:term.description,fallbackSource:term.description_source});
-    term.grounding=normalizeGroundingBlock(term.grounding,{defaultStatus:"not_attempted"});
   }
   return merged.map(({tokens,key,...rest})=>rest);
 }
@@ -211,23 +149,22 @@ export function buildTerms(probeResults,synthResult){
     if(!d) continue;
     for(const term of (r.terms||[])){
       const source=String(term.description_source||"").trim().toLowerCase()||"llm";
-      const fallbackNote=source==="wolfram"?"Wolfram grounding applied to description":"Probe model description";
-      const provenance=mergeDescriptionProvenance(term.description_provenance,[{source,stage:"probe",discId:r.discId,discName:d.name,note:fallbackNote}]);
-      addRawTerm(raw,{label:term.label,description:term.description,descriptions:term.descriptions,centrality:term.centrality,slices:[r.discId],type:"unique",description_source:source,description_provenance:provenance,wolfram_entity:term.wolfram_entity,grounding:normalizeGroundingBlock(term.grounding,{entityRef:buildWolframEntityRef(term.wolfram_entity),defaultStatus:"not_attempted"})});
+      const provenance=mergeDescriptionProvenance(term.description_provenance,[{source,stage:"probe",discId:r.discId,discName:d.name,note:"Probe model description"}]);
+      addRawTerm(raw,{label:term.label,description:term.description,descriptions:term.descriptions,centrality:term.centrality,slices:[r.discId],type:"unique",description_source:source,description_provenance:provenance});
     }
   }
   for(const item of (synthResult.convergent||[])){
     const ids=(item.disciplines||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<DISCS.length);
     if(!ids.length) continue;
-    addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.6,slices:ids,type:"convergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe convergence"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
+    addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.6,slices:ids,type:"convergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe convergence"}]});
   }
   for(const item of (synthResult.contradictory||[])){
     const ids=(item.disciplines||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<DISCS.length);
     if(!ids.length) continue;
-    addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.5,slices:ids,type:"contradictory",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe contradiction"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
+    addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.5,slices:ids,type:"contradictory",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Cross-probe contradiction"}]});
   }
   for(const item of (synthResult.emergent||[])){
-    addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.5,slices:[],type:"emergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Emergent synthesis insight"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
+    addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.5,slices:[],type:"emergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Emergent synthesis insight"}]});
   }
   setTerms(mergeRawTerms(raw));
 }

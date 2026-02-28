@@ -4,7 +4,6 @@ import { showToast } from './notifications.js';
 import { escapeHtml } from '../core/utils.js';
 import { normalizeMode } from '../api/provider.js';
 import { getQualityProfile, readApiConfig } from '../api/llm.js';
-import { resolveGroundingPolicy } from '../grounding/wolfram-score.js';
 import { toCanonicalKey } from '../domain/aliases.js';
 import { markArtifactsStale } from '../artifacts/artifact-store.js';
 import { buildPromptOverrideKey, clearPromptOverride, getEffectivePromptBundle, getPromptKindMeta, getPromptOverride, normalizePromptOverrideKind, setPromptOverride } from '../prompt/prompt-system.js';
@@ -104,7 +103,6 @@ export function collectRunReadinessChecks(){
     {label:"Research model",ok:Boolean(cfg.researchModel),blocking:true,detail:cfg.researchModel?cfg.researchModel:"Select a research model."},
     {label:"Embedding model",ok:Boolean(cfg.embeddingModel),blocking:true,detail:cfg.embeddingModel?cfg.embeddingModel:"Select an embedding model."},
     {label:"Runtime credentials",ok:mode==="proxy"||Boolean(cfg.apiKey),blocking:mode==="direct",detail:mode==="proxy"?"Proxy mode selected (credentials handled by backend).":cfg.apiKey?"Direct mode key set.":"Direct mode requires an OpenRouter key."},
-    {label:"Wolfram prerequisites",ok:!cfg.wolframEntityGrounding||(mode==="proxy"&&Boolean(cfg.wolframAppId)),blocking:Boolean(cfg.wolframEntityGrounding),detail:!cfg.wolframEntityGrounding?"Wolfram grounding disabled.":(mode==="proxy"&&cfg.wolframAppId)?"Proxy mode + AppID configured for Wolfram grounding.":"Enable proxy mode and set a Wolfram AppID."},
     {label:"Prompt overrides",ok:true,blocking:false,detail:`${overrideSummary.total} active override(s) (${overrideSummary.global} global, ${overrideSummary.lensScoped} lens-scoped).`}
   ];
   const blockingCount=checks.filter(item=>item.blocking&&!item.ok).length;
@@ -135,7 +133,6 @@ export function updateRunReadinessSummary(){
 }
 
 export function buildPromptParameterNarrative(target,cfg,quality,discName,kind){
-  const groundingPolicy=resolveGroundingPolicy(cfg||{});
   const kindMeta=getPromptKindMeta(kind);
   const lines=[
     `Target: ${target||"(not set)"}`,
@@ -146,7 +143,6 @@ export function buildPromptParameterNarrative(target,cfg,quality,discName,kind){
     `Embedding model: ${cfg?.embeddingModel||"(unset)"}`,
     `Quality profile: ${quality?.id||"balanced"} (terms ${quality?.probeTermMin||"-"}-${quality?.probeTermMax||"-"}; synthesis C/C/E ${quality?.synthConvergent||"-"}/${quality?.synthContradictory||"-"}/${quality?.synthEmergent||"-"})`,
     `Temperature baseline: ${Number(quality?.temperature||0).toFixed(2)} | max_tokens baseline: ${quality?.maxTokens||"-"}`,
-    `Grounding: ${cfg?.wolframEntityGrounding?"enabled":"disabled"} | mode ${groundingPolicy.mode} | q_min ${Number(groundingPolicy.minQualityScore||0).toFixed(2)} | a_min ${Number(groundingPolicy.minAlignmentScore||0).toFixed(2)}${groundingPolicy.annotateOnly?" | annotate-only":""}${groundingPolicy.allowCategoryMismatch?" | category-mismatch override":""}`,
     `Web search: ${cfg?.webSearch?"on":"off"} | red-team: ${cfg?.redTeam?"on":"off"} | source policy: ${cfg?.sourcePolicy||"none"}`
   ];
   if(kindMeta.scope==="lens") lines.push(`Discipline in preview: ${discName}`);

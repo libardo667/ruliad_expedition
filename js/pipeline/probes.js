@@ -1,6 +1,5 @@
 import { callLLMJSON, getQualityProfile } from '../api/llm.js';
 import { extractJSON, extractJSONLenient, extractLooseJsonFieldValues, repairJSONWithModel, stripJsonCodeFences } from '../api/json-recovery.js';
-import { buildWolframEntityRef, normalizeGroundingBlock, normalizeWolframEntityCandidate } from '../grounding/wolfram-grounding.js';
 import { inferDescriptionSourceFromLayers, normalizeTermDescriptions } from '../domain/terms.js';
 import { normalizeCitation } from '../domain/citations.js';
 import { clamp01 } from '../plot/plot-overlays.js';
@@ -21,17 +20,13 @@ export function normalizeProbeTerm(item){
   const source=String(item?.description_source||"").trim().toLowerCase()||"llm";
   const descriptions=normalizeTermDescriptions(item?.descriptions,{fallbackDescription:description,fallbackSource:source,label});
   const centrality=clamp01(Number(item?.centrality??0.5));
-  const wolfram_entity=normalizeWolframEntityCandidate(item?.wolfram_entity);
-  const entityRef=buildWolframEntityRef(wolfram_entity);
   return {
     label,
     centrality,
     descriptions,
     description:String(descriptions.displayDescription||description).trim(),
-    wolfram_entity,
     description_source:inferDescriptionSourceFromLayers(descriptions,source),
-    description_provenance:[{source:source||"llm",stage:"probe",note:"Original probe model description"}],
-    grounding:normalizeGroundingBlock(item?.grounding,{entityRef,defaultStatus:"not_attempted"})
+    description_provenance:[{source:source||"llm",stage:"probe",note:"Original probe model description"}]
   };
 }
 

@@ -1,9 +1,7 @@
-import { AMBIGUITY_QUEUE, ARTIFACT_STORE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, PROMPT_TEMPLATE_OVERRIDES, RUN_STATE, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS } from '../core/state.js';
+import { ARTIFACT_STORE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, PROMPT_TEMPLATE_OVERRIDES, RUN_STATE, TERMS } from '../core/state.js';
 import { clampInt, hashString, structuredCloneSafe } from '../core/utils.js';
 import { callLLMJSON } from '../api/llm.js';
 import { extractJSON } from '../api/json-recovery.js';
-import { buildGroundingHealthWarnings, clampGroundingSnippetScore, computeGroundingStats, computeSourceTypeBreakdown, normalizeGroundingAggressiveness } from '../grounding/wolfram-score.js';
-import { defaultGroundingBlock } from '../grounding/wolfram-grounding.js';
 import { defaultDescriptionLayers } from './terms.js';
 import { toCanonicalKey } from './aliases.js';
 import { getTermSignalModel, refreshTermSignalFields } from './grounding-status.js';
@@ -25,13 +23,6 @@ export function safeConfigForRun(cfg){return {
   replicationModels:cfg.replicationModels||"",
   replicationRuns:clampInt(cfg.replicationRuns||1,1,5),
   replicationStrategy:cfg.replicationStrategy||"fixed",
-  wolframEntityGrounding:Boolean(cfg.wolframEntityGrounding),
-  wolframAppIdPresent:Boolean(cfg.wolframAppId),
-  groundingMode:normalizeGroundingAggressiveness(cfg.groundingMode),
-  groundingMinSnippetScore:(cfg.groundingMinSnippetScore===null||cfg.groundingMinSnippetScore===undefined||String(cfg.groundingMinSnippetScore).trim()==="")?null:clampGroundingSnippetScore(cfg.groundingMinSnippetScore,0.58),
-  groundingMinAlignmentScore:(cfg.groundingMinAlignmentScore===null||cfg.groundingMinAlignmentScore===undefined||String(cfg.groundingMinAlignmentScore).trim()==="")?null:clampGroundingSnippetScore(cfg.groundingMinAlignmentScore,0.55),
-  groundingAnnotateOnly:Boolean(cfg.groundingAnnotateOnly),
-  allowGroundingCategoryMismatch:Boolean(cfg.allowGroundingCategoryMismatch),
   enableComputationalIrreducibility:Boolean(cfg.enableComputationalIrreducibility),
   caMode:Boolean(cfg.enableComputationalIrreducibility)?"run_derived":"disabled",
   caRuleOverride:Number.isFinite(Number(cfg?.caRuleOverride))?clampInt(Number(cfg.caRuleOverride),0,255):Number.isFinite(Number(cfg?.caRule))?clampInt(Number(cfg.caRule),0,255):null,
@@ -41,11 +32,8 @@ export function safeConfigForRun(cfg){return {
   caSteps:Number.isFinite(Number(cfg?.caStepsOverride))?clampInt(Number(cfg.caStepsOverride),16,240):Number.isFinite(Number(cfg?.caSteps))?clampInt(Number(cfg.caSteps),16,240):null,
   caWidth:Number.isFinite(Number(cfg?.caWidthOverride))?clampInt(Number(cfg.caWidthOverride),31,401):Number.isFinite(Number(cfg?.caWidth))?clampInt(Number(cfg.caWidth),31,401):null,
   promptTemplateOverrides:structuredCloneSafe(PROMPT_TEMPLATE_OVERRIDES),
-  promptIntent:String(cfg.promptIntent||"").trim(),
-  promptLensEmphasis:String(cfg.promptLensEmphasis||"").trim(),
-  promptHardConstraints:String(cfg.promptHardConstraints||"").trim(),
-  promptOutputStyle:String(cfg.promptOutputStyle||"").trim(),
-  promptArtifactFocus:String(cfg.promptArtifactFocus||"").trim()
+  sourceUrls:Array.isArray(cfg.sourceUrls)?cfg.sourceUrls:[],
+  sourceByDiscKeys:cfg.sourceByDisc?Object.keys(cfg.sourceByDisc):[]
 };}
 
 export function computeRunId(payload){return `run_${hashString(JSON.stringify(payload))}`;}
@@ -64,21 +52,14 @@ export function serializeTermForRun(term){
     aliases:Array.isArray(term.aliases)?[...term.aliases]:[],
     description_source:term.description_source||"",
     description_provenance:structuredCloneSafe(term.description_provenance||[]),
-    grounding:structuredCloneSafe(term.grounding||defaultGroundingBlock()),
-    groundingOutcome:signal.outcome,
     relevance_score:signal.relevanceScore,
     evidence_support_score:signal.evidenceSupportScore,
-    wa_eligibility:signal.waEligibility,
-    wa_grounding_status:signal.waGroundingStatus,
     display_description_source:signal.displayDescriptionSource
   };
 }
 
 export function buildRunSnapshot(target,probeResults,synthResult,cfg){
   refreshTermSignalFields(TERMS);
-  const groundingStats=computeGroundingStats(TERMS);
-  const sourceTypeBreakdown=computeSourceTypeBreakdown(CITATIONS);
-  const warnings=buildGroundingHealthWarnings(groundingStats,sourceTypeBreakdown);
   return {
     schemaVersion:6,
     runId:CURRENT_RUN_ID||null,
@@ -88,16 +69,11 @@ export function buildRunSnapshot(target,probeResults,synthResult,cfg){
     generatedAt:new Date().toISOString(),
     config:safeConfigForRun(cfg),
     sourcePolicy:cfg.sourcePolicy||"",
-    groundingStats,
-    sourceTypeBreakdown,
-    warnings,
     discs:DISCS.map(d=>({id:d.id,name:d.name,abbr:d.abbr,col:d.col,kind:d.kind||"llm"})),
     terms:TERMS.map(serializeTermForRun),
     citations:[...CITATIONS],
     auditTrail:[...CALL_LOGS],
     embeddingDiagnostics:{similarityMatrix:structuredCloneSafe(DISC_SIM_MATRIX),projectionStability:structuredCloneSafe(PROJECTION_STABILITY)},
-    wolframGroundingDiagnostics:structuredCloneSafe(WOLFRAM_GROUNDING_DIAGNOSTICS),
-    ambiguityQueue:structuredCloneSafe(AMBIGUITY_QUEUE),
     artifacts:structuredCloneSafe(ARTIFACT_STORE),
     report:LAST_RUN?.report||"",
     claimsLedger:LAST_RUN?.claimsLedger||[],
