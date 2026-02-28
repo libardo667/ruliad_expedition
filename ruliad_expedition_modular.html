@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ruliad Expedition Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div id="main-tabs">
+  <div class="tabs-left" role="tablist" aria-label="Workspace Views">
+    <button class="tab-btn active" id="tab-generator-btn" type="button" role="tab" aria-selected="true" aria-controls="setup" tabindex="0">GENERATION PANEL</button>
+    <button class="tab-btn" id="tab-plot-btn" type="button" role="tab" aria-selected="false" aria-controls="plot-panel" tabindex="-1">PLOT VIEW</button>
+  </div>
+  <div class="tabs-right">
+    <button class="mini-btn" id="import-run-btn" type="button">IMPORT RUN</button>
+    <button class="mini-btn" id="export-run-btn" type="button">EXPORT RUN</button>
+    <select id="theme-select-global">
+      <option value="light">Light Theme</option>
+      <option value="dark">Dark Theme</option>
+      <option value="contrast">High Contrast</option>
+    </select>
+    <input type="file" id="run-file-input" accept="application/json,.json" style="display:none"/>
+  </div>
+</div>
+<div id="setup" role="tabpanel" aria-labelledby="tab-generator-btn" tabindex="-1">
+  <div>
+    <div class="logo">RULIAD EXPEDITION TOOL v1.0</div>
+    <h1>Map the Shape of an Idea</h1>
+    <div class="sub">bring your own key | open-model probes | embedding-native topology</div>
+  </div>
+  <div class="workflow-card">
+    <div class="workflow-title">GENERATION PANEL WORKFLOW</div>
+    <ol class="workflow-list">
+      <li><b>Focus Concept</b>: set the core topic you want mapped.</li>
+      <li><b>Probe Lenses</b>: edit/customize lenses, then optionally auto-generate alternatives.</li>
+      <li><b>Model + Runtime</b>: choose API mode, research model, embedding model, and quality profile.</li>
+      <li><b>Grounding + Source Policy</b>: tune web/Wolfram behavior, source policy, and acceptance thresholds.</li>
+      <li><b>Prompt Editor</b>: choose prompt kind, inspect defaults, edit templates, and click <b>APPLY OVERRIDE</b>.</li>
+      <li><b>Advanced Experiments</b> (optional): CA probe, red-team critique, and replication settings.</li>
+      <li><b>Run + Readiness Summary</b>: resolve blocking checks, then run.</li>
+      <li><b>Long-panel ergonomics</b>: use section shortcuts, sticky readiness strip, and horizontal resizer for comfort.</li>
+    </ol>
+    <div class="workflow-note">Relevance and grounding are separate axes. WA status affects grounding display and diagnostics, not term relevance.</div>
+  </div>
+  <div class="field-group">
+    <label>GENERATION WORKBENCH</label>
+    <div class="prompt-workbench" id="generation-workbench">
+      <div class="prompt-pane">
+        <div class="prompt-pane-title">5. PROMPT EDITOR (KIND -> EDIT -> APPLY)</div>
+        <div class="prompt-preview-controls">
+          <div class="field-group compact-field">
+            <label for="prompt-preview-kind-select">Prompt kind</label>
+            <select id="prompt-preview-kind-select" title="Preview prompt type">
+              <option value="probe_user">Probe user prompt</option>
+              <option value="probe_system">Probe system prompt</option>
+              <option value="synthesis">Synthesis prompt</option>
+              <option value="lens_generation">Lens-generation prompt</option>
+              <option value="artifact_deep_report">Artifact prompt: Deep report</option>
+              <option value="artifact_claims">Artifact prompt: Claims</option>
+              <option value="artifact_outline">Artifact prompt: Outline</option>
+              <option value="artifact_red_team">Artifact prompt: Red-team</option>
+              <option value="artifact_replication">Artifact prompt: Replication</option>
+              <option value="artifact_markdown">Artifact prompt: Markdown</option>
+            </select>
+          </div>
+          <div class="field-group compact-field" id="prompt-preview-disc-wrap">
+            <label for="prompt-preview-disc-select">Probe lens (for probe user prompt)</label>
+            <select id="prompt-preview-disc-select" title="Preview discipline"></select>
+          </div>
+          <button class="small-btn" id="prompt-preview-refresh-btn" type="button">REFRESH</button>
+        </div>
+        <div class="prompt-kind-help" id="prompt-preview-kind-help" aria-live="polite"></div>
+        <textarea id="prompt-preview-params" class="prompt-params" readonly aria-label="Prompt parameter narrative"></textarea>
+        <input type="text" id="prompt-preview-status" class="prompt-status" readonly aria-live="polite" value="Using default prompt template"/>
+        <div class="prompt-override-summary" id="prompt-override-summary" aria-live="polite"></div>
+        <label for="prompt-preview-system">SYSTEM PROMPT TEMPLATE (editable)</label>
+        <textarea id="prompt-preview-system" class="prompt-editable" spellcheck="false"></textarea>
+        <label for="prompt-preview-user">USER PROMPT TEMPLATE (editable)</label>
+        <textarea id="prompt-preview-user" class="prompt-editable" spellcheck="false"></textarea>
+        <div class="probe-actions">
+          <button class="mini-btn" id="prompt-preview-apply-btn" type="button">APPLY OVERRIDE</button>
+          <button class="mini-btn" id="prompt-preview-reset-btn" type="button">RESET TO DEFAULT</button>
+          <button class="mini-btn" id="prompt-preview-discard-btn" type="button">DISCARD EDITS</button>
+        </div>
+        <div class="tiny-note">Defaults are always visible. Edits affect runtime only after <b>APPLY OVERRIDE</b>.</div>
+      </div>
+      <div id="workbench-resizer" role="separator" aria-orientation="vertical" aria-label="Resize generation workbench panels" tabindex="0"></div>
+      <div class="prompt-pane controls-pane" id="workbench-controls-pane">
+        <div class="prompt-pane-title">RUN CONTROLS + READINESS</div>
+        <div class="workbench-sticky-nav" aria-label="Generation section shortcuts">
+          <button class="mini-btn" type="button" data-workbench-jump="focus-concept-anchor">1. FOCUS</button>
+          <button class="mini-btn" type="button" data-workbench-jump="workbench-section-lenses">2. LENSES</button>
+          <button class="mini-btn" type="button" data-workbench-jump="workbench-section-model">3. MODEL</button>
+          <button class="mini-btn" type="button" data-workbench-jump="workbench-section-grounding">4. GROUNDING</button>
+          <button class="mini-btn" type="button" data-workbench-jump="workbench-section-readiness">7. READINESS</button>
+        </div>
+        <div class="workbench-control-stack">
+          <fieldset class="workbench-section" id="focus-concept-anchor">
+            <legend class="workbench-section-title">1. Focus Concept</legend>
+            <div class="field-group">
+              <label for="target-input">FOCUS CONCEPT</label>
+              <input type="text" id="target-input" placeholder="e.g. consciousness, money, entropy, love, justice..." value=""/>
+            </div>
+          </fieldset>
+          <fieldset class="workbench-section" id="workbench-section-lenses">
+            <legend class="workbench-section-title">2. Probe Lenses</legend>
+            <div class="field-group">
+              <label>PROBE LENSES (CLICK TO CUSTOMIZE)</label>
+              <div class="disc-grid" id="disc-inputs"></div>
+              <div class="probe-actions">
+                <button class="mini-btn" id="add-probe-btn" type="button">ADD LENS</button>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="lens-count-input">AUTO-GENERATE LENSES</label>
+              <div class="lens-gen-row">
+                <input type="number" id="lens-count-input" min="2" max="12" value="7"/>
+                <button class="mini-btn" id="gen-lenses-btn" type="button">GENERATE</button>
+              </div>
+              <div class="tiny-note">Creates mutually distinct lenses while staying relevant to your focus concept.</div>
+            </div>
+          </fieldset>
+          <fieldset class="workbench-section" id="workbench-section-model">
+            <legend class="workbench-section-title">3. Model + Runtime</legend>
+            <div class="api-row">
+              <div class="field-group compact-field">
+                <label for="api-mode">API MODE</label>
+                <select id="api-mode"><option value="direct">Direct mode (browser)</option><option value="proxy">Proxy mode (localhost)</option></select>
+              </div>
+              <div class="field-group compact-field">
+                <label for="research-model-input">RESEARCH MODEL</label>
+                <select id="research-model-input" title="Reasoning model">
+                  <option value="deepseek/deepseek-r1" selected>deepseek/deepseek-r1</option>
+                  <option value="qwen/qwen-2.5-72b-instruct">qwen/qwen-2.5-72b-instruct</option>
+                  <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+                  <option value="qwen/qwen3-coder">qwen/qwen3-coder</option>
+                  <option value="anthropic/claude-sonnet-4.6">anthropic/claude-sonnet-4.6</option>
+                  <option value="google/gemini-3.1-pro-preview">google/gemini-3.1-pro-preview</option>
+                  <option value="moonshotai/kimi-k2.5">moonshotai/kimi-k2.5</option>
+                  <option value="z-ai/glm-5">z-ai/glm-5</option>
+                </select>
+              </div>
+            </div>
+            <div class="api-key-row">
+              <input type="password" id="api-key-input" autocomplete="off" spellcheck="false" placeholder="OpenRouter key (required in direct mode)"/>
+              <button class="mini-btn" id="toggle-key-btn" type="button">SHOW</button>
+              <button class="mini-btn" id="clear-key-btn" type="button">CLEAR</button>
+            </div>
+            <div class="field-group compact-field">
+              <label for="embedding-model-input">EMBEDDING MODEL</label>
+              <select id="embedding-model-input" title="Embedding model">
+                <option value="qwen/qwen3-embedding-8b" selected>qwen/qwen3-embedding-8b</option>
+                <option value="baai/bge-large-en-v1.5">baai/bge-large-en-v1.5</option>
+                <option value="intfloat/e5-large-v2">intfloat/e5-large-v2</option>
+                <option value="thenlper/gte-large">thenlper/gte-large</option>
+                <option value="openai/text-embedding-3-large">openai/text-embedding-3-large</option>
+                <option value="openai/text-embedding-3-small">openai/text-embedding-3-small</option>
+                <option value="google/gemini-embedding-001">google/gemini-embedding-001</option>
+                <option value="mistalai/mistral-embed-2312">mistralai/mistral-embed-2312</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="quality-mode-select">QUALITY PROFILE</label>
+              <select id="quality-mode-select">
+                <option value="fast">Fast (speed-first)</option>
+                <option value="balanced" selected>Balanced</option>
+                <option value="rigor">Rigor (deeper, slower)</option>
+              </select>
+              <div class="tiny-note">Controls term count, synthesis depth, temperature, embedding batch size, and optional cleanup pass.</div>
+            </div>
+            <div class="tiny-note" id="api-mode-note">Direct mode sends requests from this page to the model API. The key is only held in memory for this tab and never written to localStorage.</div>
+          </fieldset>
+          <fieldset class="workbench-section" id="workbench-section-grounding">
+            <legend class="workbench-section-title">4. Grounding + Source Policy</legend>
+            <div class="prefs-row prefs-row-single">
+              <div class="toggle-wrap">
+                <input type="checkbox" id="web-search-check" checked/>
+                <label for="web-search-check">Enable web search grounding</label>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="source-policy-input">SOURCE POLICY</label>
+              <input type="text" id="source-policy-input" placeholder="e.g. prioritize peer-reviewed + government data; allow journalism; avoid blogs"/>
+            </div>
+            <div class="prefs-row-wide">
+              <div class="toggle-wrap">
+                <input type="checkbox" id="wolfram-grounding-check"/>
+                <label for="wolfram-grounding-check">Enable Wolfram entity grounding</label>
+              </div>
+              <div class="toggle-wrap">
+                <input type="checkbox" id="grounding-annotate-only-check"/>
+                <label for="grounding-annotate-only-check">Never overwrite descriptions, only annotate</label>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="wolfram-appid-input">WOLFRAM APPID</label>
+              <input type="password" id="wolfram-appid-input" autocomplete="off" spellcheck="false" placeholder="required for Wolfram grounding and live CA lookup"/>
+              <div class="tiny-note">Used only for live Wolfram calls. Without it, local CA fallback metrics still run.</div>
+            </div>
+            <div class="field-group">
+              <label for="grounding-mode-select">GROUNDING POLICY</label>
+              <div class="mini-grid">
+                <select id="grounding-mode-select" title="Grounding mode">
+                  <option value="conservative">Conservative</option>
+                  <option value="balanced" selected>Balanced</option>
+                  <option value="aggressive">Aggressive</option>
+                </select>
+                <input type="number" id="grounding-min-score-input" min="0" max="1" step="0.01" placeholder="q_min: min snippet quality (auto)"/>
+              </div>
+              <input type="number" id="grounding-min-alignment-score-input" min="0" max="1" step="0.01" placeholder="a_min: min semantic alignment (auto)"/>
+              <div class="toggle-wrap">
+                <input type="checkbox" id="grounding-allow-category-mismatch-check"/>
+                <label for="grounding-allow-category-mismatch-check">Allow category-mismatch grounding (explicit override)</label>
+              </div>
+              <div class="tiny-note">Acceptance requires both quality and semantic alignment. Conservative is safest; aggressive appends more Wolfram text.</div>
+            </div>
+          </fieldset>
+          <details class="workbench-section workbench-advanced" id="workbench-section-advanced">
+            <summary class="workbench-section-title">6. Advanced Experiments (optional)</summary>
+            <div class="workbench-advanced-body">
+              <div class="prefs-row-wide">
+                <div class="toggle-wrap">
+                  <input type="checkbox" id="ca-probe-check"/>
+                  <label for="ca-probe-check">Enable computational irreducibility diagnostic</label>
+                </div>
+                <div class="toggle-wrap">
+                  <input type="checkbox" id="redteam-check"/>
+                  <label for="redteam-check">Enable red-team critique</label>
+                </div>
+              </div>
+              <div class="field-group compact-field" id="ca-override-group" style="display:none">
+                <label>MANUAL OVERRIDE (leave blank for auto-derivation)</label>
+                <div class="mini-grid">
+                  <input type="number" id="ca-rule-input" min="0" max="255" placeholder="Rule (auto)" title="manual override for CA rule (0-255)"/>
+                  <input type="number" id="ca-steps-input" min="16" max="240" placeholder="Steps (auto)" title="manual override for CA steps (16-240)"/>
+                </div>
+                <input type="number" id="ca-width-input" min="31" max="401" placeholder="Width (auto)" title="manual override for CA width (odd 31-401 preferred)"/>
+                <div class="tiny-note">
+                  When blank, all parameters are derived from the run's actual probe topology,
+                  synthesis depth, and term count. Manual values override derivation.
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="replication-models-input">REPLICATION MODELS (COMMA-SEPARATED)</label>
+                <input type="text" id="replication-models-input" placeholder="replication models (comma-separated)"/>
+              </div>
+              <div class="mini-grid">
+                <div class="field-group compact-field">
+                  <label for="replication-runs-input">RUNS PER MODEL</label>
+                  <input type="number" id="replication-runs-input" min="1" max="5" value="1" title="number of reruns per model"/>
+                </div>
+                <div class="field-group compact-field">
+                  <label for="replication-strategy-select">REPLICATION STRATEGY</label>
+                  <select id="replication-strategy-select" title="temperature/seed strategy">
+                    <option value="fixed">Fixed params</option>
+                    <option value="jitter">Temperature jitter</option>
+                  </select>
+                </div>
+              </div>
+              <div class="tiny-note">Left box is runs per model. Right selector controls fixed parameters vs temperature jitter.</div>
+            </div>
+          </details>
+          <fieldset class="workbench-section" id="workbench-section-readiness">
+            <legend class="workbench-section-title">7. Run + Readiness Summary</legend>
+            <div class="run-readiness-status" id="run-readiness-status" aria-live="polite">Checking run readiness...</div>
+            <ul class="readiness-list" id="run-readiness-list"></ul>
+            <div class="run-action-strip">
+              <button class="launch-btn" id="launch-btn" type="button">RUN EXPEDITION</button>
+            </div>
+          </fieldset>
+          <div class="tiny-note">8. Long-panel ergonomics: shortcuts are sticky at the top, readiness action strip is sticky at the bottom, and the center divider is draggable.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">Each lens runs an independent model query. Synthesis then links overlaps, tensions, and emergent terms. Final nodes are embedded and projected into 3D where distance reflects semantic similarity. Typical run: ~10-16 API calls, depending on term count and embedding batches.</div>
+</div>
+<div id="plot-panel" role="tabpanel" aria-labelledby="tab-plot-btn" tabindex="-1" hidden>
+<div id="progress">
+  <div><div class="prog-title">EXPEDITION IN PROGRESS</div><div class="prog-target" id="prog-target-label"></div></div>
+  <div class="probe-list" id="probe-list"></div>
+  <div class="synth-bar" id="synth-bar">SYNTHESIS - waiting for probes...</div>
+</div>
+<div id="viz">
+  <div id="viz-topbar">
+    <div id="viz-topbar-left">RULIAD SCAN - <span id="viz-target-label"></span></div>
+    <div id="viz-topbar-right">
+      <div class="viz-actions">
+        <span style="font-size:12px;color:var(--muted);letter-spacing:.5px"><span id="vis-count">0</span> TERMS</span>
+        <span class="projection-tip" title="Distances are suggestive; global direction/opposites are not invariant under projection.">PROJECTION NOTE</span>
+        <span class="progress-pill" id="artifact-progress-text">Idle</span>
+        <button class="reset-btn" id="artifacts-btn" title="Open run artifacts and their status">ARTIFACTS</button>
+        <div class="menu-wrap">
+          <button class="reset-btn" id="export-menu-btn" title="Open export options">EXPORT</button>
+          <div class="menu-pop" id="export-menu">
+            <button class="menu-item" id="export-menu-figure" type="button">Download Figure (PNG)</button>
+            <button class="menu-item" id="export-menu-markdown" type="button">Download Report (MD)</button>
+            <button class="menu-item" id="export-menu-wa-graph" type="button">Export WA Graph Data</button>
+            <button class="menu-item" id="export-menu-bundle" type="button">Export Bundle (.zip)</button>
+          </div>
+        </div>
+        <button class="reset-btn" id="zen-mode-btn" type="button" aria-pressed="false" title="Hide top menu and left panel for cinematic capture">ZEN MODE</button>
+        <button class="reset-btn" id="new-run-btn" title="Reset current run and start new expedition">NEW</button>
+      </div>
+      <div class="legacy-actions">
+        <button class="reset-btn" id="raw-list-btn">RAW NODES</button><button class="reset-btn" id="evidence-btn">EVIDENCE</button><button class="reset-btn" id="ambiguity-btn">AMBIGUITY</button><button class="reset-btn" id="claims-btn">CLAIMS</button><button class="reset-btn" id="redteam-btn">RED TEAM</button><button class="reset-btn" id="replication-btn">REPLICATION</button><button class="reset-btn" id="outline-btn">OUTLINE</button><button class="reset-btn" id="export-md-btn">EXPORT MD</button><button class="reset-btn" id="export-fig-btn">EXPORT FIGURE</button><button class="reset-btn" id="rerun-synth-btn">RERUN SYNTH</button><button class="reset-btn" id="deep-report-btn">DEEP REPORT</button><button class="reset-btn" id="reset-btn">NEW EXPEDITION</button>
+      </div>
+    </div>
+  </div>
+  <div id="viz-body">
+    <div id="sidebar">
+      <div><div class="sec-label">PROBE DISCIPLINES</div><div id="disc-list"></div><div style="margin-top:8px;display:flex;align-items:center;gap:8px;padding:4px;cursor:pointer" id="surf-toggle"><input type="checkbox" id="surf-check" checked style="cursor:pointer"/><label for="surf-check" style="font-size:13px;color:var(--muted);cursor:pointer;letter-spacing:.5px">PROBE SURFACES</label></div><div style="padding:0 4px 4px;display:flex;flex-direction:column;gap:4px"><label for="surf-opacity-range" style="font-size:11px;color:var(--muted);letter-spacing:.5px">SURFACE OPACITY <span id="surf-opacity-value">9%</span></label><input type="range" id="surf-opacity-range" min="0" max="35" step="1" value="9" aria-label="Probe surface opacity"/></div></div>
+      <div><div class="sec-label">TERM CATEGORIES</div><div id="type-list"></div></div>
+      <div>
+        <div class="sec-label">GROUNDING VISUALS</div>
+        <div class="field-group" style="margin-top:6px">
+          <label for="node-color-mode-select">NODE COLOR MODE</label>
+          <select id="node-color-mode-select">
+            <option value="type">Color by node type</option>
+            <option value="grounding">Color by grounding quality</option>
+          </select>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;padding:4px;cursor:pointer">
+          <input type="checkbox" id="grounding-overlay-check" checked style="cursor:pointer"/>
+          <label for="grounding-overlay-check" style="font-size:13px;color:var(--muted);cursor:pointer;letter-spacing:.5px">GROUNDING HALOS / RINGS</label>
+        </div>
+        <div class="matrix-note" id="grounding-encoding-note">Node type color mode active. Halos indicate grounding confidence.</div>
+      </div>
+      <div id="node-filter-panel">
+        <div class="sec-label">NODE SEARCH / FILTER</div>
+        <input type="text" id="node-search-input" placeholder="Search node label (fuzzy)" aria-label="Node search"/>
+        <div class="filter-grid" style="margin-top:6px">
+          <select id="node-type-filter" aria-label="Filter by node type">
+            <option value="all">Type: all</option>
+            <option value="unique">Type: unique</option>
+            <option value="convergent">Type: convergent</option>
+            <option value="contradictory">Type: contradictory</option>
+            <option value="emergent">Type: emergent</option>
+          </select>
+          <select id="node-grounding-filter" aria-label="Filter by WA grounding status">
+            <option value="all">WA status: all</option>
+            <option value="grounded">WA status: grounded (applied)</option>
+            <option value="weak">WA status: weak (metadata-only/unresolved)</option>
+            <option value="metadata_only">WA status: metadata-only</option>
+            <option value="rejected">WA status: unresolved</option>
+            <option value="local_defined">WA status: not suitable (local-defined)</option>
+            <option value="not_attempted">WA status: not attempted</option>
+          </select>
+          <input type="number" id="node-min-probe-filter" min="0" value="0" placeholder="Min probe count" aria-label="Minimum probe count"/>
+          <input type="number" id="node-min-citation-filter" min="0" value="0" placeholder="Min citation count" aria-label="Minimum citation count"/>
+          <select id="node-sort-select" aria-label="Sort nodes">
+            <option value="probe_coverage">Sort: probe coverage</option>
+            <option value="citation_count">Sort: citation count</option>
+            <option value="grounding_confidence">Sort: grounding confidence</option>
+            <option value="alphabetical">Sort: alphabetical</option>
+          </select>
+          <button class="small-btn" id="node-filter-clear-btn" type="button">CLEAR</button>
+        </div>
+        <div class="matrix-note" id="node-filter-summary" style="margin-top:6px">No nodes loaded.</div>
+        <div id="node-filter-results"></div>
+      </div>
+      <div id="detail"><div class="sec-label">SELECTED</div><h3 id="d-label"></h3><div class="detail-type" id="d-type"></div><div class="detail-desc" id="d-desc"></div><div class="dtags" id="d-slices"></div><div class="sec-label" style="margin-top:10px">EVIDENCE</div><div class="card-list" id="d-citations"></div><button class="reset-btn" id="clear-btn" style="margin-top:8px;font-size:11px">CLEAR</button></div>
+      <div id="embedding-diagnostics">
+        <div class="sec-label">PROJECTION CHECKS</div>
+        <div class="matrix-note" id="disc-sim-status">No embedding diagnostics yet.</div>
+        <div class="matrix-note" id="projection-stability"></div>
+        <div class="matrix-wrap" id="disc-sim-matrix"></div>
+      </div>
+      <div id="wa-hotspot-audit">
+        <div class="sec-label">GENERIC INTERPRETATION HOTSPOT AUDIT</div>
+        <div class="matrix-note" id="wa-hotspot-status">No Wolfram interpretation hotspot diagnostics yet.</div>
+        <div class="matrix-wrap" id="wa-hotspot-matrix"></div>
+      </div>
+      <div class="ca-card" id="ca-panel">
+        <div class="sec-label">COMPUTATIONAL IRREDUCIBILITY DIAGNOSTIC</div>
+        <div class="ca-title" id="ca-title"></div>
+        <div class="ca-meta" id="ca-meta"></div>
+        <details>
+          <summary class="ca-meta" style="cursor:pointer">DERIVATION DETAILS</summary>
+          <div class="ca-derivation" id="ca-derivation"></div>
+        </details>
+        <img id="ca-image" alt="Cellular automaton evolution"/>
+        <div class="ca-trajectory-wrap" id="ca-trajectory-wrap">
+          <canvas id="ca-trajectory-canvas" width="280" height="90"></canvas>
+        </div>
+        <div class="ca-meta" id="ca-commentary"></div>
+      </div>
+      <div id="stats"><div class="sec-label">CORPUS</div><div id="stat-rows"></div></div>
+    </div>
+    <div id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Resize plot sidebar" tabindex="0"></div>
+    <div id="plot-wrap"><div id="plot"></div></div>
+  </div>
+</div>
+</div>
+<div id="toast"></div>
+<div id="artifact-drawer">
+  <div class="artifact-head">
+    <div style="font-size:13px;letter-spacing:.5px;color:var(--accent)">RUN ARTIFACTS</div>
+    <button class="small-btn" id="artifact-drawer-close" type="button">CLOSE</button>
+  </div>
+  <div id="artifact-list"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:8px">
+    <button class="small-btn" id="artifact-rerun-synth-btn" type="button" title="Re-run synthesis and mark downstream artifacts stale">RERUN SYNTHESIS</button>
+  </div>
+</div>
+<div class="modal" id="artifact-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div>
+        <div class="modal-title" id="artifact-modal-title">ARTIFACT</div>
+        <div class="evidence-meta" id="artifact-modal-meta"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="reset-btn" id="artifact-copy-btn" type="button">COPY</button>
+        <button class="reset-btn" id="artifact-download-btn" type="button">DOWNLOAD</button>
+        <button class="reset-btn" id="artifact-regenerate-btn" type="button">REGENERATE</button>
+        <button class="reset-btn" id="artifact-close-btn" type="button">CLOSE</button>
+      </div>
+    </div>
+    <div class="artifact-modal-body">
+      <div class="mono-block" id="artifact-modal-content"></div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="raw-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">RAW NODE LIST</div>
+      <button class="reset-btn" id="raw-close-btn" type="button">CLOSE</button>
+    </div>
+    <div class="mono-block" id="raw-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="report-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">DEEP RESEARCH REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="reset-btn" id="report-copy-btn" type="button">COPY</button>
+        <button class="reset-btn" id="report-close-btn" type="button">CLOSE</button>
+      </div>
+    </div>
+    <div class="mono-block" id="report-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="evidence-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">EVIDENCE CARDS</div>
+      <button class="reset-btn" id="evidence-close-btn" type="button">CLOSE</button>
+    </div>
+    <div id="evidence-filter-bar" class="field-group"></div>
+    <div class="card-list" id="evidence-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="claims-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">CLAIMS LEDGER</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="reset-btn" id="claims-copy-btn" type="button">COPY</button>
+        <button class="reset-btn" id="claims-close-btn" type="button">CLOSE</button>
+      </div>
+    </div>
+    <div class="mono-block" id="claims-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="outline-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">OUTLINE FROM MAP</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="reset-btn" id="outline-copy-btn" type="button">COPY</button>
+        <button class="reset-btn" id="outline-close-btn" type="button">CLOSE</button>
+      </div>
+    </div>
+    <div class="mono-block" id="outline-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="critique-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">RED-TEAM CRITIQUE</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="reset-btn" id="critique-copy-btn" type="button">COPY</button>
+        <button class="reset-btn" id="critique-close-btn" type="button">CLOSE</button>
+      </div>
+    </div>
+    <div class="mono-block" id="critique-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="replication-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div class="modal-title">REPLICATION RESULTS</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="reset-btn" id="replication-close-btn" type="button">CLOSE</button>
+      </div>
+    </div>
+    <div class="mono-block" id="replication-modal-content"></div>
+  </div>
+</div>
+<div class="modal" id="ambiguity-modal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div>
+        <div class="modal-title">WOLFRAM AMBIGUITY QUEUE</div>
+        <div class="evidence-meta" id="ambiguity-summary"></div>
+      </div>
+      <button class="reset-btn" id="ambiguity-close-btn" type="button">CLOSE</button>
+    </div>
+    <div class="card-list" id="ambiguity-modal-content"></div>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

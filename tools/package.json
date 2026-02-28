@@ -1,0 +1,8 @@
+{
+  "name": "ruliad-decompose-tools",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "acorn": "^8.14.0"
+  }
+}

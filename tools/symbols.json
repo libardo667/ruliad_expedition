@@ -1,0 +1,3842 @@
+[
+  {
+    "name": "COLORS",
+    "kind": "const",
+    "jsLine": 2,
+    "htmlLine": 739
+  },
+  {
+    "name": "FALLBACK_DIRS",
+    "kind": "const",
+    "jsLine": 3,
+    "htmlLine": 740
+  },
+  {
+    "name": "DEFAULT_DISCS",
+    "kind": "const",
+    "jsLine": 4,
+    "htmlLine": 741
+  },
+  {
+    "name": "TYPE_CFG",
+    "kind": "const",
+    "jsLine": 5,
+    "htmlLine": 742
+  },
+  {
+    "name": "TYPE_PRIORITY",
+    "kind": "const",
+    "jsLine": 6,
+    "htmlLine": 743
+  },
+  {
+    "name": "QUALITY_PROFILES",
+    "kind": "const",
+    "jsLine": 7,
+    "htmlLine": 744
+  },
+  {
+    "name": "API_ENDPOINTS",
+    "kind": "const",
+    "jsLine": 12,
+    "htmlLine": 749
+  },
+  {
+    "name": "PROJECTION_BASE_SEED",
+    "kind": "const",
+    "jsLine": 13,
+    "htmlLine": 750
+  },
+  {
+    "name": "PROJECTION_STABILITY_RUNS",
+    "kind": "const",
+    "jsLine": 14,
+    "htmlLine": 751
+  },
+  {
+    "name": "RNG",
+    "kind": "class",
+    "jsLine": 15,
+    "htmlLine": 752
+  },
+  {
+    "name": "DISCS",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "TERMS",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "activeSlices",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "activeTypes",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "showSurfaces",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "surfaceOpacity",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "plotInited",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "sessionConfig",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "umapModulePromise",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "nodeColorMode",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "showGroundingOverlays",
+    "kind": "let",
+    "jsLine": 16,
+    "htmlLine": 753
+  },
+  {
+    "name": "LAST_RUN",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "activeTab",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "isGenerating",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "lastReportText",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "lastClaimsText",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "lastOutlineText",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "lastCritiqueText",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "lastMarkdownText",
+    "kind": "let",
+    "jsLine": 17,
+    "htmlLine": 754
+  },
+  {
+    "name": "zenModeEnabled",
+    "kind": "let",
+    "jsLine": 18,
+    "htmlLine": 755
+  },
+  {
+    "name": "CALL_LOGS",
+    "kind": "let",
+    "jsLine": 19,
+    "htmlLine": 756
+  },
+  {
+    "name": "RUN_STATE",
+    "kind": "let",
+    "jsLine": 19,
+    "htmlLine": 756
+  },
+  {
+    "name": "CITATIONS",
+    "kind": "let",
+    "jsLine": 19,
+    "htmlLine": 756
+  },
+  {
+    "name": "CURRENT_RUN_ID",
+    "kind": "let",
+    "jsLine": 19,
+    "htmlLine": 756
+  },
+  {
+    "name": "CITATION_UNMAPPED_SUPPORTING_TERMS",
+    "kind": "let",
+    "jsLine": 19,
+    "htmlLine": 756
+  },
+  {
+    "name": "DISC_SIM_MATRIX",
+    "kind": "let",
+    "jsLine": 20,
+    "htmlLine": 757
+  },
+  {
+    "name": "PROJECTION_STABILITY",
+    "kind": "let",
+    "jsLine": 20,
+    "htmlLine": 757
+  },
+  {
+    "name": "CA_PROBE_OUTPUT",
+    "kind": "let",
+    "jsLine": 21,
+    "htmlLine": 758
+  },
+  {
+    "name": "WOLFRAM_GROUNDING_DIAGNOSTICS",
+    "kind": "let",
+    "jsLine": 22,
+    "htmlLine": 759
+  },
+  {
+    "name": "AMBIGUITY_QUEUE",
+    "kind": "let",
+    "jsLine": 23,
+    "htmlLine": 760
+  },
+  {
+    "name": "EVIDENCE_FILTER_STATE",
+    "kind": "let",
+    "jsLine": 24,
+    "htmlLine": 761
+  },
+  {
+    "name": "WOLFRAM_CACHE_VERSION",
+    "kind": "const",
+    "jsLine": 25,
+    "htmlLine": 762
+  },
+  {
+    "name": "WOLFRAM_QUERY_CACHE_TTL_MS",
+    "kind": "const",
+    "jsLine": 26,
+    "htmlLine": 763
+  },
+  {
+    "name": "WOLFRAM_TERM_CACHE_TTL_MS",
+    "kind": "const",
+    "jsLine": 27,
+    "htmlLine": 764
+  },
+  {
+    "name": "WOLFRAM_QUERY_CACHE_MAX",
+    "kind": "const",
+    "jsLine": 28,
+    "htmlLine": 765
+  },
+  {
+    "name": "WOLFRAM_TERM_CACHE_MAX",
+    "kind": "const",
+    "jsLine": 29,
+    "htmlLine": 766
+  },
+  {
+    "name": "WOLFRAM_CACHE_STORAGE_KEY",
+    "kind": "const",
+    "jsLine": 30,
+    "htmlLine": 767
+  },
+  {
+    "name": "WOLFRAM_QUERY_CACHE_MEM",
+    "kind": "const",
+    "jsLine": 31,
+    "htmlLine": 768
+  },
+  {
+    "name": "WOLFRAM_TERM_CACHE_MEM",
+    "kind": "const",
+    "jsLine": 32,
+    "htmlLine": 769
+  },
+  {
+    "name": "WOLFRAM_CACHE_STORAGE_ENABLED",
+    "kind": "let",
+    "jsLine": 33,
+    "htmlLine": 770
+  },
+  {
+    "name": "WOLFRAM_CACHE_LAST_SAVE",
+    "kind": "let",
+    "jsLine": 34,
+    "htmlLine": 771
+  },
+  {
+    "name": "SIDEBAR_WIDTH_STORAGE_KEY",
+    "kind": "const",
+    "jsLine": 35,
+    "htmlLine": 772
+  },
+  {
+    "name": "SIDEBAR_WIDTH_DEFAULT",
+    "kind": "const",
+    "jsLine": 36,
+    "htmlLine": 773
+  },
+  {
+    "name": "SIDEBAR_WIDTH_MIN",
+    "kind": "const",
+    "jsLine": 37,
+    "htmlLine": 774
+  },
+  {
+    "name": "SIDEBAR_WIDTH_MAX",
+    "kind": "const",
+    "jsLine": 38,
+    "htmlLine": 775
+  },
+  {
+    "name": "GENERATION_WORKBENCH_WIDTH_STORAGE_KEY",
+    "kind": "const",
+    "jsLine": 39,
+    "htmlLine": 776
+  },
+  {
+    "name": "GENERATION_WORKBENCH_LEFT_MIN",
+    "kind": "const",
+    "jsLine": 40,
+    "htmlLine": 777
+  },
+  {
+    "name": "GENERATION_WORKBENCH_RIGHT_MIN",
+    "kind": "const",
+    "jsLine": 41,
+    "htmlLine": 778
+  },
+  {
+    "name": "PROMPT_OVERRIDE_KINDS",
+    "kind": "const",
+    "jsLine": 42,
+    "htmlLine": 779
+  },
+  {
+    "name": "PROMPT_KIND_META",
+    "kind": "const",
+    "jsLine": 43,
+    "htmlLine": 780
+  },
+  {
+    "name": "PROMPT_TEMPLATE_OVERRIDES",
+    "kind": "let",
+    "jsLine": 55,
+    "htmlLine": 792
+  },
+  {
+    "name": "PROMPT_PREVIEW_RENDERING",
+    "kind": "let",
+    "jsLine": 56,
+    "htmlLine": 793
+  },
+  {
+    "name": "ARTIFACT_DEFS",
+    "kind": "const",
+    "jsLine": 57,
+    "htmlLine": 794
+  },
+  {
+    "name": "ARTIFACT_STORE",
+    "kind": "let",
+    "jsLine": 68,
+    "htmlLine": 805
+  },
+  {
+    "name": "ARTIFACT_BUSY",
+    "kind": "let",
+    "jsLine": 69,
+    "htmlLine": 806
+  },
+  {
+    "name": "ACTIVE_ARTIFACT_KEY",
+    "kind": "let",
+    "jsLine": 70,
+    "htmlLine": 807
+  },
+  {
+    "name": "ACTIVE_MODAL_ID",
+    "kind": "let",
+    "jsLine": 71,
+    "htmlLine": 808
+  },
+  {
+    "name": "MODAL_RETURN_FOCUS",
+    "kind": "const",
+    "jsLine": 72,
+    "htmlLine": 809
+  },
+  {
+    "name": "MODAL_FOCUSABLE_SELECTOR",
+    "kind": "const",
+    "jsLine": 73,
+    "htmlLine": 810
+  },
+  {
+    "name": "WA_GRAPH_STATUS_META",
+    "kind": "const",
+    "jsLine": 84,
+    "htmlLine": 821
+  },
+  {
+    "name": "WA_ACCEPTED_GROUNDING_STATUSES",
+    "kind": "const",
+    "jsLine": 91,
+    "htmlLine": 828
+  },
+  {
+    "name": "TERM_GROUNDING_OUTCOME_META",
+    "kind": "const",
+    "jsLine": 92,
+    "htmlLine": 829
+  },
+  {
+    "name": "WA_TERM_STATUS_META",
+    "kind": "const",
+    "jsLine": 99,
+    "htmlLine": 836
+  },
+  {
+    "name": "KNOWN_RULE_CLASSES",
+    "kind": "const",
+    "jsLine": 108,
+    "htmlLine": 845
+  },
+  {
+    "name": "waTermStatusLabel",
+    "kind": "function",
+    "jsLine": 142,
+    "htmlLine": 879
+  },
+  {
+    "name": "waTermStatusColor",
+    "kind": "function",
+    "jsLine": 143,
+    "htmlLine": 880
+  },
+  {
+    "name": "normalizeWolframCacheKey",
+    "kind": "function",
+    "jsLine": 144,
+    "htmlLine": 881
+  },
+  {
+    "name": "normalizeWolframTermCacheKey",
+    "kind": "function",
+    "jsLine": 145,
+    "htmlLine": 882
+  },
+  {
+    "name": "wolframCacheNow",
+    "kind": "function",
+    "jsLine": 146,
+    "htmlLine": 883
+  },
+  {
+    "name": "buildWolframTermCacheKey",
+    "kind": "function",
+    "jsLine": 147,
+    "htmlLine": 884
+  },
+  {
+    "name": "enforceWolframCacheLimit",
+    "kind": "function",
+    "jsLine": 148,
+    "htmlLine": 885
+  },
+  {
+    "name": "pruneExpiredWolframCache",
+    "kind": "function",
+    "jsLine": 149,
+    "htmlLine": 886
+  },
+  {
+    "name": "persistWolframCaches",
+    "kind": "function",
+    "jsLine": 150,
+    "htmlLine": 887
+  },
+  {
+    "name": "loadWolframCaches",
+    "kind": "function",
+    "jsLine": 151,
+    "htmlLine": 888
+  },
+  {
+    "name": "getWolframQueryCache",
+    "kind": "function",
+    "jsLine": 152,
+    "htmlLine": 889
+  },
+  {
+    "name": "setWolframQueryCache",
+    "kind": "function",
+    "jsLine": 153,
+    "htmlLine": 890
+  },
+  {
+    "name": "getWolframTermCache",
+    "kind": "function",
+    "jsLine": 154,
+    "htmlLine": 891
+  },
+  {
+    "name": "setWolframTermCache",
+    "kind": "function",
+    "jsLine": 155,
+    "htmlLine": 892
+  },
+  {
+    "name": "discInputsEl",
+    "kind": "const",
+    "jsLine": 156,
+    "htmlLine": 893
+  },
+  {
+    "name": "setupEl",
+    "kind": "const",
+    "jsLine": 157,
+    "htmlLine": 894
+  },
+  {
+    "name": "plotPanelEl",
+    "kind": "const",
+    "jsLine": 158,
+    "htmlLine": 895
+  },
+  {
+    "name": "progressEl",
+    "kind": "const",
+    "jsLine": 159,
+    "htmlLine": 896
+  },
+  {
+    "name": "vizEl",
+    "kind": "const",
+    "jsLine": 160,
+    "htmlLine": 897
+  },
+  {
+    "name": "generatorTabBtn",
+    "kind": "const",
+    "jsLine": 161,
+    "htmlLine": 898
+  },
+  {
+    "name": "plotTabBtn",
+    "kind": "const",
+    "jsLine": 162,
+    "htmlLine": 899
+  },
+  {
+    "name": "TAB_ORDER",
+    "kind": "const",
+    "jsLine": 163,
+    "htmlLine": 900
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 164,
+    "htmlLine": 901
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 165,
+    "htmlLine": 902
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 166,
+    "htmlLine": 903
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 167,
+    "htmlLine": 904
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 168,
+    "htmlLine": 905
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 169,
+    "htmlLine": 906
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 170,
+    "htmlLine": 907
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 171,
+    "htmlLine": 908
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 172,
+    "htmlLine": 909
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 173,
+    "htmlLine": 910
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 174,
+    "htmlLine": 911
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 175,
+    "htmlLine": 912
+  },
+  {
+    "name": "themeSelectGlobalEl",
+    "kind": "const",
+    "jsLine": 176,
+    "htmlLine": 913
+  },
+  {
+    "name": "(IfStatement)",
+    "kind": "IfStatement",
+    "jsLine": 177,
+    "htmlLine": 914
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 178,
+    "htmlLine": 915
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 179,
+    "htmlLine": 916
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 180,
+    "htmlLine": 917
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 181,
+    "htmlLine": 918
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 182,
+    "htmlLine": 919
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 183,
+    "htmlLine": 920
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 184,
+    "htmlLine": 921
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 185,
+    "htmlLine": 922
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 186,
+    "htmlLine": 923
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 187,
+    "htmlLine": 924
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 188,
+    "htmlLine": 925
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 189,
+    "htmlLine": 926
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 190,
+    "htmlLine": 927
+  },
+  {
+    "name": "(ForOfStatement)",
+    "kind": "ForOfStatement",
+    "jsLine": 191,
+    "htmlLine": 928
+  },
+  {
+    "name": "(ForOfStatement)",
+    "kind": "ForOfStatement",
+    "jsLine": 192,
+    "htmlLine": 929
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 193,
+    "htmlLine": 930
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 194,
+    "htmlLine": 931
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 195,
+    "htmlLine": 932
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 196,
+    "htmlLine": 933
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 197,
+    "htmlLine": 934
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 198,
+    "htmlLine": 935
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 199,
+    "htmlLine": 936
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 200,
+    "htmlLine": 937
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 201,
+    "htmlLine": 938
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 202,
+    "htmlLine": 939
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 203,
+    "htmlLine": 940
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 204,
+    "htmlLine": 941
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 205,
+    "htmlLine": 942
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 206,
+    "htmlLine": 943
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 207,
+    "htmlLine": 944
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 208,
+    "htmlLine": 945
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 209,
+    "htmlLine": 946
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 210,
+    "htmlLine": 947
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 211,
+    "htmlLine": 948
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 212,
+    "htmlLine": 949
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 213,
+    "htmlLine": 950
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 214,
+    "htmlLine": 951
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 215,
+    "htmlLine": 952
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 216,
+    "htmlLine": 953
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 217,
+    "htmlLine": 954
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 218,
+    "htmlLine": 955
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 219,
+    "htmlLine": 956
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 220,
+    "htmlLine": 957
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 221,
+    "htmlLine": 958
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 222,
+    "htmlLine": 959
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 223,
+    "htmlLine": 960
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 224,
+    "htmlLine": 961
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 225,
+    "htmlLine": 962
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 226,
+    "htmlLine": 963
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 227,
+    "htmlLine": 964
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 228,
+    "htmlLine": 965
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 229,
+    "htmlLine": 966
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 230,
+    "htmlLine": 967
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 231,
+    "htmlLine": 968
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 232,
+    "htmlLine": 969
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 233,
+    "htmlLine": 970
+  },
+  {
+    "name": "(ForOfStatement)",
+    "kind": "ForOfStatement",
+    "jsLine": 234,
+    "htmlLine": 971
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 235,
+    "htmlLine": 972
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 236,
+    "htmlLine": 973
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 237,
+    "htmlLine": 974
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 238,
+    "htmlLine": 975
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 239,
+    "htmlLine": 976
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 239,
+    "htmlLine": 976
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 240,
+    "htmlLine": 977
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 240,
+    "htmlLine": 977
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 241,
+    "htmlLine": 978
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 242,
+    "htmlLine": 979
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 250,
+    "htmlLine": 987
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 251,
+    "htmlLine": 988
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 252,
+    "htmlLine": 989
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 253,
+    "htmlLine": 990
+  },
+  {
+    "name": "(expression)",
+    "kind": "expression",
+    "jsLine": 254,
+    "htmlLine": 991
+  },
+  {
+    "name": "renderDisciplineInputs",
+    "kind": "function",
+    "jsLine": 255,
+    "htmlLine": 992
+  },
+  {
+    "name": "clampInt",
+    "kind": "function",
+    "jsLine": 256,
+    "htmlLine": 993
+  },
+  {
+    "name": "applyTheme",
+    "kind": "function",
+    "jsLine": 257,
+    "htmlLine": 994
+  },
+  {
+    "name": "createSetupSection",
+    "kind": "function",
+    "jsLine": 258,
+    "htmlLine": 995
+  },
+  {
+    "name": "findDirectChildBlock",
+    "kind": "function",
+    "jsLine": 276,
+    "htmlLine": 1013
+  },
+  {
+    "name": "extractSetupBlocks",
+    "kind": "function",
+    "jsLine": 283,
+    "htmlLine": 1020
+  },
+  {
+    "name": "applySetupTooltips",
+    "kind": "function",
+    "jsLine": 294,
+    "htmlLine": 1031
+  },
+  {
+    "name": "initGenerationPanelQol",
+    "kind": "function",
+    "jsLine": 328,
+    "htmlLine": 1065
+  },
+  {
+    "name": "clampSidebarWidth",
+    "kind": "function",
+    "jsLine": 387,
+    "htmlLine": 1124
+  },
+  {
+    "name": "applySidebarWidth",
+    "kind": "function",
+    "jsLine": 394,
+    "htmlLine": 1131
+  },
+  {
+    "name": "initSidebarResizer",
+    "kind": "function",
+    "jsLine": 400,
+    "htmlLine": 1137
+  },
+  {
+    "name": "clampGenerationWorkbenchLeftWidth",
+    "kind": "function",
+    "jsLine": 443,
+    "htmlLine": 1180
+  },
+  {
+    "name": "applyGenerationWorkbenchLeftWidth",
+    "kind": "function",
+    "jsLine": 452,
+    "htmlLine": 1189
+  },
+  {
+    "name": "initGenerationWorkbenchResizer",
+    "kind": "function",
+    "jsLine": 460,
+    "htmlLine": 1197
+  },
+  {
+    "name": "initWorkbenchJumpNav",
+    "kind": "function",
+    "jsLine": 501,
+    "htmlLine": 1238
+  },
+  {
+    "name": "getCurrentProbeSpecs",
+    "kind": "function",
+    "jsLine": 524,
+    "htmlLine": 1261
+  },
+  {
+    "name": "addProbeSpec",
+    "kind": "function",
+    "jsLine": 525,
+    "htmlLine": 1262
+  },
+  {
+    "name": "onProbeActionClick",
+    "kind": "function",
+    "jsLine": 526,
+    "htmlLine": 1263
+  },
+  {
+    "name": "getNodeFilterState",
+    "kind": "function",
+    "jsLine": 527,
+    "htmlLine": 1264
+  },
+  {
+    "name": "getNodeGroundingStatus",
+    "kind": "function",
+    "jsLine": 528,
+    "htmlLine": 1265
+  },
+  {
+    "name": "termGroundingOutcomeLabel",
+    "kind": "function",
+    "jsLine": 529,
+    "htmlLine": 1266
+  },
+  {
+    "name": "termGroundingOutcomeColor",
+    "kind": "function",
+    "jsLine": 530,
+    "htmlLine": 1267
+  },
+  {
+    "name": "isLocalDefinedTerm",
+    "kind": "function",
+    "jsLine": 531,
+    "htmlLine": 1268
+  },
+  {
+    "name": "isWolframGroundingCitation",
+    "kind": "function",
+    "jsLine": 538,
+    "htmlLine": 1275
+  },
+  {
+    "name": "getWolframCitationsForTerm",
+    "kind": "function",
+    "jsLine": 550,
+    "htmlLine": 1287
+  },
+  {
+    "name": "getResearchCitationsForTerm",
+    "kind": "function",
+    "jsLine": 554,
+    "htmlLine": 1291
+  },
+  {
+    "name": "getLLMProbeCount",
+    "kind": "function",
+    "jsLine": 558,
+    "htmlLine": 1295
+  },
+  {
+    "name": "computeTermRelevanceScore",
+    "kind": "function",
+    "jsLine": 562,
+    "htmlLine": 1299
+  },
+  {
+    "name": "computeTermEvidenceSupportScore",
+    "kind": "function",
+    "jsLine": 571,
+    "htmlLine": 1308
+  },
+  {
+    "name": "termScoreBand",
+    "kind": "function",
+    "jsLine": 582,
+    "htmlLine": 1319
+  },
+  {
+    "name": "getTermGroundingReasonHints",
+    "kind": "function",
+    "jsLine": 589,
+    "htmlLine": 1326
+  },
+  {
+    "name": "deriveWaGroundingStatusKey",
+    "kind": "function",
+    "jsLine": 604,
+    "htmlLine": 1341
+  },
+  {
+    "name": "deriveTermStateBadge",
+    "kind": "function",
+    "jsLine": 619,
+    "htmlLine": 1356
+  },
+  {
+    "name": "getTermSignalModel",
+    "kind": "function",
+    "jsLine": 628,
+    "htmlLine": 1365
+  },
+  {
+    "name": "refreshTermSignalFields",
+    "kind": "function",
+    "jsLine": 647,
+    "htmlLine": 1384
+  },
+  {
+    "name": "getTermGroundingOutcome",
+    "kind": "function",
+    "jsLine": 658,
+    "htmlLine": 1395
+  },
+  {
+    "name": "getNodeGroundingConfidenceScore",
+    "kind": "function",
+    "jsLine": 679,
+    "htmlLine": 1416
+  },
+  {
+    "name": "fuzzyLabelMatch",
+    "kind": "function",
+    "jsLine": 680,
+    "htmlLine": 1417
+  },
+  {
+    "name": "matchesNodeFilters",
+    "kind": "function",
+    "jsLine": 681,
+    "htmlLine": 1418
+  },
+  {
+    "name": "sortNodes",
+    "kind": "function",
+    "jsLine": 682,
+    "htmlLine": 1419
+  },
+  {
+    "name": "getVisibleNodeTerms",
+    "kind": "function",
+    "jsLine": 683,
+    "htmlLine": 1420
+  },
+  {
+    "name": "showTermDetail",
+    "kind": "function",
+    "jsLine": 684,
+    "htmlLine": 1421
+  },
+  {
+    "name": "renderNodeFilterResults",
+    "kind": "function",
+    "jsLine": 710,
+    "htmlLine": 1447
+  },
+  {
+    "name": "clearNodeFilters",
+    "kind": "function",
+    "jsLine": 735,
+    "htmlLine": 1472
+  },
+  {
+    "name": "initNodeFilterControls",
+    "kind": "function",
+    "jsLine": 736,
+    "htmlLine": 1473
+  },
+  {
+    "name": "renderGroundingLegend",
+    "kind": "function",
+    "jsLine": 737,
+    "htmlLine": 1474
+  },
+  {
+    "name": "updateZenModeUI",
+    "kind": "function",
+    "jsLine": 738,
+    "htmlLine": 1475
+  },
+  {
+    "name": "toggleZenMode",
+    "kind": "function",
+    "jsLine": 739,
+    "htmlLine": 1476
+  },
+  {
+    "name": "tabNameForButton",
+    "kind": "function",
+    "jsLine": 740,
+    "htmlLine": 1477
+  },
+  {
+    "name": "buttonForTabName",
+    "kind": "function",
+    "jsLine": 741,
+    "htmlLine": 1478
+  },
+  {
+    "name": "setPanelVisibility",
+    "kind": "function",
+    "jsLine": 742,
+    "htmlLine": 1479
+  },
+  {
+    "name": "updateTabState",
+    "kind": "function",
+    "jsLine": 743,
+    "htmlLine": 1480
+  },
+  {
+    "name": "focusTabTarget",
+    "kind": "function",
+    "jsLine": 744,
+    "htmlLine": 1481
+  },
+  {
+    "name": "moveTabFocus",
+    "kind": "function",
+    "jsLine": 745,
+    "htmlLine": 1482
+  },
+  {
+    "name": "initTabAccessibility",
+    "kind": "function",
+    "jsLine": 746,
+    "htmlLine": 1483
+  },
+  {
+    "name": "switchMainTab",
+    "kind": "function",
+    "jsLine": 747,
+    "htmlLine": 1484
+  },
+  {
+    "name": "isElementVisibleForFocus",
+    "kind": "function",
+    "jsLine": 748,
+    "htmlLine": 1485
+  },
+  {
+    "name": "getFocusableElementsInModal",
+    "kind": "function",
+    "jsLine": 749,
+    "htmlLine": 1486
+  },
+  {
+    "name": "getOpenModals",
+    "kind": "function",
+    "jsLine": 750,
+    "htmlLine": 1487
+  },
+  {
+    "name": "getActiveOpenModal",
+    "kind": "function",
+    "jsLine": 751,
+    "htmlLine": 1488
+  },
+  {
+    "name": "focusModalEntry",
+    "kind": "function",
+    "jsLine": 752,
+    "htmlLine": 1489
+  },
+  {
+    "name": "handleModalKeyboard",
+    "kind": "function",
+    "jsLine": 753,
+    "htmlLine": 1490
+  },
+  {
+    "name": "openModal",
+    "kind": "function",
+    "jsLine": 777,
+    "htmlLine": 1514
+  },
+  {
+    "name": "closeModal",
+    "kind": "function",
+    "jsLine": 787,
+    "htmlLine": 1524
+  },
+  {
+    "name": "ambiguityQueueKey",
+    "kind": "function",
+    "jsLine": 797,
+    "htmlLine": 1534
+  },
+  {
+    "name": "getAmbiguityReasonsFromDiagnostic",
+    "kind": "function",
+    "jsLine": 798,
+    "htmlLine": 1535
+  },
+  {
+    "name": "normalizeAmbiguityQueueItem",
+    "kind": "function",
+    "jsLine": 799,
+    "htmlLine": 1536
+  },
+  {
+    "name": "normalizeAmbiguitySeverity",
+    "kind": "function",
+    "jsLine": 800,
+    "htmlLine": 1537
+  },
+  {
+    "name": "computeAmbiguityPriority",
+    "kind": "function",
+    "jsLine": 824,
+    "htmlLine": 1561
+  },
+  {
+    "name": "sortAmbiguityQueueInPlace",
+    "kind": "function",
+    "jsLine": 833,
+    "htmlLine": 1570
+  },
+  {
+    "name": "getPendingAmbiguityCount",
+    "kind": "function",
+    "jsLine": 834,
+    "htmlLine": 1571
+  },
+  {
+    "name": "updateAmbiguityQueueUIState",
+    "kind": "function",
+    "jsLine": 835,
+    "htmlLine": 1572
+  },
+  {
+    "name": "upsertAmbiguityQueueItem",
+    "kind": "function",
+    "jsLine": 836,
+    "htmlLine": 1573
+  },
+  {
+    "name": "upsertAmbiguityFromDiagnostic",
+    "kind": "function",
+    "jsLine": 837,
+    "htmlLine": 1574
+  },
+  {
+    "name": "rebuildAmbiguityQueueFromDiagnostics",
+    "kind": "function",
+    "jsLine": 838,
+    "htmlLine": 1575
+  },
+  {
+    "name": "formatAmbiguityReason",
+    "kind": "function",
+    "jsLine": 839,
+    "htmlLine": 1576
+  },
+  {
+    "name": "findTermForAmbiguityItem",
+    "kind": "function",
+    "jsLine": 840,
+    "htmlLine": 1577
+  },
+  {
+    "name": "upsertCitationEntry",
+    "kind": "function",
+    "jsLine": 841,
+    "htmlLine": 1578
+  },
+  {
+    "name": "applyAmbiguityDecisionToTerm",
+    "kind": "function",
+    "jsLine": 842,
+    "htmlLine": 1579
+  },
+  {
+    "name": "buildAmbiguityRetryTemplates",
+    "kind": "function",
+    "jsLine": 870,
+    "htmlLine": 1607
+  },
+  {
+    "name": "getAmbiguityRetryTemplate",
+    "kind": "function",
+    "jsLine": 891,
+    "htmlLine": 1628
+  },
+  {
+    "name": "retryAmbiguityWithQuery",
+    "kind": "async function",
+    "jsLine": 895,
+    "htmlLine": 1632
+  },
+  {
+    "name": "retryAmbiguityWithTemplate",
+    "kind": "async function",
+    "jsLine": 935,
+    "htmlLine": 1672
+  },
+  {
+    "name": "retryAmbiguityWithCustomQuery",
+    "kind": "async function",
+    "jsLine": 940,
+    "htmlLine": 1677
+  },
+  {
+    "name": "renderAmbiguityQueueModal",
+    "kind": "function",
+    "jsLine": 946,
+    "htmlLine": 1683
+  },
+  {
+    "name": "showAmbiguityQueueModal",
+    "kind": "function",
+    "jsLine": 975,
+    "htmlLine": 1712
+  },
+  {
+    "name": "onAmbiguityQueueClick",
+    "kind": "async function",
+    "jsLine": 976,
+    "htmlLine": 1713
+  },
+  {
+    "name": "showRawNodeList",
+    "kind": "function",
+    "jsLine": 1014,
+    "htmlLine": 1751
+  },
+  {
+    "name": "generateDeepReport",
+    "kind": "async function",
+    "jsLine": 1015,
+    "htmlLine": 1752
+  },
+  {
+    "name": "copyReportText",
+    "kind": "async function",
+    "jsLine": 1016,
+    "htmlLine": 1753
+  },
+  {
+    "name": "buildWolframCitationContext",
+    "kind": "function",
+    "jsLine": 1017,
+    "htmlLine": 1754
+  },
+  {
+    "name": "formatWolframGroundingStatusLabel",
+    "kind": "function",
+    "jsLine": 1025,
+    "htmlLine": 1762
+  },
+  {
+    "name": "detectCitationProvider",
+    "kind": "function",
+    "jsLine": 1036,
+    "htmlLine": 1773
+  },
+  {
+    "name": "getEvidenceFilterState",
+    "kind": "function",
+    "jsLine": 1044,
+    "htmlLine": 1781
+  },
+  {
+    "name": "setEvidenceFilterState",
+    "kind": "function",
+    "jsLine": 1048,
+    "htmlLine": 1785
+  },
+  {
+    "name": "citationSupportsTerm",
+    "kind": "function",
+    "jsLine": 1052,
+    "htmlLine": 1789
+  },
+  {
+    "name": "citationMatchesEvidenceFilters",
+    "kind": "function",
+    "jsLine": 1059,
+    "htmlLine": 1796
+  },
+  {
+    "name": "createEvidenceTag",
+    "kind": "function",
+    "jsLine": 1067,
+    "htmlLine": 1804
+  },
+  {
+    "name": "getCitationSupportingTerms",
+    "kind": "function",
+    "jsLine": 1073,
+    "htmlLine": 1810
+  },
+  {
+    "name": "buildEvidenceSnippetText",
+    "kind": "function",
+    "jsLine": 1080,
+    "htmlLine": 1817
+  },
+  {
+    "name": "renderEvidenceCard",
+    "kind": "function",
+    "jsLine": 1090,
+    "htmlLine": 1827
+  },
+  {
+    "name": "renderEvidenceCardsInto",
+    "kind": "function",
+    "jsLine": 1154,
+    "htmlLine": 1891
+  },
+  {
+    "name": "renderEvidenceModalContent",
+    "kind": "function",
+    "jsLine": 1166,
+    "htmlLine": 1903
+  },
+  {
+    "name": "showEvidenceModal",
+    "kind": "function",
+    "jsLine": 1207,
+    "htmlLine": 1944
+  },
+  {
+    "name": "generateClaimsLedger",
+    "kind": "async function",
+    "jsLine": 1213,
+    "htmlLine": 1950
+  },
+  {
+    "name": "formatClaimsLedger",
+    "kind": "function",
+    "jsLine": 1214,
+    "htmlLine": 1951
+  },
+  {
+    "name": "copyClaimsText",
+    "kind": "async function",
+    "jsLine": 1215,
+    "htmlLine": 1952
+  },
+  {
+    "name": "generateOutlineFromMap",
+    "kind": "async function",
+    "jsLine": 1216,
+    "htmlLine": 1953
+  },
+  {
+    "name": "copyOutlineText",
+    "kind": "async function",
+    "jsLine": 1217,
+    "htmlLine": 1954
+  },
+  {
+    "name": "runRedTeamPass",
+    "kind": "async function",
+    "jsLine": 1218,
+    "htmlLine": 1955
+  },
+  {
+    "name": "runReplication",
+    "kind": "async function",
+    "jsLine": 1219,
+    "htmlLine": 1956
+  },
+  {
+    "name": "copyCritiqueText",
+    "kind": "async function",
+    "jsLine": 1240,
+    "htmlLine": 1977
+  },
+  {
+    "name": "exportMarkdownReport",
+    "kind": "async function",
+    "jsLine": 1241,
+    "htmlLine": 1978
+  },
+  {
+    "name": "exportFigure",
+    "kind": "async function",
+    "jsLine": 1242,
+    "htmlLine": 1979
+  },
+  {
+    "name": "downloadTextFile",
+    "kind": "function",
+    "jsLine": 1243,
+    "htmlLine": 1980
+  },
+  {
+    "name": "rerunSynthesis",
+    "kind": "async function",
+    "jsLine": 1244,
+    "htmlLine": 1981
+  },
+  {
+    "name": "rerunProbe",
+    "kind": "async function",
+    "jsLine": 1286,
+    "htmlLine": 2023
+  },
+  {
+    "name": "exportRunToFile",
+    "kind": "function",
+    "jsLine": 1350,
+    "htmlLine": 2087
+  },
+  {
+    "name": "importRunFromFile",
+    "kind": "async function",
+    "jsLine": 1351,
+    "htmlLine": 2088
+  },
+  {
+    "name": "hydrateRunFromImport",
+    "kind": "function",
+    "jsLine": 1352,
+    "htmlLine": 2089
+  },
+  {
+    "name": "setSelectValuePreserveOption",
+    "kind": "function",
+    "jsLine": 1452,
+    "htmlLine": 2189
+  },
+  {
+    "name": "getPromptPreviewDisciplineNames",
+    "kind": "function",
+    "jsLine": 1453,
+    "htmlLine": 2190
+  },
+  {
+    "name": "syncPromptPreviewDiscOptions",
+    "kind": "function",
+    "jsLine": 1459,
+    "htmlLine": 2196
+  },
+  {
+    "name": "getPromptKindMeta",
+    "kind": "function",
+    "jsLine": 1474,
+    "htmlLine": 2211
+  },
+  {
+    "name": "summarizePromptOverrides",
+    "kind": "function",
+    "jsLine": 1478,
+    "htmlLine": 2215
+  },
+  {
+    "name": "formatPromptOverrideDisplay",
+    "kind": "function",
+    "jsLine": 1491,
+    "htmlLine": 2228
+  },
+  {
+    "name": "updatePromptKindHelp",
+    "kind": "function",
+    "jsLine": 1499,
+    "htmlLine": 2236
+  },
+  {
+    "name": "updatePromptOverrideSummary",
+    "kind": "function",
+    "jsLine": 1507,
+    "htmlLine": 2244
+  },
+  {
+    "name": "collectRunReadinessChecks",
+    "kind": "function",
+    "jsLine": 1522,
+    "htmlLine": 2259
+  },
+  {
+    "name": "updateRunReadinessSummary",
+    "kind": "function",
+    "jsLine": 1549,
+    "htmlLine": 2286
+  },
+  {
+    "name": "normalizePromptOverrideKind",
+    "kind": "function",
+    "jsLine": 1570,
+    "htmlLine": 2307
+  },
+  {
+    "name": "normalizePromptOverrideDisciplineKey",
+    "kind": "function",
+    "jsLine": 1571,
+    "htmlLine": 2308
+  },
+  {
+    "name": "buildPromptOverrideKey",
+    "kind": "function",
+    "jsLine": 1572,
+    "htmlLine": 2309
+  },
+  {
+    "name": "getPromptOverride",
+    "kind": "function",
+    "jsLine": 1573,
+    "htmlLine": 2310
+  },
+  {
+    "name": "setPromptOverride",
+    "kind": "function",
+    "jsLine": 1574,
+    "htmlLine": 2311
+  },
+  {
+    "name": "clearPromptOverride",
+    "kind": "function",
+    "jsLine": 1575,
+    "htmlLine": 2312
+  },
+  {
+    "name": "getPromptTemplateVars",
+    "kind": "function",
+    "jsLine": 1576,
+    "htmlLine": 2313
+  },
+  {
+    "name": "interpolatePromptTemplate",
+    "kind": "function",
+    "jsLine": 1577,
+    "htmlLine": 2314
+  },
+  {
+    "name": "resolvePromptBundleWithOverrides",
+    "kind": "function",
+    "jsLine": 1578,
+    "htmlLine": 2315
+  },
+  {
+    "name": "buildDefaultPromptBundle",
+    "kind": "function",
+    "jsLine": 1579,
+    "htmlLine": 2316
+  },
+  {
+    "name": "getEffectivePromptBundle",
+    "kind": "function",
+    "jsLine": 1580,
+    "htmlLine": 2317
+  },
+  {
+    "name": "buildLensGenerationPrompt",
+    "kind": "function",
+    "jsLine": 1581,
+    "htmlLine": 2318
+  },
+  {
+    "name": "buildPromptPreviewArtifactPrompts",
+    "kind": "function",
+    "jsLine": 1582,
+    "htmlLine": 2319
+  },
+  {
+    "name": "buildPromptParameterNarrative",
+    "kind": "function",
+    "jsLine": 1583,
+    "htmlLine": 2320
+  },
+  {
+    "name": "refreshPromptPreview",
+    "kind": "function",
+    "jsLine": 1601,
+    "htmlLine": 2338
+  },
+  {
+    "name": "applyPromptPreviewOverride",
+    "kind": "function",
+    "jsLine": 1636,
+    "htmlLine": 2373
+  },
+  {
+    "name": "resetPromptPreviewOverride",
+    "kind": "function",
+    "jsLine": 1650,
+    "htmlLine": 2387
+  },
+  {
+    "name": "toggleApiKey",
+    "kind": "function",
+    "jsLine": 1661,
+    "htmlLine": 2398
+  },
+  {
+    "name": "clearApiKey",
+    "kind": "function",
+    "jsLine": 1662,
+    "htmlLine": 2399
+  },
+  {
+    "name": "generateOrthogonalLenses",
+    "kind": "async function",
+    "jsLine": 1663,
+    "htmlLine": 2400
+  },
+  {
+    "name": "syncApiModeNote",
+    "kind": "function",
+    "jsLine": 1664,
+    "htmlLine": 2401
+  },
+  {
+    "name": "syncCAOverrideUI",
+    "kind": "function",
+    "jsLine": 1665,
+    "htmlLine": 2402
+  },
+  {
+    "name": "showToast",
+    "kind": "function",
+    "jsLine": 1670,
+    "htmlLine": 2407
+  },
+  {
+    "name": "initArtifactStore",
+    "kind": "function",
+    "jsLine": 1671,
+    "htmlLine": 2408
+  },
+  {
+    "name": "updateArtifactProgress",
+    "kind": "function",
+    "jsLine": 1672,
+    "htmlLine": 2409
+  },
+  {
+    "name": "getRunFingerprint",
+    "kind": "function",
+    "jsLine": 1673,
+    "htmlLine": 2410
+  },
+  {
+    "name": "setArtifactDrawer",
+    "kind": "function",
+    "jsLine": 1674,
+    "htmlLine": 2411
+  },
+  {
+    "name": "toggleArtifactDrawer",
+    "kind": "function",
+    "jsLine": 1675,
+    "htmlLine": 2412
+  },
+  {
+    "name": "setExportMenu",
+    "kind": "function",
+    "jsLine": 1676,
+    "htmlLine": 2413
+  },
+  {
+    "name": "toggleExportMenu",
+    "kind": "function",
+    "jsLine": 1677,
+    "htmlLine": 2414
+  },
+  {
+    "name": "artifactStatusBadge",
+    "kind": "function",
+    "jsLine": 1678,
+    "htmlLine": 2415
+  },
+  {
+    "name": "markArtifactsStale",
+    "kind": "function",
+    "jsLine": 1679,
+    "htmlLine": 2416
+  },
+  {
+    "name": "setArtifactReady",
+    "kind": "function",
+    "jsLine": 1680,
+    "htmlLine": 2417
+  },
+  {
+    "name": "updateDerivedArtifactsReady",
+    "kind": "function",
+    "jsLine": 1681,
+    "htmlLine": 2418
+  },
+  {
+    "name": "syncArtifactStoreFromRun",
+    "kind": "function",
+    "jsLine": 1682,
+    "htmlLine": 2419
+  },
+  {
+    "name": "refreshArtifactList",
+    "kind": "function",
+    "jsLine": 1683,
+    "htmlLine": 2420
+  },
+  {
+    "name": "setArtifactBusy",
+    "kind": "function",
+    "jsLine": 1684,
+    "htmlLine": 2421
+  },
+  {
+    "name": "withArtifactTask",
+    "kind": "async function",
+    "jsLine": 1685,
+    "htmlLine": 2422
+  },
+  {
+    "name": "buildRawTermsArtifact",
+    "kind": "function",
+    "jsLine": 1686,
+    "htmlLine": 2423
+  },
+  {
+    "name": "buildEvidenceArtifact",
+    "kind": "function",
+    "jsLine": 1687,
+    "htmlLine": 2424
+  },
+  {
+    "name": "waGraphStatusLabel",
+    "kind": "function",
+    "jsLine": 1693,
+    "htmlLine": 2430
+  },
+  {
+    "name": "waGraphStatusColor",
+    "kind": "function",
+    "jsLine": 1694,
+    "htmlLine": 2431
+  },
+  {
+    "name": "hexToRgbaColor",
+    "kind": "function",
+    "jsLine": 1695,
+    "htmlLine": 2432
+  },
+  {
+    "name": "normalizeWAGraphLabel",
+    "kind": "function",
+    "jsLine": 1696,
+    "htmlLine": 2433
+  },
+  {
+    "name": "resolveWAGraphOutcomeBucket",
+    "kind": "function",
+    "jsLine": 1697,
+    "htmlLine": 2434
+  },
+  {
+    "name": "buildWAGroundingGraphData",
+    "kind": "function",
+    "jsLine": 1708,
+    "htmlLine": 2445
+  },
+  {
+    "name": "buildWAGroundingGraphText",
+    "kind": "function",
+    "jsLine": 1791,
+    "htmlLine": 2528
+  },
+  {
+    "name": "buildWAGroundingGraphHTML",
+    "kind": "function",
+    "jsLine": 1814,
+    "htmlLine": 2551
+  },
+  {
+    "name": "buildWAGroundingGraphArtifact",
+    "kind": "function",
+    "jsLine": 1822,
+    "htmlLine": 2559
+  },
+  {
+    "name": "escapeHtml",
+    "kind": "function",
+    "jsLine": 1823,
+    "htmlLine": 2560
+  },
+  {
+    "name": "openArtifactModal",
+    "kind": "function",
+    "jsLine": 1824,
+    "htmlLine": 2561
+  },
+  {
+    "name": "renderArtifactModalEnhancements",
+    "kind": "function",
+    "jsLine": 1825,
+    "htmlLine": 2562
+  },
+  {
+    "name": "renderWAGroundingGraphSankey",
+    "kind": "function",
+    "jsLine": 1826,
+    "htmlLine": 2563
+  },
+  {
+    "name": "artifactCanOpenWithoutRegenerate",
+    "kind": "function",
+    "jsLine": 1854,
+    "htmlLine": 2591
+  },
+  {
+    "name": "openArtifact",
+    "kind": "async function",
+    "jsLine": 1855,
+    "htmlLine": 2592
+  },
+  {
+    "name": "regenerateArtifact",
+    "kind": "async function",
+    "jsLine": 1856,
+    "htmlLine": 2593
+  },
+  {
+    "name": "artifactToCopyText",
+    "kind": "function",
+    "jsLine": 1857,
+    "htmlLine": 2594
+  },
+  {
+    "name": "copyArtifact",
+    "kind": "async function",
+    "jsLine": 1858,
+    "htmlLine": 2595
+  },
+  {
+    "name": "downloadBlob",
+    "kind": "function",
+    "jsLine": 1859,
+    "htmlLine": 2596
+  },
+  {
+    "name": "artifactFilenameBase",
+    "kind": "function",
+    "jsLine": 1860,
+    "htmlLine": 2597
+  },
+  {
+    "name": "downloadArtifact",
+    "kind": "async function",
+    "jsLine": 1861,
+    "htmlLine": 2598
+  },
+  {
+    "name": "buildWAGraphReadyNodeExport",
+    "kind": "function",
+    "jsLine": 1862,
+    "htmlLine": 2599
+  },
+  {
+    "name": "buildWAGraphReadyEdgeExport",
+    "kind": "function",
+    "jsLine": 1881,
+    "htmlLine": 2618
+  },
+  {
+    "name": "buildWAGraphReadyWLSource",
+    "kind": "function",
+    "jsLine": 1911,
+    "htmlLine": 2648
+  },
+  {
+    "name": "buildWAGraphReadyExportData",
+    "kind": "function",
+    "jsLine": 1956,
+    "htmlLine": 2693
+  },
+  {
+    "name": "exportWAGraphReadyArtifacts",
+    "kind": "async function",
+    "jsLine": 1969,
+    "htmlLine": 2706
+  },
+  {
+    "name": "copyActiveArtifact",
+    "kind": "async function",
+    "jsLine": 1983,
+    "htmlLine": 2720
+  },
+  {
+    "name": "downloadActiveArtifact",
+    "kind": "async function",
+    "jsLine": 1984,
+    "htmlLine": 2721
+  },
+  {
+    "name": "generateDeepReportArtifact",
+    "kind": "async function",
+    "jsLine": 1985,
+    "htmlLine": 2722
+  },
+  {
+    "name": "generateClaimsArtifact",
+    "kind": "async function",
+    "jsLine": 1986,
+    "htmlLine": 2723
+  },
+  {
+    "name": "generateOutlineArtifact",
+    "kind": "async function",
+    "jsLine": 1987,
+    "htmlLine": 2724
+  },
+  {
+    "name": "generateRedTeamArtifact",
+    "kind": "async function",
+    "jsLine": 1988,
+    "htmlLine": 2725
+  },
+  {
+    "name": "buildTermsForReplicationRun",
+    "kind": "function",
+    "jsLine": 1989,
+    "htmlLine": 2726
+  },
+  {
+    "name": "buildReplicationCitationsFromProbeResults",
+    "kind": "function",
+    "jsLine": 2019,
+    "htmlLine": 2756
+  },
+  {
+    "name": "modeValue",
+    "kind": "function",
+    "jsLine": 2045,
+    "htmlLine": 2782
+  },
+  {
+    "name": "extractWolframClassNumber",
+    "kind": "function",
+    "jsLine": 2057,
+    "htmlLine": 2794
+  },
+  {
+    "name": "formatWolframClassForReplication",
+    "kind": "function",
+    "jsLine": 2064,
+    "htmlLine": 2801
+  },
+  {
+    "name": "summarizeReplicationCAFingerprints",
+    "kind": "function",
+    "jsLine": 2070,
+    "htmlLine": 2807
+  },
+  {
+    "name": "formatReplicationCAFingerprintSection",
+    "kind": "function",
+    "jsLine": 2099,
+    "htmlLine": 2836
+  },
+  {
+    "name": "deriveReplicationCAFingerprint",
+    "kind": "async function",
+    "jsLine": 2138,
+    "htmlLine": 2875
+  },
+  {
+    "name": "generateReplicationArtifact",
+    "kind": "async function",
+    "jsLine": 2182,
+    "htmlLine": 2919
+  },
+  {
+    "name": "generateMarkdownArtifact",
+    "kind": "async function",
+    "jsLine": 2264,
+    "htmlLine": 3001
+  },
+  {
+    "name": "exportArtifactBundle",
+    "kind": "async function",
+    "jsLine": 2265,
+    "htmlLine": 3002
+  },
+  {
+    "name": "hashString",
+    "kind": "function",
+    "jsLine": 2310,
+    "htmlLine": 3047
+  },
+  {
+    "name": "GROUNDING_MODE_DEFAULTS",
+    "kind": "const",
+    "jsLine": 2311,
+    "htmlLine": 3048
+  },
+  {
+    "name": "NAME_LIKE_METADATA_ALIGNMENT_MIN",
+    "kind": "const",
+    "jsLine": 2316,
+    "htmlLine": 3053
+  },
+  {
+    "name": "NAME_LIKE_OVERRIDE_ALIGNMENT_MIN",
+    "kind": "const",
+    "jsLine": 2317,
+    "htmlLine": 3054
+  },
+  {
+    "name": "NAME_LIKE_OVERRIDE_QUALITY_MIN",
+    "kind": "const",
+    "jsLine": 2318,
+    "htmlLine": 3055
+  },
+  {
+    "name": "normalizeGroundingAggressiveness",
+    "kind": "function",
+    "jsLine": 2319,
+    "htmlLine": 3056
+  },
+  {
+    "name": "clampGroundingSnippetScore",
+    "kind": "function",
+    "jsLine": 2320,
+    "htmlLine": 3057
+  },
+  {
+    "name": "parseGroundingSnippetScoreInput",
+    "kind": "function",
+    "jsLine": 2321,
+    "htmlLine": 3058
+  },
+  {
+    "name": "resolveGroundingPolicy",
+    "kind": "function",
+    "jsLine": 2322,
+    "htmlLine": 3059
+  },
+  {
+    "name": "evaluateGroundingApplication",
+    "kind": "function",
+    "jsLine": 2336,
+    "htmlLine": 3073
+  },
+  {
+    "name": "isAbstractConceptPhrase",
+    "kind": "function",
+    "jsLine": 2337,
+    "htmlLine": 3074
+  },
+  {
+    "name": "isAbstractNameCollisionTarget",
+    "kind": "function",
+    "jsLine": 2350,
+    "htmlLine": 3087
+  },
+  {
+    "name": "looksNameLikeInterpretation",
+    "kind": "function",
+    "jsLine": 2360,
+    "htmlLine": 3097
+  },
+  {
+    "name": "resolveScoringComponent",
+    "kind": "function",
+    "jsLine": 2381,
+    "htmlLine": 3118
+  },
+  {
+    "name": "classifyWolframResolvedCategory",
+    "kind": "function",
+    "jsLine": 2388,
+    "htmlLine": 3125
+  },
+  {
+    "name": "evaluateGroundingCategoryMismatch",
+    "kind": "function",
+    "jsLine": 2400,
+    "htmlLine": 3137
+  },
+  {
+    "name": "labelContentTokens",
+    "kind": "function",
+    "jsLine": 2426,
+    "htmlLine": 3163
+  },
+  {
+    "name": "isTitleCaseCompositeLabel",
+    "kind": "function",
+    "jsLine": 2427,
+    "htmlLine": 3164
+  },
+  {
+    "name": "isCompositeSyntheticTermLabel",
+    "kind": "function",
+    "jsLine": 2428,
+    "htmlLine": 3165
+  },
+  {
+    "name": "hasExactConceptPhraseMatch",
+    "kind": "function",
+    "jsLine": 2429,
+    "htmlLine": 3166
+  },
+  {
+    "name": "hasHighAlignmentConceptMatch",
+    "kind": "function",
+    "jsLine": 2430,
+    "htmlLine": 3167
+  },
+  {
+    "name": "applySingleWordDriftGuard",
+    "kind": "function",
+    "jsLine": 2431,
+    "htmlLine": 3168
+  },
+  {
+    "name": "applyWarningAssumptionRiskGuard",
+    "kind": "function",
+    "jsLine": 2432,
+    "htmlLine": 3169
+  },
+  {
+    "name": "applyCompositeTermAppendGuard",
+    "kind": "function",
+    "jsLine": 2433,
+    "htmlLine": 3170
+  },
+  {
+    "name": "expectedCategoriesForEntityType",
+    "kind": "function",
+    "jsLine": 2434,
+    "htmlLine": 3171
+  },
+  {
+    "name": "interpretationTypeLooksUnrelated",
+    "kind": "function",
+    "jsLine": 2435,
+    "htmlLine": 3172
+  },
+  {
+    "name": "hasSuspiciousDomainMarkerMismatch",
+    "kind": "function",
+    "jsLine": 2436,
+    "htmlLine": 3173
+  },
+  {
+    "name": "evaluateSuspiciousAcceptedGrounding",
+    "kind": "function",
+    "jsLine": 2437,
+    "htmlLine": 3174
+  },
+  {
+    "name": "applyGroundingCategoryMismatchGuard",
+    "kind": "function",
+    "jsLine": 2438,
+    "htmlLine": 3175
+  },
+  {
+    "name": "parseOptionalIntInput",
+    "kind": "function",
+    "jsLine": 2450,
+    "htmlLine": 3187
+  },
+  {
+    "name": "parseOptionalInt",
+    "kind": "function",
+    "jsLine": 2459,
+    "htmlLine": 3196
+  },
+  {
+    "name": "safeConfigForRun",
+    "kind": "function",
+    "jsLine": 2462,
+    "htmlLine": 3199
+  },
+  {
+    "name": "computeRunId",
+    "kind": "function",
+    "jsLine": 2495,
+    "htmlLine": 3232
+  },
+  {
+    "name": "recordCall",
+    "kind": "function",
+    "jsLine": 2496,
+    "htmlLine": 3233
+  },
+  {
+    "name": "normalizeWolframCacheStatus",
+    "kind": "function",
+    "jsLine": 2497,
+    "htmlLine": 3234
+  },
+  {
+    "name": "recordWolframAuditEvent",
+    "kind": "function",
+    "jsLine": 2505,
+    "htmlLine": 3242
+  },
+  {
+    "name": "getQualityProfile",
+    "kind": "function",
+    "jsLine": 2538,
+    "htmlLine": 3275
+  },
+  {
+    "name": "withArtifactTokenBudget",
+    "kind": "function",
+    "jsLine": 2539,
+    "htmlLine": 3276
+  },
+  {
+    "name": "readApiConfig",
+    "kind": "function",
+    "jsLine": 2540,
+    "htmlLine": 3277
+  },
+  {
+    "name": "normalizeMode",
+    "kind": "function",
+    "jsLine": 2570,
+    "htmlLine": 3307
+  },
+  {
+    "name": "validateApiConfig",
+    "kind": "function",
+    "jsLine": 2571,
+    "htmlLine": 3308
+  },
+  {
+    "name": "sanitizePromptMadLib",
+    "kind": "function",
+    "jsLine": 2572,
+    "htmlLine": 3309
+  },
+  {
+    "name": "buildPromptMadLibNotes",
+    "kind": "function",
+    "jsLine": 2573,
+    "htmlLine": 3310
+  },
+  {
+    "name": "appendPromptMadLibBlock",
+    "kind": "function",
+    "jsLine": 2582,
+    "htmlLine": 3319
+  },
+  {
+    "name": "endpointFor",
+    "kind": "function",
+    "jsLine": 2587,
+    "htmlLine": 3324
+  },
+  {
+    "name": "providerFetch",
+    "kind": "async function",
+    "jsLine": 2588,
+    "htmlLine": 3325
+  },
+  {
+    "name": "flattenContent",
+    "kind": "function",
+    "jsLine": 2589,
+    "htmlLine": 3326
+  },
+  {
+    "name": "callLLMFull",
+    "kind": "async function",
+    "jsLine": 2590,
+    "htmlLine": 3327
+  },
+  {
+    "name": "callLLM",
+    "kind": "async function",
+    "jsLine": 2591,
+    "htmlLine": 3328
+  },
+  {
+    "name": "callLLMJSON",
+    "kind": "async function",
+    "jsLine": 2592,
+    "htmlLine": 3329
+  },
+  {
+    "name": "callEmbeddings",
+    "kind": "async function",
+    "jsLine": 2593,
+    "htmlLine": 3330
+  },
+  {
+    "name": "stripJsonCodeFences",
+    "kind": "function",
+    "jsLine": 2594,
+    "htmlLine": 3331
+  },
+  {
+    "name": "findBalancedJsonCandidates",
+    "kind": "function",
+    "jsLine": 2595,
+    "htmlLine": 3332
+  },
+  {
+    "name": "escapeNewlinesInsideJsonStrings",
+    "kind": "function",
+    "jsLine": 2596,
+    "htmlLine": 3333
+  },
+  {
+    "name": "sanitizeJsonCandidate",
+    "kind": "function",
+    "jsLine": 2597,
+    "htmlLine": 3334
+  },
+  {
+    "name": "buildJsonParseCandidates",
+    "kind": "function",
+    "jsLine": 2598,
+    "htmlLine": 3335
+  },
+  {
+    "name": "parseJsonFromModelText",
+    "kind": "function",
+    "jsLine": 2599,
+    "htmlLine": 3336
+  },
+  {
+    "name": "extractJSON",
+    "kind": "function",
+    "jsLine": 2600,
+    "htmlLine": 3337
+  },
+  {
+    "name": "extractJSONLenient",
+    "kind": "function",
+    "jsLine": 2601,
+    "htmlLine": 3338
+  },
+  {
+    "name": "repairJSONWithModel",
+    "kind": "async function",
+    "jsLine": 2602,
+    "htmlLine": 3339
+  },
+  {
+    "name": "buildProbeCompactFallbackPrompt",
+    "kind": "function",
+    "jsLine": 2603,
+    "htmlLine": 3340
+  },
+  {
+    "name": "decodeLooseJsonString",
+    "kind": "function",
+    "jsLine": 2604,
+    "htmlLine": 3341
+  },
+  {
+    "name": "extractLooseJsonFieldValues",
+    "kind": "function",
+    "jsLine": 2605,
+    "htmlLine": 3342
+  },
+  {
+    "name": "buildProbeRescueResult",
+    "kind": "function",
+    "jsLine": 2606,
+    "htmlLine": 3343
+  },
+  {
+    "name": "getProbeResultWithRecovery",
+    "kind": "async function",
+    "jsLine": 2607,
+    "htmlLine": 3344
+  },
+  {
+    "name": "buildProbeSystemPrompt",
+    "kind": "function",
+    "jsLine": 2608,
+    "htmlLine": 3345
+  },
+  {
+    "name": "buildProbeUserPrompt",
+    "kind": "function",
+    "jsLine": 2609,
+    "htmlLine": 3346
+  },
+  {
+    "name": "SOURCE_TYPE_LABELS",
+    "kind": "const",
+    "jsLine": 2619,
+    "htmlLine": 3356
+  },
+  {
+    "name": "normalizeSourceType",
+    "kind": "function",
+    "jsLine": 2632,
+    "htmlLine": 3369
+  },
+  {
+    "name": "sourceTypeLabel",
+    "kind": "function",
+    "jsLine": 2646,
+    "htmlLine": 3383
+  },
+  {
+    "name": "normalizeAliasMappingEntry",
+    "kind": "function",
+    "jsLine": 2650,
+    "htmlLine": 3387
+  },
+  {
+    "name": "normalizeCitation",
+    "kind": "function",
+    "jsLine": 2651,
+    "htmlLine": 3388
+  },
+  {
+    "name": "dedupeCasefold",
+    "kind": "function",
+    "jsLine": 2681,
+    "htmlLine": 3418
+  },
+  {
+    "name": "confidenceRank",
+    "kind": "function",
+    "jsLine": 2682,
+    "htmlLine": 3419
+  },
+  {
+    "name": "normalizeConfidenceLevel",
+    "kind": "function",
+    "jsLine": 2683,
+    "htmlLine": 3420
+  },
+  {
+    "name": "betterConfidence",
+    "kind": "function",
+    "jsLine": 2684,
+    "htmlLine": 3421
+  },
+  {
+    "name": "buildWolframEntityRef",
+    "kind": "function",
+    "jsLine": 2685,
+    "htmlLine": 3422
+  },
+  {
+    "name": "GROUNDING_ELIGIBILITY_VALUES",
+    "kind": "const",
+    "jsLine": 2686,
+    "htmlLine": 3423
+  },
+  {
+    "name": "normalizeGroundingEligibility",
+    "kind": "function",
+    "jsLine": 2687,
+    "htmlLine": 3424
+  },
+  {
+    "name": "defaultGroundingBlock",
+    "kind": "function",
+    "jsLine": 2688,
+    "htmlLine": 3425
+  },
+  {
+    "name": "normalizeGroundingStatus",
+    "kind": "function",
+    "jsLine": 2689,
+    "htmlLine": 3426
+  },
+  {
+    "name": "normalizeGroundingBlock",
+    "kind": "function",
+    "jsLine": 2690,
+    "htmlLine": 3427
+  },
+  {
+    "name": "mergeGroundingBlocks",
+    "kind": "function",
+    "jsLine": 2691,
+    "htmlLine": 3428
+  },
+  {
+    "name": "normalizeProvenanceEntry",
+    "kind": "function",
+    "jsLine": 2692,
+    "htmlLine": 3429
+  },
+  {
+    "name": "mergeDescriptionProvenance",
+    "kind": "function",
+    "jsLine": 2693,
+    "htmlLine": 3430
+  },
+  {
+    "name": "mergeDescriptionSource",
+    "kind": "function",
+    "jsLine": 2694,
+    "htmlLine": 3431
+  },
+  {
+    "name": "normalizeWolframEntityCandidate",
+    "kind": "function",
+    "jsLine": 2695,
+    "htmlLine": 3432
+  },
+  {
+    "name": "normalizeProbeTerm",
+    "kind": "function",
+    "jsLine": 2696,
+    "htmlLine": 3433
+  },
+  {
+    "name": "normalizeProbeResult",
+    "kind": "function",
+    "jsLine": 2716,
+    "htmlLine": 3453
+  },
+  {
+    "name": "wolframPublicInputUrl",
+    "kind": "function",
+    "jsLine": 2717,
+    "htmlLine": 3454
+  },
+  {
+    "name": "sanitizeWolframToken",
+    "kind": "function",
+    "jsLine": 2718,
+    "htmlLine": 3455
+  },
+  {
+    "name": "canonicalizeWolframLabelForQuery",
+    "kind": "function",
+    "jsLine": 2719,
+    "htmlLine": 3456
+  },
+  {
+    "name": "deriveWolframDomainHintFromDiscName",
+    "kind": "function",
+    "jsLine": 2725,
+    "htmlLine": 3462
+  },
+  {
+    "name": "isComputationalMathLikeTerm",
+    "kind": "function",
+    "jsLine": 2739,
+    "htmlLine": 3476
+  },
+  {
+    "name": "buildWolframEntityQueryAttempts",
+    "kind": "function",
+    "jsLine": 2744,
+    "htmlLine": 3481
+  },
+  {
+    "name": "fetchWolframJSON",
+    "kind": "async function",
+    "jsLine": 2791,
+    "htmlLine": 3528
+  },
+  {
+    "name": "compactWolframText",
+    "kind": "function",
+    "jsLine": 2866,
+    "htmlLine": 3603
+  },
+  {
+    "name": "resolveWolframTemplateToken",
+    "kind": "function",
+    "jsLine": 2867,
+    "htmlLine": 3604
+  },
+  {
+    "name": "normalizeWolframAssumptionText",
+    "kind": "function",
+    "jsLine": 2878,
+    "htmlLine": 3615
+  },
+  {
+    "name": "isWolframLowSignalText",
+    "kind": "function",
+    "jsLine": 2918,
+    "htmlLine": 3655
+  },
+  {
+    "name": "wolframPodTitleScore",
+    "kind": "function",
+    "jsLine": 2927,
+    "htmlLine": 3664
+  },
+  {
+    "name": "extractWolframListValues",
+    "kind": "function",
+    "jsLine": 2938,
+    "htmlLine": 3675
+  },
+  {
+    "name": "extractWolframStructured",
+    "kind": "function",
+    "jsLine": 2959,
+    "htmlLine": 3696
+  },
+  {
+    "name": "selectWolframSnippetFromParsed",
+    "kind": "function",
+    "jsLine": 3088,
+    "htmlLine": 3825
+  },
+  {
+    "name": "buildNoPlaintextReasons",
+    "kind": "function",
+    "jsLine": 3111,
+    "htmlLine": 3848
+  },
+  {
+    "name": "extractWolframPlaintext",
+    "kind": "function",
+    "jsLine": 3124,
+    "htmlLine": 3861
+  },
+  {
+    "name": "resolveWolframChosenPod",
+    "kind": "function",
+    "jsLine": 3129,
+    "htmlLine": 3866
+  },
+  {
+    "name": "scoreWolframSnippet",
+    "kind": "function",
+    "jsLine": 3143,
+    "htmlLine": 3880
+  },
+  {
+    "name": "recordWolframGroundingDiagnostic",
+    "kind": "function",
+    "jsLine": 3247,
+    "htmlLine": 3984
+  },
+  {
+    "name": "serializeWolframParsed",
+    "kind": "function",
+    "jsLine": 3317,
+    "htmlLine": 4054
+  },
+  {
+    "name": "buildWolframGroundingCitation",
+    "kind": "function",
+    "jsLine": 3318,
+    "htmlLine": 4055
+  },
+  {
+    "name": "setTermGroundingEligibility",
+    "kind": "function",
+    "jsLine": 3319,
+    "htmlLine": 4056
+  },
+  {
+    "name": "dedupeCitations",
+    "kind": "function",
+    "jsLine": 3325,
+    "htmlLine": 4062
+  },
+  {
+    "name": "buildWolframLayerTextForPolicy",
+    "kind": "function",
+    "jsLine": 3326,
+    "htmlLine": 4063
+  },
+  {
+    "name": "groundProbeTermsWithWolfram",
+    "kind": "async function",
+    "jsLine": 3342,
+    "htmlLine": 4079
+  },
+  {
+    "name": "applySuspiciousAcceptanceAuditPass",
+    "kind": "function",
+    "jsLine": 3561,
+    "htmlLine": 4298
+  },
+  {
+    "name": "medianOfNumbers",
+    "kind": "function",
+    "jsLine": 3611,
+    "htmlLine": 4348
+  },
+  {
+    "name": "estimateWolframRuleClass",
+    "kind": "function",
+    "jsLine": 3618,
+    "htmlLine": 4355
+  },
+  {
+    "name": "resolveCARuleFallbackCounts",
+    "kind": "function",
+    "jsLine": 3626,
+    "htmlLine": 4363
+  },
+  {
+    "name": "computeCARuleFallbackHash",
+    "kind": "function",
+    "jsLine": 3641,
+    "htmlLine": 4378
+  },
+  {
+    "name": "takeWithWrap",
+    "kind": "function",
+    "jsLine": 3656,
+    "htmlLine": 4393
+  },
+  {
+    "name": "deriveRuleFromSimilarityMatrix",
+    "kind": "function",
+    "jsLine": 3666,
+    "htmlLine": 4403
+  },
+  {
+    "name": "deriveWidthFromTermCount",
+    "kind": "function",
+    "jsLine": 3730,
+    "htmlLine": 4467
+  },
+  {
+    "name": "deriveStepsFromSynthesisDepth",
+    "kind": "function",
+    "jsLine": 3736,
+    "htmlLine": 4473
+  },
+  {
+    "name": "buildInitialRowFromProbes",
+    "kind": "function",
+    "jsLine": 3767,
+    "htmlLine": 4504
+  },
+  {
+    "name": "maxContiguousAliveRun",
+    "kind": "function",
+    "jsLine": 3809,
+    "htmlLine": 4546
+  },
+  {
+    "name": "trajectoryLinearRegressionSlope",
+    "kind": "function",
+    "jsLine": 3823,
+    "htmlLine": 4560
+  },
+  {
+    "name": "countMeanZeroCrossings",
+    "kind": "function",
+    "jsLine": 3838,
+    "htmlLine": 4575
+  },
+  {
+    "name": "classifyTrajectoryTrend",
+    "kind": "function",
+    "jsLine": 3853,
+    "htmlLine": 4590
+  },
+  {
+    "name": "computeMetricTrajectories",
+    "kind": "function",
+    "jsLine": 3863,
+    "htmlLine": 4600
+  },
+  {
+    "name": "normalizeOddWidth",
+    "kind": "function",
+    "jsLine": 3938,
+    "htmlLine": 4675
+  },
+  {
+    "name": "simulateElementaryCA",
+    "kind": "function",
+    "jsLine": 3939,
+    "htmlLine": 4676
+  },
+  {
+    "name": "computeAutomataMetrics",
+    "kind": "function",
+    "jsLine": 3971,
+    "htmlLine": 4708
+  },
+  {
+    "name": "renderAutomataDataUrl",
+    "kind": "function",
+    "jsLine": 4008,
+    "htmlLine": 4745
+  },
+  {
+    "name": "buildRunDerivedCommentary",
+    "kind": "function",
+    "jsLine": 4039,
+    "htmlLine": 4776
+  },
+  {
+    "name": "buildCATermsFromMetrics",
+    "kind": "function",
+    "jsLine": 4161,
+    "htmlLine": 4898
+  },
+  {
+    "name": "appendDerivedCATermsToTerms",
+    "kind": "function",
+    "jsLine": 4208,
+    "htmlLine": 4945
+  },
+  {
+    "name": "deriveCAFromRun",
+    "kind": "async function",
+    "jsLine": 4249,
+    "htmlLine": 4986
+  },
+  {
+    "name": "isRunDerivedCAOutput",
+    "kind": "function",
+    "jsLine": 4428,
+    "htmlLine": 5165
+  },
+  {
+    "name": "buildDerivationDetailHTML",
+    "kind": "function",
+    "jsLine": 4433,
+    "htmlLine": 5170
+  },
+  {
+    "name": "renderTrajectoryChart",
+    "kind": "function",
+    "jsLine": 4473,
+    "htmlLine": 5210
+  },
+  {
+    "name": "drawCATrajectoryMiniChart",
+    "kind": "function",
+    "jsLine": 4502,
+    "htmlLine": 5239
+  },
+  {
+    "name": "renderCAPanel",
+    "kind": "function",
+    "jsLine": 4517,
+    "htmlLine": 5254
+  },
+  {
+    "name": "buildSynthesisPrompt",
+    "kind": "function",
+    "jsLine": 4554,
+    "htmlLine": 5291
+  },
+  {
+    "name": "parseSynthesisRangeMin",
+    "kind": "function",
+    "jsLine": 4555,
+    "htmlLine": 5292
+  },
+  {
+    "name": "disciplineIndexFromValue",
+    "kind": "function",
+    "jsLine": 4556,
+    "htmlLine": 5293
+  },
+  {
+    "name": "coerceSynthesisDisciplines",
+    "kind": "function",
+    "jsLine": 4557,
+    "htmlLine": 5294
+  },
+  {
+    "name": "normalizeSynthesisEntry",
+    "kind": "function",
+    "jsLine": 4558,
+    "htmlLine": 5295
+  },
+  {
+    "name": "buildTermCoverageByDiscipline",
+    "kind": "function",
+    "jsLine": 4559,
+    "htmlLine": 5296
+  },
+  {
+    "name": "jaccardFromSets",
+    "kind": "function",
+    "jsLine": 4560,
+    "htmlLine": 5297
+  },
+  {
+    "name": "buildFallbackSynthesisResult",
+    "kind": "function",
+    "jsLine": 4561,
+    "htmlLine": 5298
+  },
+  {
+    "name": "normalizeSynthesisResult",
+    "kind": "function",
+    "jsLine": 4562,
+    "htmlLine": 5299
+  },
+  {
+    "name": "repairSynthesisJSONWithModel",
+    "kind": "async function",
+    "jsLine": 4563,
+    "htmlLine": 5300
+  },
+  {
+    "name": "buildSynthesisCompactFallbackPrompt",
+    "kind": "function",
+    "jsLine": 4564,
+    "htmlLine": 5301
+  },
+  {
+    "name": "getSynthesisResultWithRecovery",
+    "kind": "async function",
+    "jsLine": 4565,
+    "htmlLine": 5302
+  },
+  {
+    "name": "buildRedTeamPrompt",
+    "kind": "function",
+    "jsLine": 4566,
+    "htmlLine": 5303
+  },
+  {
+    "name": "launchExpedition",
+    "kind": "async function",
+    "jsLine": 4567,
+    "htmlLine": 5304
+  },
+  {
+    "name": "setProbeState",
+    "kind": "function",
+    "jsLine": 4704,
+    "htmlLine": 5441
+  },
+  {
+    "name": "makeAbbr",
+    "kind": "function",
+    "jsLine": 4705,
+    "htmlLine": 5442
+  },
+  {
+    "name": "normalizeLabel",
+    "kind": "function",
+    "jsLine": 4706,
+    "htmlLine": 5443
+  },
+  {
+    "name": "toCanonicalKey",
+    "kind": "function",
+    "jsLine": 4707,
+    "htmlLine": 5444
+  },
+  {
+    "name": "tokenSet",
+    "kind": "function",
+    "jsLine": 4708,
+    "htmlLine": 5445
+  },
+  {
+    "name": "jaccardSimilarity",
+    "kind": "function",
+    "jsLine": 4709,
+    "htmlLine": 5446
+  },
+  {
+    "name": "aliasSimilarityScore",
+    "kind": "function",
+    "jsLine": 4710,
+    "htmlLine": 5447
+  },
+  {
+    "name": "matchTermFromAliasCandidate",
+    "kind": "function",
+    "jsLine": 4724,
+    "htmlLine": 5461
+  },
+  {
+    "name": "buildTermAliasIndex",
+    "kind": "function",
+    "jsLine": 4742,
+    "htmlLine": 5479
+  },
+  {
+    "name": "mapSupportingTermsWithAliases",
+    "kind": "function",
+    "jsLine": 4799,
+    "htmlLine": 5536
+  },
+  {
+    "name": "mergeType",
+    "kind": "function",
+    "jsLine": 4842,
+    "htmlLine": 5579
+  },
+  {
+    "name": "pickBetterLabel",
+    "kind": "function",
+    "jsLine": 4843,
+    "htmlLine": 5580
+  },
+  {
+    "name": "mergeDescription",
+    "kind": "function",
+    "jsLine": 4844,
+    "htmlLine": 5581
+  },
+  {
+    "name": "defaultDescriptionLayers",
+    "kind": "function",
+    "jsLine": 4845,
+    "htmlLine": 5582
+  },
+  {
+    "name": "normalizeWolframDisplayMode",
+    "kind": "function",
+    "jsLine": 4846,
+    "htmlLine": 5583
+  },
+  {
+    "name": "mergeWolframDisplayMode",
+    "kind": "function",
+    "jsLine": 4847,
+    "htmlLine": 5584
+  },
+  {
+    "name": "inferDescriptionSourceFromLayers",
+    "kind": "function",
+    "jsLine": 4848,
+    "htmlLine": 5585
+  },
+  {
+    "name": "computeDisplayDescriptionFromLayers",
+    "kind": "function",
+    "jsLine": 4861,
+    "htmlLine": 5598
+  },
+  {
+    "name": "normalizeTermDescriptions",
+    "kind": "function",
+    "jsLine": 4898,
+    "htmlLine": 5635
+  },
+  {
+    "name": "mergeTermDescriptions",
+    "kind": "function",
+    "jsLine": 4922,
+    "htmlLine": 5659
+  },
+  {
+    "name": "applyDisplayDescriptionForTerm",
+    "kind": "function",
+    "jsLine": 4936,
+    "htmlLine": 5673
+  },
+  {
+    "name": "addRawTerm",
+    "kind": "function",
+    "jsLine": 4943,
+    "htmlLine": 5680
+  },
+  {
+    "name": "mergeRawTerms",
+    "kind": "function",
+    "jsLine": 4953,
+    "htmlLine": 5690
+  },
+  {
+    "name": "buildTerms",
+    "kind": "function",
+    "jsLine": 4987,
+    "htmlLine": 5724
+  },
+  {
+    "name": "collectCitations",
+    "kind": "function",
+    "jsLine": 5014,
+    "htmlLine": 5751
+  },
+  {
+    "name": "isLikelyDictionaryOnlyGroundingText",
+    "kind": "function",
+    "jsLine": 5106,
+    "htmlLine": 5843
+  },
+  {
+    "name": "computeGroundingStats",
+    "kind": "function",
+    "jsLine": 5119,
+    "htmlLine": 5856
+  },
+  {
+    "name": "computeRunGroundingStats",
+    "kind": "function",
+    "jsLine": 5232,
+    "htmlLine": 5969
+  },
+  {
+    "name": "computeSourceTypeBreakdown",
+    "kind": "function",
+    "jsLine": 5235,
+    "htmlLine": 5972
+  },
+  {
+    "name": "interpretationLooksGeneric",
+    "kind": "function",
+    "jsLine": 5243,
+    "htmlLine": 5980
+  },
+  {
+    "name": "computeGenericInterpretationHotspotAudit",
+    "kind": "function",
+    "jsLine": 5257,
+    "htmlLine": 5994
+  },
+  {
+    "name": "renderGenericInterpretationHotspotAudit",
+    "kind": "function",
+    "jsLine": 5301,
+    "htmlLine": 6038
+  },
+  {
+    "name": "buildGroundingHealthWarnings",
+    "kind": "function",
+    "jsLine": 5328,
+    "htmlLine": 6065
+  },
+  {
+    "name": "serializeTermForRun",
+    "kind": "function",
+    "jsLine": 5379,
+    "htmlLine": 6116
+  },
+  {
+    "name": "buildRunSnapshot",
+    "kind": "function",
+    "jsLine": 5402,
+    "htmlLine": 6139
+  },
+  {
+    "name": "structuredCloneSafe",
+    "kind": "function",
+    "jsLine": 5436,
+    "htmlLine": 6173
+  },
+  {
+    "name": "applyRenameMapToResults",
+    "kind": "function",
+    "jsLine": 5437,
+    "htmlLine": 6174
+  },
+  {
+    "name": "applySecondPassCleanup",
+    "kind": "async function",
+    "jsLine": 5438,
+    "htmlLine": 6175
+  },
+  {
+    "name": "assignSemanticPositions",
+    "kind": "async function",
+    "jsLine": 5439,
+    "htmlLine": 6176
+  },
+  {
+    "name": "buildEmbeddingText",
+    "kind": "function",
+    "jsLine": 5440,
+    "htmlLine": 6177
+  },
+  {
+    "name": "normalizeEmbeddingVector",
+    "kind": "function",
+    "jsLine": 5441,
+    "htmlLine": 6178
+  },
+  {
+    "name": "projectVectorsTo3D",
+    "kind": "async function",
+    "jsLine": 5442,
+    "htmlLine": 6179
+  },
+  {
+    "name": "loadUMAPModule",
+    "kind": "function",
+    "jsLine": 5443,
+    "htmlLine": 6180
+  },
+  {
+    "name": "randomProjection3D",
+    "kind": "function",
+    "jsLine": 5444,
+    "htmlLine": 6181
+  },
+  {
+    "name": "averageVector",
+    "kind": "function",
+    "jsLine": 5445,
+    "htmlLine": 6182
+  },
+  {
+    "name": "cosineDistance",
+    "kind": "function",
+    "jsLine": 5446,
+    "htmlLine": 6183
+  },
+  {
+    "name": "computeDiscCentroidsFromVectors",
+    "kind": "function",
+    "jsLine": 5447,
+    "htmlLine": 6184
+  },
+  {
+    "name": "computeDiscSimilarityMatrix",
+    "kind": "function",
+    "jsLine": 5448,
+    "htmlLine": 6185
+  },
+  {
+    "name": "computeDiscSimilarityMatrixForTerms",
+    "kind": "function",
+    "jsLine": 5449,
+    "htmlLine": 6186
+  },
+  {
+    "name": "computeRunDiscSimilarityMatrixForTerms",
+    "kind": "async function",
+    "jsLine": 5466,
+    "htmlLine": 6203
+  },
+  {
+    "name": "computeDiscCentroidsFromPoints",
+    "kind": "function",
+    "jsLine": 5474,
+    "htmlLine": 6211
+  },
+  {
+    "name": "averagePoint3",
+    "kind": "function",
+    "jsLine": 5475,
+    "htmlLine": 6212
+  },
+  {
+    "name": "euclid3",
+    "kind": "function",
+    "jsLine": 5476,
+    "htmlLine": 6213
+  },
+  {
+    "name": "buildDiscNeighborMap",
+    "kind": "function",
+    "jsLine": 5477,
+    "htmlLine": 6214
+  },
+  {
+    "name": "neighborOverlap",
+    "kind": "function",
+    "jsLine": 5478,
+    "htmlLine": 6215
+  },
+  {
+    "name": "averageNumbers",
+    "kind": "function",
+    "jsLine": 5479,
+    "htmlLine": 6216
+  },
+  {
+    "name": "computeProjectionStability",
+    "kind": "function",
+    "jsLine": 5480,
+    "htmlLine": 6217
+  },
+  {
+    "name": "renderEmbeddingDiagnostics",
+    "kind": "function",
+    "jsLine": 5481,
+    "htmlLine": 6218
+  },
+  {
+    "name": "normalizePointCloud",
+    "kind": "function",
+    "jsLine": 5482,
+    "htmlLine": 6219
+  },
+  {
+    "name": "applyFallbackPositions",
+    "kind": "function",
+    "jsLine": 5483,
+    "htmlLine": 6220
+  },
+  {
+    "name": "clamp01",
+    "kind": "function",
+    "jsLine": 5484,
+    "htmlLine": 6221
+  },
+  {
+    "name": "clampSurfaceOpacity",
+    "kind": "function",
+    "jsLine": 5485,
+    "htmlLine": 6222
+  },
+  {
+    "name": "fallbackDirection",
+    "kind": "function",
+    "jsLine": 5486,
+    "htmlLine": 6223
+  },
+  {
+    "name": "normalize3",
+    "kind": "function",
+    "jsLine": 5487,
+    "htmlLine": 6224
+  },
+  {
+    "name": "computeDisciplineAnchors",
+    "kind": "function",
+    "jsLine": 5488,
+    "htmlLine": 6225
+  },
+  {
+    "name": "showViz",
+    "kind": "function",
+    "jsLine": 5489,
+    "htmlLine": 6226
+  },
+  {
+    "name": "buildSidebar",
+    "kind": "function",
+    "jsLine": 5490,
+    "htmlLine": 6227
+  },
+  {
+    "name": "buildStats",
+    "kind": "function",
+    "jsLine": 5491,
+    "htmlLine": 6228
+  },
+  {
+    "name": "buildSurface",
+    "kind": "function",
+    "jsLine": 5573,
+    "htmlLine": 6310
+  },
+  {
+    "name": "markerSizeByCentrality",
+    "kind": "function",
+    "jsLine": 5574,
+    "htmlLine": 6311
+  },
+  {
+    "name": "getGroundingConfidenceRank",
+    "kind": "function",
+    "jsLine": 5575,
+    "htmlLine": 6312
+  },
+  {
+    "name": "groundingColorForTerm",
+    "kind": "function",
+    "jsLine": 5576,
+    "htmlLine": 6313
+  },
+  {
+    "name": "getEmergentRingColor",
+    "kind": "function",
+    "jsLine": 5577,
+    "htmlLine": 6314
+  },
+  {
+    "name": "hasWolframGrounding",
+    "kind": "function",
+    "jsLine": 5578,
+    "htmlLine": 6315
+  },
+  {
+    "name": "isUnresolvedGrounding",
+    "kind": "function",
+    "jsLine": 5579,
+    "htmlLine": 6316
+  },
+  {
+    "name": "appendGroundingOverlayTraces",
+    "kind": "function",
+    "jsLine": 5580,
+    "htmlLine": 6317
+  },
+  {
+    "name": "buildTraces",
+    "kind": "function",
+    "jsLine": 5581,
+    "htmlLine": 6318
+  },
+  {
+    "name": "getPlotLayout",
+    "kind": "function",
+    "jsLine": 5588,
+    "htmlLine": 6325
+  },
+  {
+    "name": "CONFIG",
+    "kind": "const",
+    "jsLine": 5589,
+    "htmlLine": 6326
+  },
+  {
+    "name": "renderPlot",
+    "kind": "function",
+    "jsLine": 5590,
+    "htmlLine": 6327
+  },
+  {
+    "name": "formatProvenanceLine",
+    "kind": "function",
+    "jsLine": 5591,
+    "htmlLine": 6328
+  },
+  {
+    "name": "getLinkedCitationsForTerm",
+    "kind": "function",
+    "jsLine": 5592,
+    "htmlLine": 6329
+  },
+  {
+    "name": "safeHttpUrl",
+    "kind": "function",
+    "jsLine": 5593,
+    "htmlLine": 6330
+  },
+  {
+    "name": "summarizeWhyNodeExists",
+    "kind": "function",
+    "jsLine": 5594,
+    "htmlLine": 6331
+  },
+  {
+    "name": "resolveChosenWolframQuery",
+    "kind": "function",
+    "jsLine": 5595,
+    "htmlLine": 6332
+  },
+  {
+    "name": "buildTermDescriptionDetail",
+    "kind": "function",
+    "jsLine": 5596,
+    "htmlLine": 6333
+  },
+  {
+    "name": "onPlotClick",
+    "kind": "function",
+    "jsLine": 5676,
+    "htmlLine": 6413
+  },
+  {
+    "name": "resetToSetup",
+    "kind": "function",
+    "jsLine": 5683,
+    "htmlLine": 6420
+  }
+]
