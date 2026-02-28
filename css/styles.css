@@ -181,6 +181,17 @@ body.plot-zen #sidebar,body.plot-zen #sidebar-resizer{display:none}
 .menu-pop.open{display:block}
 .menu-item{width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--text);font-family:'Courier New',monospace;font-size:12px;padding:8px;border-radius:6px;cursor:pointer}
 .menu-item:hover{border-color:var(--accent);color:var(--accent)}
+#history-drawer{position:fixed;top:56px;right:12px;z-index:1250;width:min(560px,94vw);max-height:78vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;display:none;box-shadow:0 12px 28px #00000022}
+#history-drawer.open{display:block}
+.history-drawer-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.history-run-card{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--panel-alt);margin-bottom:8px}
+.history-card-top{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.history-card-target{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-card-meta{font-size:11px;color:var(--muted)}
+.history-card-discs{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.history-disc-chip{font-size:10px;border:1px solid;border-radius:4px;padding:1px 5px;letter-spacing:.5px}
+.history-card-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.history-empty{font-size:12px;color:var(--muted);padding:16px;text-align:center}
 #artifact-drawer{position:fixed;top:56px;right:12px;z-index:1250;width:min(560px,94vw);max-height:78vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;display:none;box-shadow:0 12px 28px #00000022}
 #artifact-drawer.open{display:block}
 .artifact-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
@@ -233,6 +244,13 @@ body.plot-zen #sidebar,body.plot-zen #sidebar-resizer{display:none}
 .mode-card-desc{font-size:13px;color:var(--muted);line-height:1.6;flex:1}
 .mode-card .launch-btn{align-self:flex-start;font-size:13px;padding:10px 22px}
 @media(max-width:700px){.mode-cards{grid-template-columns:1fr}}
+.example-run-card{grid-column:1 / -1;flex-direction:row;align-items:center;gap:20px;border-style:dashed}
+.example-run-card .mode-card-title{white-space:nowrap}
+.example-run-card .mode-card-desc{flex:1;margin:0}
+.example-run-row{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.example-run-row select{font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg,var(--panel));color:var(--text);min-width:220px}
+.example-run-row select:focus{outline:none;border-color:var(--accent)}
+@media(max-width:700px){.example-run-card{flex-direction:column;align-items:flex-start}.example-run-row{width:100%}.example-run-row select{flex:1}}
 /* Mode bar (shown inside workbench area) */
 #setup-mode-bar{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
 #setup-mode-bar .mini-btn.mode-active{border-color:var(--accent);color:var(--accent);background:var(--panel-soft)}
@@ -255,6 +273,7 @@ body.plot-zen #sidebar,body.plot-zen #sidebar-resizer{display:none}
 #generation-workbench.sources-mode{grid-template-columns:1fr}
 #generation-workbench.sources-mode>.prompt-pane:not(#workbench-controls-pane),
 #generation-workbench.sources-mode>#workbench-resizer{display:none}
+#generation-workbench.sources-mode #focus-concept-anchor,
 #generation-workbench.sources-mode #workbench-section-lenses,
 #generation-workbench.sources-mode #workbench-section-model,
 #generation-workbench.sources-mode #workbench-section-grounding,

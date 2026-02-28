@@ -15,6 +15,7 @@
     <button class="tab-btn" id="tab-plot-btn" type="button" role="tab" aria-selected="false" aria-controls="plot-panel" tabindex="-1">PLOT VIEW</button>
   </div>
   <div class="tabs-right">
+    <button class="mini-btn" id="history-btn" type="button">HISTORY</button>
     <button class="mini-btn" id="import-run-btn" type="button">IMPORT RUN</button>
     <button class="mini-btn" id="export-run-btn" type="button">EXPORT RUN</button>
     <select id="theme-select-global">
@@ -47,6 +48,21 @@
         <div class="mode-card-title">ADVANCED</div>
         <div class="mode-card-desc">Full workbench with custom probe lenses, model selection, prompt overrides, and CA diagnostics.</div>
         <button class="launch-btn" data-mode="advanced" type="button">START</button>
+      </div>
+    </div>
+    <div class="mode-card example-run-card" id="mode-card-example">
+      <div class="mode-card-title">LOAD AN EXAMPLE</div>
+      <div class="mode-card-desc">No API key? Browse a completed expedition to explore the interface and see what the tool produces.</div>
+      <div class="example-run-row">
+        <select id="example-run-select">
+          <option value="money_expedition_full.json">Money</option>
+          <option value="trump_tariffs_expedition_full.json">Trump Tariffs</option>
+          <option value="truth_and_falsehood_full.json">Truth &amp; Falsehood</option>
+          <option value="unintelligible_alien_expedition_full.json">Alien Communication</option>
+          <option value="iran_2.28.26_expedition_full.json">US-Iran Strikes (Feb 2026)</option>
+          <option value="israel_2.28.26_expedition_full.json">US-Israel Strikes on Iran (Feb 2026)</option>
+        </select>
+        <button class="launch-btn" id="load-example-btn" type="button">LOAD</button>
       </div>
     </div>
   </div>
@@ -410,6 +426,13 @@
 </div>
 </div>
 <div id="toast"></div>
+<div id="history-drawer">
+  <div class="history-drawer-head">
+    <div style="font-size:13px;letter-spacing:.5px;color:var(--accent)">RUN HISTORY</div>
+    <button class="small-btn" id="history-drawer-close" type="button">CLOSE</button>
+  </div>
+  <div id="history-list"></div>
+</div>
 <div id="artifact-drawer">
   <div class="artifact-head">
     <div style="font-size:13px;letter-spacing:.5px;color:var(--accent)">RUN ARTIFACTS</div>

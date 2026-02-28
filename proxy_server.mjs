@@ -75,6 +75,49 @@ async function proxyOpenRouter(req, res, kind) {
   send(res, upstream.status, text, { "Content-Type": upstream.headers.get("content-type") || MIME[".json"] });
 }
 
+// Extract publication date from raw HTML using deterministic patterns (no LLM).
+// Tries in priority order: URL path, Open Graph meta, name/itemprop meta, JSON-LD, <time>.
+function extractArticlePubDate(raw, url) {
+  // 1. URL path: /YYYY/MM/DD/ (NPR, NYT, WaPo, BBC, etc.)
+  try {
+    const urlPath = new URL(String(url)).pathname;
+    const m = urlPath.match(/\/(\d{4})\/(\d{2})\/(\d{2})\//);
+    if (m) {
+      const d = new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00Z`);
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  } catch {}
+
+  // 2. Open Graph: <meta property="article:published_time" content="...">
+  const og = raw.match(/<meta[^>]+property=["']article:published_time["'][^>]+content=["']([^"']+)["']/i)
+    || raw.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']article:published_time["']/i);
+  if (og) { const d = new Date(og[1]); if (!isNaN(d.getTime())) return d.toISOString(); }
+
+  // 3. <meta name/itemprop="datePublished|pubdate|date" content="...">
+  const metaA = raw.match(/<meta[^>]+(?:name|itemprop)=["'](?:datePublished|pubdate|date)["'][^>]+content=["']([^"']+)["']/i)
+    || raw.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:name|itemprop)=["'](?:datePublished|pubdate|date)["']/i);
+  if (metaA) { const d = new Date(metaA[1]); if (!isNaN(d.getTime())) return d.toISOString(); }
+
+  // 4. JSON-LD: "datePublished" / "dateCreated" in any ld+json block
+  const ldRe = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let ldM;
+  while ((ldM = ldRe.exec(raw)) !== null) {
+    try {
+      const items = [].concat(JSON.parse(ldM[1]));
+      for (const item of items) {
+        const dp = item.datePublished || item.dateCreated;
+        if (dp) { const d = new Date(dp); if (!isNaN(d.getTime())) return d.toISOString(); }
+      }
+    } catch {}
+  }
+
+  // 5. First <time datetime="..."> element
+  const tm = raw.match(/<time[^>]+datetime=["']([^"']+)["']/i);
+  if (tm) { const d = new Date(tm[1]); if (!isNaN(d.getTime())) return d.toISOString(); }
+
+  return null;
+}
+
 async function fetchUrlHandler(req, res) {
   const body = await readJsonBody(req);
   const urls = Array.isArray(body.urls) ? body.urls.slice(0, 10) : [];
@@ -97,7 +140,8 @@ async function fetchUrlHandler(req, res) {
         .trim();
       const isXml = contentType.includes("xml") || contentType.includes("rss") || contentType.includes("atom")
         || raw.trimStart().startsWith("<?xml") || raw.trimStart().startsWith("<rss") || raw.trimStart().startsWith("<feed");
-      return { url, title, text: text.slice(0, 12000), contentType, raw: isXml ? raw.slice(0, 60000) : undefined, ok: true };
+      const pubDate = isXml ? undefined : extractArticlePubDate(raw, url);
+      return { url, title, text: text.slice(0, 12000), contentType, raw: isXml ? raw.slice(0, 60000) : undefined, pubDate, ok: true };
     } catch (err) {
       return { url, title: "", text: "", contentType: "", ok: false, error: String(err?.message || err) };
     }

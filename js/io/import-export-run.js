@@ -10,6 +10,7 @@ import { collectCitations, dedupeCasefold, mergeDescriptionProvenance, normalize
 import { refreshTermSignalFields } from '../domain/grounding-status.js';
 import { serializeTermForRun } from '../domain/run-metadata.js';
 import { normalizeOddWidth } from '../ca/automata.js';
+import { saveRunToHistory } from './run-history.js';
 import { applyFallbackPositions } from '../embedding/projection.js';
 import { showViz } from '../plot/plot-render.js';
 import { clamp01 } from '../plot/plot-overlays.js';
@@ -100,8 +101,21 @@ export function hydrateRunFromImport(data){
   syncArtifactStoreFromRun();
   syncPromptPreviewDiscOptions();
   refreshPromptPreview();
+  saveRunToHistory(LAST_RUN).catch(()=>{});
   showViz(target);
   switchMainTab("plot",{silent:true});
+}
+
+export async function loadSampleRun(filename) {
+  try {
+    const resp = await fetch(`/sample_runs/${encodeURIComponent(filename)}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    hydrateRunFromImport(data);
+    showToast("Example loaded.");
+  } catch (err) {
+    showToast(`Failed to load example: ${err.message || err}`);
+  }
 }
 
 export function setSelectValuePreserveOption(selectId,value){const el=document.getElementById(selectId);const val=String(value||"").trim();if(!el||!val) return;if(el.tagName!=="SELECT"){el.value=val;return;}if(![...el.options].some(opt=>String(opt.value||"")===val)){const opt=document.createElement("option");opt.value=val;opt.textContent=`${val} (imported)`;el.appendChild(opt);}el.value=val;}

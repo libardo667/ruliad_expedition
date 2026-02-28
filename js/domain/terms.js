@@ -38,7 +38,7 @@ export function buildTermsForReplicationRun(probeResults,synthResult){
   return mergeRawTerms(raw);
 }
 
-export function makeAbbr(name){const words=name.split(/[\s/]+/).filter(Boolean);if(words.length>=2) return (words[0][0]+words[1][0]).toUpperCase();return name.substring(0,2).toUpperCase();}
+export function makeAbbr(name){const words=name.split(/[\s/\-]+/).filter(Boolean);if(words.length>=2) return (words[0][0]+words[1][0]).toUpperCase();return name.substring(0,2).toUpperCase();}
 
 export function normalizeLabel(label){return String(label||"").toLowerCase().normalize("NFKD").replace(/[^\w\s]|_/g," ").replace(/\s+/g," ").trim();}
 

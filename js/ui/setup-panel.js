@@ -693,6 +693,9 @@ export async function findStories() {
       seedMeta = await extractSeedMetadata(seedUrl, seedResult.text || "", cfg);
     }
 
+    // Proxy-extracted date (from URL path / meta tags / JSON-LD) takes priority over LLM guess
+    const effectivePubDate = seedResult.pubDate ? new Date(seedResult.pubDate) : seedMeta.pubDate;
+
     // 3. Auto-fill #target-input with extracted topic label
     const topicLabel = seedMeta.topicLabel || seedResult.title || "";
     const targetInput = document.getElementById("target-input");
@@ -703,7 +706,7 @@ export async function findStories() {
       seedUrl,
       title: seedResult.title || seedUrl,
       topicLabel,
-      pubDate: seedMeta.pubDate,
+      pubDate: effectivePubDate,
       entities: seedMeta.entities
     });
 
@@ -726,7 +729,7 @@ export async function findStories() {
         if (!r?.ok || !r.raw) continue;
         items.push(...parseFeedItems(r.raw));
       }
-      articlesByColumn[col.id] = filterByTemporalProximity(items, seedMeta.pubDate, 7);
+      articlesByColumn[col.id] = filterByTemporalProximity(items, effectivePubDate, 7);
     }
 
     // 7. Score and rank (entity-aware when entities available, falls back to keyword-only)
@@ -747,8 +750,8 @@ export async function findStories() {
 
     renderSourceColumns(columns, scoredByColumn);
     const totalArticles = Object.values(scoredByColumn).reduce((s, a) => s + a.length, 0);
-    const anchorDateStr = seedMeta.pubDate && !isNaN(seedMeta.pubDate.getTime())
-      ? seedMeta.pubDate.toLocaleDateString()
+    const anchorDateStr = effectivePubDate && !isNaN(effectivePubDate.getTime())
+      ? effectivePubDate.toLocaleDateString()
       : "seed article";
     setSourceStatus(`${columns.length} perspectives · ${totalArticles} stories found (anchored to ${anchorDateStr} ±7 days). Check articles to select; double-click to preview.`, "ok");
   } catch (err) {

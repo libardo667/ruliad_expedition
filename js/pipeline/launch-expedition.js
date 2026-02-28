@@ -13,6 +13,7 @@ import { normalizeMode } from '../api/provider.js';
 import { getQualityProfile, readApiConfig, validateApiConfig } from '../api/llm.js';
 import { buildEmbeddingText, callEmbeddings } from '../api/embeddings.js';
 import { buildTerms, makeAbbr } from '../domain/terms.js';
+import { saveRunToHistory } from '../io/run-history.js';
 import { collectCitations } from '../domain/citations.js';
 import { applySecondPassCleanup, buildRunSnapshot, computeRunId, safeConfigForRun } from '../domain/run-metadata.js';
 import { appendDerivedCATermsToTerms, buildCATermsFromMetrics, deriveCAFromRun } from '../ca/derive-ca.js';
@@ -163,6 +164,7 @@ export async function launchExpedition(){
   }
   if(cfg.redTeam){await runRedTeamPass(true);}
   setLastRun(buildRunSnapshot(target,probeResults,synthResult,cfg));
+  saveRunToHistory(LAST_RUN).catch(()=>{});
   syncArtifactStoreFromRun();
   await new Promise(resolve=>setTimeout(resolve,500));
   showViz(target);
