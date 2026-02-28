@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruliad Expedition | Map the Shape of an Idea</title>
+    <style>
+        :root {
+            --bg: #06060f;
+            --surface: #11111a;
+            --surface-hover: #1a1a2e;
+            --border: #2a2a3a;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent-gold: #ffd700;
+            --accent-blue: #7cb9ff;
+            --accent-orange: #ff9500;
+            --font-mono: 'Courier New', Courier, monospace;
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Layout & Spacing */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        section {
+            padding: 60px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: var(--font-mono);
+            font-weight: normal;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.05em;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.125rem;
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .highlight {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .mono-tag {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        /* Hero Section */
+        header {
+            padding: 80px 0 60px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-lead {
+            font-size: 1.5rem;
+            color: var(--text);
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        /* Nodes / Mechanism Section */
+        .node-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 2rem;
+        }
+
+        .node-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 24px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .node-card:hover {
+            background: var(--surface-hover);
+        }
+
+        .node-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .node-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .dot-conv { background: var(--accent-blue); border-radius: 50%; }
+        .dot-cont { background: var(--accent-orange); clip-path: polygon(20% 0%, 0% 20%, 30% 50%, 0% 80%, 20% 100%, 50% 70%, 80% 100%, 100% 80%, 70% 50%, 100% 20%, 80% 0%, 50% 30%); }
+        .dot-emerg { background: var(--accent-gold); clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+
+        /* Audience List */
+        .audience-list {
+            list-style: none;
+            margin: 2rem 0;
+        }
+
+        .audience-list li {
+            font-size: 1.125rem;
+            color: var(--muted);
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .audience-list li::before {
+            content: "→";
+            color: var(--border);
+            font-family: var(--font-mono);
+        }
+
+        /* CTA & Buttons */
+        .cta-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 40px 24px;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--text);
+            color: var(--bg);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: opacity 0.2s ease;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--text);
+            margin-top: 12px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
+
+        /* Desktop Adjustments */
+        @media (min-width: 768px) {
+            h1 { font-size: 3.5rem; }
+            .hero-lead { font-size: 2rem; }
+            .node-grid { grid-template-columns: repeat(3, 1fr); }
+            .btn { width: auto; margin-right: 12px; }
+            .cta-box { padding: 60px 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <span class="mono-tag">The Manifesto</span>
+            <h1>Ruliad Expedition.</h1>
+            <p class="hero-lead">There are plenty of tools that help us search for answers. There are fewer tools that help us explore a question <span class="highlight">before it collapses into an answer.</span></p>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <div class="container">
+                <h2>Fieldwork, not extraction.</h2>
+                <p>Standard search treats information like an archaeology dig—extracting facts. Generative AI chat interfaces treat information like an oracle—flattening dimensionality into a single, confident voice.</p>
+                <p>Ruliad Expedition is different. It is an instrument for navigating complex ideas through multiple conceptual lenses, then mapping where those lenses converge, diverge, distort, or illuminate.</p>
+                <p>You do not begin with the assumption that there is one obvious path through the terrain. You begin with a target, and you send probes into that terrain from different angles. Each probe acts like a lens with its own assumptions, vocabulary, and bias.</p>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <h2>Mapping the Idea Space</h2>
+                <p>By plotting the intersections of these probes, the tool reveals the spatial topology of the concept itself.</p>
+                
+                <div class="node-grid">
+                    <div class="node-card">
+                        <div class="node-title">
+                            <div class="node-dot dot-conv"></div>
+                            Convergent
+                        </div>
+                        <p style="font-size: 0.95rem; margin:0;">Where do different probes keep landing near each other? These are the structurally stable realities of the target.</p>
+                    </div>
+                    
+                    <div class="node-card">
+                        <div class="node-title">
+                            <div class="node-dot dot-cont"></div>
+                            Contradictory
+                        </div>
+                        <p style="font-size: 0.95rem; margin:0;">Where do they conflict? These are the fault lines and tension zones where single-discipline thinking breaks down.</p>
+                    </div>
+
+                    <div class="node-card">
+                        <div class="node-title">
+                            <div class="node-dot dot-emerg"></div>
+                            Emergent
+                        </div>
+                        <p style="font-size: 0.95rem; margin:0;">What insights only become visible through cross-disciplinary integration? These are the discoveries.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <h2>Who is this for?</h2>
+                <p>This tool is for people who do not just want answers. It is for people who want better questions, better maps, and better ways of seeing.</p>
+                
+                <ul class="audience-list">
+                    <li>Independent researchers & essayists</li>
+                    <li>Strategists and policy thinkers</li>
+                    <li>Students building theses or capstones</li>
+                    <li>AI evaluators & systems thinkers</li>
+                    <li>Minds that naturally think in networks and layered frames</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <div class="cta-box">
+                    <span class="mono-tag" style="justify-content: center; margin-bottom: 20px;">Not an Oracle</span>
+                    <h2 style="color: var(--text);">A way to wander without being lost.</h2>
+                    <p style="max-width: 600px; margin: 0 auto 30px auto;">Ruliad Expedition does not replace judgment. It does not guarantee truth. It offers a way to map without pretending the map is the world. A way to think with complexity instead of fleeing from it.</p>
+                    
+                    <div>
+                        <a href="#get-kit" class="btn">Get the Starter Kit</a>
+                        <a href="#read-logs" class="btn btn-outline">Read the Expedition Logs</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p style="font-size: 0.875rem; margin: 0;">Built for privacy-first, local execution. Bring your own keys.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

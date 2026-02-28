@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ruliad Expedition Kit v1.0 — Think Again.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07080e;
+  --surface:#0d0f18;
+  --surface2:#12141f;
+  --border:#1a1d2e;
+  --border-hi:#2a2e44;
+  --text:#c8cdd8;
+  --text-dim:#5a6178;
+  --text-bright:#eaecf2;
+  --accent:#60a5fa;
+  --accent-dim:#60a5fa33;
+  --gold:#f0c040;
+  --gold-dim:#f0c04022;
+  --emerald:#34d399;
+  --emerald-dim:#34d39922;
+  --rose:#f472b6;
+  --rose-dim:#f472b622;
+  --orange:#fb923c;
+  --serif:'Fraunces', Georgia, serif;
+  --mono:'IBM Plex Mono', 'Courier New', monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── GRAIN OVERLAY ──────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.03;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.container{max-width:820px;margin:0 auto;padding:0 28px}
+section{padding:80px 0}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border-hi),transparent);margin:0 auto;max-width:600px}
+
+/* ── HERO ───────────────────────────────────────────── */
+.hero{padding:100px 0 80px;text-align:center;position:relative}
+.hero::after{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:600px;height:600px;
+  background:radial-gradient(circle,var(--accent-dim) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.hero>*{position:relative;z-index:1}
+.hero-eyebrow{
+  font-size:10px;letter-spacing:5px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:24px;font-weight:500;
+}
+.hero h1{
+  font-family:var(--serif);font-size:clamp(32px,5.5vw,56px);
+  font-weight:900;color:var(--text-bright);line-height:1.15;
+  margin-bottom:20px;font-style:italic;
+}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero-sub{
+  font-size:15px;color:var(--text-dim);max-width:560px;margin:0 auto 36px;
+  line-height:1.8;letter-spacing:0.3px;
+}
+.hero-sub strong{color:var(--text);font-weight:500}
+.hero-cta{display:inline-flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.btn{
+  display:inline-block;padding:14px 32px;border-radius:6px;
+  font-family:var(--mono);font-size:13px;letter-spacing:1px;
+  font-weight:500;transition:all .25s;cursor:pointer;border:none;
+}
+.btn-primary{background:var(--accent);color:#07080e}
+.btn-primary:hover{filter:brightness(1.15);text-decoration:none;transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid var(--border-hi);color:var(--text)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+
+/* ── PROBLEM ────────────────────────────────────────── */
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:40px}
+@media(max-width:640px){.problem-grid{grid-template-columns:1fr}}
+.problem-card{
+  padding:28px 24px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);
+}
+.problem-card h3{
+  font-family:var(--serif);font-size:17px;color:var(--text-bright);
+  margin-bottom:10px;font-weight:500;
+}
+.problem-card p{font-size:13px;color:var(--text-dim);line-height:1.7}
+.section-label{
+  font-size:10px;letter-spacing:4px;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:12px;font-weight:500;
+}
+.section-title{
+  font-family:var(--serif);font-size:clamp(24px,3.5vw,36px);
+  color:var(--text-bright);font-weight:700;line-height:1.25;
+  margin-bottom:16px;
+}
+.section-body{font-size:14px;color:var(--text-dim);line-height:1.8;max-width:600px}
+
+/* ── EXPEDITION EXAMPLE ──────────────────────────────── */
+.expedition-example{
+  margin-top:48px;border:1px solid var(--border-hi);border-radius:10px;
+  background:var(--surface);overflow:hidden;
+}
+.example-header{
+  padding:24px 24px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.example-eyebrow{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px;font-weight:500;
+}
+.example-target{
+  font-size:14px;color:var(--text-bright);line-height:1.6;font-weight:500;
+}
+.example-target em{font-style:italic;color:var(--text)}
+.probe-descriptions{display:flex;flex-direction:column;gap:0}
+.probe-desc{
+  display:grid;grid-template-columns:48px 1fr;gap:0;
+  border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.probe-desc:last-child{border-bottom:none}
+.probe-desc:hover{background:var(--surface2)}
+.probe-desc-num{
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:18px 0 18px 4px;font-size:11px;color:var(--text-dim);
+  letter-spacing:1px;font-weight:500;
+}
+.probe-desc-body{padding:18px 20px 18px 0}
+.probe-desc-title{
+  font-size:13px;color:var(--text-bright);font-weight:500;
+  margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.probe-tag{
+  font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;border-radius:3px;font-weight:500;
+  background:var(--accent-dim);color:var(--accent);
+}
+.probe-tag.tag-rose{background:var(--rose-dim);color:var(--rose)}
+.probe-tag.tag-gold{background:var(--gold-dim);color:var(--gold)}
+.probe-tag.tag-emerald{background:var(--emerald-dim);color:var(--emerald)}
+.probe-tag.tag-orange{background:#fb923c22;color:var(--orange)}
+.probe-tag.tag-cyan{background:#22d3ee22;color:#22d3ee}
+.probe-tag.tag-purple{background:#a78bfa22;color:#a78bfa}
+.probe-tag.tag-dim{background:#ffffff0a;color:var(--text-dim)}
+.probe-desc-body p{font-size:12px;color:var(--text-dim);line-height:1.7}
+.example-footnote{
+  padding:16px 24px;border-top:1px solid var(--border);
+  font-size:12px;color:var(--text-dim);line-height:1.6;
+  background:var(--surface2);letter-spacing:0.2px;
+}
+
+/* ── WHAT YOU GET ───────────────────────────────────── */
+.output-showcase{margin-top:48px;display:flex;flex-direction:column;gap:24px}
+.output-block{
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+  background:var(--surface);
+}
+.output-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface2);
+}
+.output-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.output-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);font-weight:500}
+.output-count{font-size:11px;color:var(--text-dim);margin-left:auto;letter-spacing:1px}
+.output-body{padding:20px;font-size:13px;line-height:1.8}
+.output-body .finding{margin-bottom:14px;padding-left:16px;border-left:2px solid var(--border)}
+.output-body .finding:last-child{margin-bottom:0}
+.output-body .finding-label{color:var(--text-bright);font-weight:500;margin-bottom:2px}
+.output-body .finding-desc{color:var(--text-dim);font-size:12px}
+
+.stat-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;margin-top:32px;
+}
+@media(max-width:640px){.stat-strip{grid-template-columns:repeat(2,1fr)}}
+.stat-cell{background:var(--surface);padding:20px 16px;text-align:center}
+.stat-num{font-family:var(--serif);font-size:28px;color:var(--text-bright);font-weight:700}
+.stat-label{font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-top:4px;text-transform:uppercase}
+
+/* ── HOW IT WORKS ───────────────────────────────────── */
+.steps{margin-top:40px;display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:60px 1fr;gap:0;min-height:100px}
+@media(max-width:480px){.step{grid-template-columns:40px 1fr}}
+.step-line{display:flex;flex-direction:column;align-items:center}
+.step-num{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--border-hi);background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--accent);font-weight:600;flex-shrink:0;
+}
+.step-connector{flex:1;width:1px;background:var(--border);margin:8px 0}
+.step:last-child .step-connector{background:transparent}
+.step-content{padding:4px 0 40px 0}
+.step-content h3{font-size:15px;color:var(--text-bright);margin-bottom:6px;font-weight:500}
+.step-content p{font-size:13px;color:var(--text-dim);line-height:1.7}
+
+/* ── PRICING ────────────────────────────────────────── */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px}
+@media(max-width:640px){.pricing-grid{grid-template-columns:1fr}}
+.price-card{
+  border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.price-card.featured{border-color:var(--accent);position:relative}
+.price-card.featured::before{
+  content:'FOUNDING COHORT';position:absolute;top:0;right:20px;
+  background:var(--accent);color:#07080e;font-size:9px;letter-spacing:2px;
+  padding:4px 10px;border-radius:0 0 4px 4px;font-weight:600;
+}
+.price-top{padding:28px 24px 20px;border-bottom:1px solid var(--border)}
+.price-name{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px}
+.price-amount{font-family:var(--serif);font-size:40px;color:var(--text-bright);font-weight:700}
+.price-amount span{font-size:16px;color:var(--text-dim);font-weight:400}
+.price-desc{font-size:12px;color:var(--text-dim);margin-top:8px;line-height:1.6}
+.price-body{padding:24px;flex:1;display:flex;flex-direction:column}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:10px;flex:1}
+.price-features li{font-size:12px;color:var(--text);padding-left:20px;position:relative;line-height:1.5}
+.price-features li::before{content:'→';position:absolute;left:0;color:var(--accent)}
+.price-cta{margin-top:20px}
+.price-cta .btn{width:100%;text-align:center;display:block}
+
+/* ── PI SERVICE ─────────────────────────────────────── */
+.boundaries-card{
+  margin-top:32px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);overflow:hidden;padding:28px 28px;
+}
+.boundaries-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:32px;
+}
+@media(max-width:640px){.boundaries-grid{grid-template-columns:1fr}}
+.boundaries-card h4{
+  font-size:12px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text-bright);margin-bottom:14px;font-weight:500;
+}
+.boundaries-card ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.boundaries-card ul li{
+  font-size:12px;color:var(--text-dim);line-height:1.6;
+  padding-left:18px;position:relative;
+}
+.boundaries-grid>div:first-child li::before{content:'→';position:absolute;left:0;color:var(--emerald)}
+.boundaries-grid>div:last-child li::before{content:'—';position:absolute;left:0;color:var(--text-dim)}
+
+.pi-card{
+  border:1px solid var(--gold-dim);border-radius:10px;
+  background:linear-gradient(135deg,#0d0f18,#141620);
+  padding:40px 32px;margin-top:40px;position:relative;overflow:hidden;
+}
+.pi-card::before{
+  content:'';position:absolute;top:-100px;right:-100px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,var(--gold-dim),transparent 70%);
+  pointer-events:none;
+}
+.pi-card>*{position:relative}
+.pi-card h3{
+  font-family:var(--serif);font-size:22px;color:var(--gold);
+  font-weight:700;margin-bottom:12px;
+}
+.pi-card p{font-size:13px;color:var(--text-dim);line-height:1.8;margin-bottom:16px}
+.pi-examples{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;
+}
+@media(max-width:640px){.pi-examples{grid-template-columns:1fr}}
+.pi-example{
+  padding:14px 16px;border:1px solid var(--border);border-radius:6px;
+  background:var(--surface);font-size:12px;color:var(--text);line-height:1.5;
+}
+.pi-example strong{color:var(--gold);font-weight:500}
+.pi-price{font-family:var(--serif);font-size:20px;color:var(--text-bright);margin:16px 0 6px}
+.pi-note{font-size:11px;color:var(--text-dim)}
+
+/* ── FAQ ────────────────────────────────────────────── */
+.faq-list{margin-top:40px;display:flex;flex-direction:column;gap:0}
+.faq-item{border-bottom:1px solid var(--border);padding:20px 0}
+.faq-item:first-child{border-top:1px solid var(--border)}
+.faq-q{
+  font-size:14px;color:var(--text-bright);cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  font-weight:500;
+}
+.faq-q::after{content:'+';color:var(--text-dim);font-size:18px;transition:transform .2s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{
+  max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;
+  font-size:13px;color:var(--text-dim);line-height:1.8;
+}
+.faq-item.open .faq-a{max-height:500px;padding-top:12px}
+
+/* ── FOOTER ─────────────────────────────────────────── */
+footer{padding:60px 0;text-align:center;border-top:1px solid var(--border)}
+footer p{font-size:11px;color:var(--text-dim);letter-spacing:1px;line-height:1.8}
+
+/* ── UTILITY ────────────────────────────────────────── */
+.text-accent{color:var(--accent)}
+.text-gold{color:var(--gold)}
+.text-emerald{color:var(--emerald)}
+.text-rose{color:var(--rose)}
+.mt-12{margin-top:12px}
+.mt-24{margin-top:24px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Ruliad Expedition Kit v1.0</div>
+    <h1>You've never read more.<br/><em>You've never thought less.</em></h1>
+    <p class="hero-sub">
+      The attention economy didn't just overwhelm you with information. It <strong>retrained your nervous system</strong> to scan for signal rather than hold complexity — to feel informed rather than actually understand. The Ruliad Expedition Kit is a research instrument built for the gap between those two things.
+    </p>
+    <div class="hero-cta">
+      <a href="#pricing" class="btn btn-primary">Get the Kit — from $75</a>
+      <a href="#how-it-works" class="btn btn-ghost">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     THE PROBLEM
+     ═══════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-label">The Actual Problem</div>
+    <div class="section-title">Being constantly informed is not the same as understanding anything.</div>
+    <p class="section-body">
+      Decades of high-frequency media exposure have done something measurable to human cognition: they've trained our brains to mistake consumption for comprehension. The feeling of staying informed — the dopamine of the new, the anxiety of missing something — has replaced the slower, more uncertain process of actually sitting with complexity. The Ruliad Expedition Kit doesn't give you more information. It gives you a different relationship with the information you already have.
+    </p>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h3>The Entrainment Problem</h3>
+        <p>Mass media and the attention economy are extraordinarily efficient at synchronizing your cognitive patterns with their own. Outrage, novelty, tribal confirmation — your brain's threat-detection system gets recruited for engagement, not understanding. You feel informed. Your thinking has been narrowed.</p>
+      </div>
+      <div class="problem-card">
+        <h3>The Ruliad Response</h3>
+        <p>Instead of one perspective finding what it's looking for, eight independent disciplinary lenses fire simultaneously. Convergence becomes evidence. Contradiction becomes information. What no single perspective can see becomes visible only in the synthesis — the emergent structure of the thing itself.</p>
+      </div>
+      <div class="problem-card">
+        <h3>The Single-Thread Problem</h3>
+        <p>A single AI conversation is one perspective, one lens, one set of inherited assumptions. The model's default framing becomes yours. You get an answer that feels comprehensive. You get one slice of a much larger structure — and no way to see the rest.</p>
+      </div>
+      <div class="problem-card">
+        <h3>What Genuine Inquiry Produces</h3>
+        <p>72 unique analytical terms. 26 cited sources. Convergent, contradictory, and emergent findings — separated automatically. A 3D topology you can rotate, filter, and explore. The full structure of an idea, not a summary of it. Under 2 minutes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     WHAT AN EXPEDITION PRODUCES
+     ═══════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-label">What You Get Per Run</div>
+    <div class="section-title">A complete topological scan of any idea.</div>
+    <p class="section-body">
+      Each expedition fires 7–8 disciplinary probes with web search enabled, then runs automated synthesis to sort every finding into one of three categories. Not a summary. Not a chatbot response. A map of the structure underneath.
+    </p>
+
+    <div class="stat-strip">
+      <div class="stat-cell">
+        <div class="stat-num">72</div>
+        <div class="stat-label">Unique Terms</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">9</div>
+        <div class="stat-label">Probe Disciplines</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">26</div>
+        <div class="stat-label">Cited Sources</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num">23</div>
+        <div class="stat-label">Synthesis Findings</div>
+      </div>
+    </div>
+
+    <!-- Real expedition example -->
+    <div class="expedition-example">
+      <div class="example-header">
+        <div class="example-eyebrow">Live Expedition — February 23, 2026</div>
+        <div class="example-target">Target: <em>The Supreme Court struck down President Trump's sweeping tariffs on February 20, 2026, ruling 6-3 that he exceeded his emergency economic powers. Trump has since pledged to reimpose equivalent tariffs at an even higher rate through alternative legal mechanisms. What does this moment reveal about the structural relationship between executive power, economic policy, democratic legitimacy, and institutional resiliency in the United States?</em></div>
+      </div>
+
+      <div class="probe-descriptions">
+        <div class="probe-desc">
+          <div class="probe-desc-num">D0</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Constitutional Law &amp; Separation of Powers <span class="probe-tag">The Constraint Probe</span></div>
+            <p>Examines how the Court's invocation of the Major Questions Doctrine fits into the longer arc of executive power expansion — and what precedent it sets (or fails to set) when a president immediately signals intent to circumvent via alternative statutory mechanisms.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D1</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">International Trade Economics <span class="probe-tag tag-rose">The Cost Probe</span></div>
+            <p>Applies the empirical literature on tariff incidence: who actually bears the cost, how supply chains absorb or transmit shocks, and what deadweight loss looks like at scale. Asks whether the economic case for these tariffs survives contact with the data — or whether the policy was always primarily political.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D2</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Political Psychology &amp; Motivated Reasoning <span class="probe-tag tag-gold">The Cognition Probe</span></div>
+            <p>Investigates why voters support tariffs despite evidence of personal economic cost. Examines identity-protective cognition, zero-sum thinking, and loss aversion as the psychological substrate that makes protectionism intuitively compelling — and how that substrate interacts with the "deep state" narrative when courts push back.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D3</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Institutional Design &amp; Democratic Theory <span class="probe-tag tag-emerald">The Stress Test Probe</span></div>
+            <p>Asks what it means for democratic legitimacy when a president responds to a judicial ruling by immediately announcing circumvention. Analyzes the "ratchet effect" — each successful workaround lowers the friction for the next — and what distinguishes a stressed institution from a degrading one.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D4</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Game Theory &amp; Strategic Interaction <span class="probe-tag tag-orange">The Leverage Probe</span></div>
+            <p>Models the Court ruling as a move in a repeated game between branches and international actors. Examines whether US unpredictability functions as credible leverage or costly noise — and how trading partners rationally respond when the legal status of tariff threats is perpetually uncertain.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D5</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Historical Pattern Recognition <span class="probe-tag tag-cyan">The Precedent Probe</span></div>
+            <p>Situates this moment in the longer history of US trade policy cycles — from Smoot-Hawley to Nixon's 1971 import surcharge to Reagan-era steel quotas. Asks what the historical resolution pattern for executive protectionist overreach looks like, and whether 2026 fits the pattern or breaks it.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D6</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Information Ecosystem &amp; Narrative Framing <span class="probe-tag tag-purple">The Framing Probe</span></div>
+            <p>Maps how the same event is being constructed differently across media ecosystems — "judicial overreach undermining economic sovereignty" vs. "constitutional check on executive abuse" — and what the divergence in framing reveals about the underlying values being contested, not just the facts.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D7</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Systems Dynamics &amp; Feedback Loops <span class="probe-tag tag-dim">The Cascade Probe</span></div>
+            <p>Models the second and third-order effects of sustained tariff uncertainty on investment decisions, supply chain geography, and long-term industrial capacity. Identifies the feedback loops where legal constraint triggers policy substitution, which triggers new uncertainty, which triggers further investment hysteresis.</p>
+          </div>
+        </div>
+        <div class="probe-desc">
+          <div class="probe-desc-num">D8</div>
+          <div class="probe-desc-body">
+            <div class="probe-desc-title">Philosophy of Law &amp; Legitimacy <span class="probe-tag">The Foundation Probe</span></div>
+            <p>Asks the deepest question: when an executive openly signals intent to circumvent a court ruling through alternative means, what does that do to rule of law as a social technology? Examines the conditions under which legal legitimacy degrades versus holds — and whether this moment is a stress test or a turning point.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-footnote">
+        This single expedition produced 72 unique analytical terms, 26 cited sources, 12 convergent findings, 5 contradictions, and 6 emergent dynamics — in under 2 minutes. Below is what the synthesis engine found.
+      </div>
+    </div>
+
+    <!-- ── STATIC SCREENSHOT ─────────────────────────────
+         Replace src with your actual image path or URL.
+         Alt text describes the 3D topology for accessibility.
+    ──────────────────────────────────────────────────── -->
+    <div style="margin-top:32px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <img
+        src="img/basic_screenshot.png"
+        alt="3D semantic topology map of the Trump tariffs expedition, showing convergent, emergent, and contradictory nodes including the Legitimacy-Arbitrage Paradox and Cognitive-Institutional Spiral"
+        style="width:100%;display:block"
+      />
+    </div>
+
+    <div class="output-showcase">
+      <!-- Convergent -->
+      <div class="output-block">
+        <div class="output-header">
+          <div class="output-dot" style="background:var(--emerald)"></div>
+          <div class="output-label">Convergent Findings</div>
+          <div class="output-count">What multiple disciplines agree on</div>
+        </div>
+        <div class="output-body">
+          <div class="finding">
+            <div class="finding-label">Executive overreach confirmed across disciplines</div>
+            <div class="finding-desc">Constitutional law, trade economics, institutional design, and philosophy all independently identify the tariff imposition as exceeding statutory authority — convergence so strong it functions as evidence, not opinion.</div>
+          </div>
+          <div class="finding">
+            <div class="finding-label">Uncertainty costs are real and compounding</div>
+            <div class="finding-desc">Trade economics, game theory, and systems dynamics converge on policy unpredictability creating measurable investment paralysis and supply chain disruption — regardless of whether the underlying tariff policy is economically sound.</div>
+          </div>
+          <div class="finding">
+            <div class="finding-label">Democratic legitimacy eroded by circumvention</div>
+            <div class="finding-desc">Institutional design, philosophy, and constitutional law agree that announcing intent to circumvent a ruling — rather than challenging it — degrades the social technology of rule of law in ways that compound over time.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contradictory -->
+      <div class="output-block">
+        <div class="output-header">
+          <div class="output-dot" style="background:var(--rose)"></div>
+          <div class="output-label">Contradictory Findings</div>
+          <div class="output-count">Where disciplines disagree</div>
+        </div>
+        <div class="output-body">
+          <div class="finding">
+            <div class="finding-label">Unpredictability: leverage or cost?</div>
+            <div class="finding-desc">Game theory views executive unpredictability as credible strategic leverage in trade negotiations. Trade economics sees the same unpredictability as pure deadweight loss that destroys investment confidence. Both are correct — they're measuring different things.</div>
+          </div>
+          <div class="finding">
+            <div class="finding-label">Circumvention: degradation or adaptation?</div>
+            <div class="finding-desc">Institutional design frames statutory workarounds as rule-of-law erosion. Game theory interprets the same behavior as evidence of institutional adaptability under constraint. The difference turns on whether you're measuring legitimacy or effectiveness.</div>
+          </div>
+          <div class="finding">
+            <div class="finding-label">Court ruling: legitimacy or threat?</div>
+            <div class="finding-desc">Constitutional law sees the 6-3 ruling as institutional legitimacy functioning as designed. Political psychology notes the same ruling will fuel the "deep state resistance" narrative — and may strengthen the executive's populist position by giving it a villain.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergent -->
+      <div class="output-block">
+        <div class="output-header">
+          <div class="output-dot" style="background:var(--gold)"></div>
+          <div class="output-label">Emergent Findings</div>
+          <div class="output-count">Visible only in cross-discipline synthesis</div>
+        </div>
+        <div class="output-body">
+          <div class="finding">
+            <div class="finding-label">The Legitimacy-Arbitrage Paradox</div>
+            <div class="finding-desc">Cross-disciplinary synthesis reveals that executives gain short-term populist legitimacy precisely by violating the institutional constraints that generate long-term legitimacy. It's not hypocrisy — it's a structural exploit. The foundation is being burned to heat the house. No single discipline could name this.</div>
+          </div>
+          <div class="finding">
+            <div class="finding-label">Cognitive-Institutional Spiral</div>
+            <div class="finding-desc">Political psychology + media framing + systems dynamics reveals a ratchet: zero-sum cognition makes circumvention feel justified, media normalization shifts the Overton window, which makes the next circumvention cheaper, which shifts it further. The driver is cognitive, but the damage is institutional.</div>
+          </div>
+          <div class="finding">
+            <div class="finding-label">Ambiguity-Driven Institutional Cycling</div>
+            <div class="finding-desc">Constitutional law + history + institutional design expose a predictable cycle: statutory vagueness in emergency powers laws invites overreach, which triggers judicial correction, which triggers statutory workarounds — each iteration leaving the next executive more room to maneuver than the last.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence sample -->
+    <div class="output-block" style="margin-top:24px">
+      <div class="output-header">
+        <div class="output-dot" style="background:var(--accent)"></div>
+        <div class="output-label">Evidence Sample</div>
+        <div class="output-count">Sources automatically mapped to analytical terms</div>
+      </div>
+      <div class="output-body">
+        <div class="finding">
+          <div class="finding-label" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">supremecourt.gov · gov/ngo · 2026-02-20</div>
+          <div class="finding-label"><a href="https://www.supremecourt.gov/opinions/25pdf/24-1287_4gcj.pdf" target="_blank" style="color:var(--text-bright)">Learning Resources, Inc. v. Trump — SCOTUS Opinion PDF</a></div>
+          <div class="finding-desc">The actual ruling, read directly. Auto-mapped to: <span style="color:var(--accent)">Institutional Legitimacy · Judicial Constraint · Executive Assertion</span></div>
+        </div>
+        <div class="finding">
+          <div class="finding-label" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Princeton · peer-reviewed · 2024</div>
+          <div class="finding-label"><a href="https://www.princeton.edu/~reddings/pubpapers/Supply_Chains_AER_2024.pdf" target="_blank" style="color:var(--text-bright)">When Tariffs Disrupt Global Supply Chains — AER</a></div>
+          <div class="finding-desc">Academic economics grounding sitting alongside breaking news. Auto-mapped to: <span style="color:var(--accent)">Supply Chain Disruption · Welfare Loss · Renegotiation Costs</span></div>
+        </div>
+        <div class="finding">
+          <div class="finding-label" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Miller Center · reference · 2025-09-11</div>
+          <div class="finding-label"><a href="https://millercenter.org/conference-on-the-presidency-2025/essays/ratchet-effect-presidents-emergency-powers-and-crisis-institutional-faith" target="_blank" style="color:var(--text-bright)">The Ratchet Effect: Presidents, Emergency Powers, and Institutional Faith</a></div>
+          <div class="finding-desc">The tool found a named academic concept that exactly matches a key emergent term. Auto-mapped to: <span style="color:var(--accent)">Ratchet Effect · Institutional Faith</span></div>
+        </div>
+        <div class="finding">
+          <div class="finding-label" style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">New York Times · major journalism · 2026-02-20</div>
+          <div class="finding-label"><a href="https://www.nytimes.com/live/2026/02/20/us/trump-tariffs-supreme-court" target="_blank" style="color:var(--text-bright)">Defiant Trump Says He Will Work Around Supreme Court's Tariff Ruling</a></div>
+          <div class="finding-desc">A live news blog automatically translated into political psychology terms. Auto-mapped to: <span style="color:var(--accent)">Populist Narrative · Authoritarian Populism · Statutory Workaround</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LOOPING VIDEO ─────────────────────────────────
+         Replace src with your actual video path or URL.
+         autoplay + muted + loop = silent ambient flythrough.
+         Add poster="PLACEHOLDER_POSTER_URL" for a thumbnail
+         while the video loads if desired.
+    ──────────────────────────────────────────────────── -->
+    <div style="margin-top:32px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <video
+        src="video/basic_recording.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+        style="width:100%;display:block"
+      ></video>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     ADDITIONAL CAPABILITIES
+     ═══════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-label">Beyond Synthesis</div>
+    <div class="section-title">Every run also includes:</div>
+
+    <div class="problem-grid mt-24">
+      <div class="problem-card">
+        <h3>3D Topology Visualization</h3>
+        <p>Every term is embedded and projected into 3D space. Rotate, zoom, filter by discipline or category. Convergent clusters, contradiction fault lines, and emergence zones are visually distinct. Powered by Plotly.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Cellular Automata Probe</h3>
+        <p>A Wolfram-style CA simulation maps your query onto a computational irreducibility lens — complete with density, volatility, and spread metrics. A visual metaphor for how predictable your topic actually is.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Evidence Chain</h3>
+        <p>Every finding is traced back to source citations. The tool maps which sources support which terms, with fuzzy alias matching and relevance scoring. Fully auditable research, not black-box summary.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Embedding Diagnostics</h3>
+        <p>Similarity matrices and projection stability scores tell you how reliable the 3D layout is. Multiple seeded runs measure neighborhood consistency — you know when to trust the topology and when it's exploratory.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Exportable JSON</h3>
+        <p>Every expedition produces a complete schema v6 JSON file — 70+ terms, all synthesis results, audit trail, config, citations, grounding stats. Pipe it into your own tools, databases, or reports.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Customizable Probes</h3>
+        <p>Default disciplines include institutional economics, game theory, cybernetics, jurisprudence, linguistics, and more. Swap any of them. Add domain-specific lenses for your industry.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     HOW IT WORKS
+     ═══════════════════════════════════════════════════ -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <div class="section-title">Self-hosted. Your keys. Your data.</div>
+    <p class="section-body">
+      The kit runs entirely on your machine. No accounts, no cloud, no subscriptions. You provide an API key from any supported provider and the tool handles everything else.
+    </p>
+
+    <div class="steps mt-24">
+      <div class="step">
+        <div class="step-line"><div class="step-num">1</div><div class="step-connector"></div></div>
+        <div class="step-content">
+          <h3>Unzip &amp; Launch</h3>
+          <p>Extract the kit. Start the included local proxy server with one command. Open the HTML file in any browser. No dependencies beyond Node.js.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-line"><div class="step-num">2</div><div class="step-connector"></div></div>
+        <div class="step-content">
+          <h3>Enter Your Question</h3>
+          <p>Type any target concept or research question. "How is X being framed?" "What are the structural risks of Y?" "Map the topology of Z." The tool adapts to any level of specificity.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-line"><div class="step-num">3</div><div class="step-connector"></div></div>
+        <div class="step-content">
+          <h3>Configure Your Lenses</h3>
+          <p>Choose from default disciplinary probes or write your own. Select your research model (DeepSeek R1, Claude, GPT-4, etc.), toggle web search, set quality mode.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-line"><div class="step-num">4</div><div class="step-connector"></div></div>
+        <div class="step-content">
+          <h3>Launch Expedition</h3>
+          <p>Watch 8 probes fire independently in real time. Each returns 10–13 unique analytical terms with centrality scores. Synthesis runs automatically. Total time: 45–120 seconds.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-line"><div class="step-num">5</div><div class="step-connector"></div></div>
+        <div class="step-content">
+          <h3>Explore the Topology</h3>
+          <p>Interactive 3D visualization. Filter by discipline, toggle probe surfaces, click any node for full descriptions and source citations. Export the full JSON for downstream analysis.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     PRICING
+     ═══════════════════════════════════════════════════ -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-label">Founding Cohort — v1.0 Launch</div>
+    <div class="section-title">One purchase. Unlimited expeditions.</div>
+    <p class="section-body">
+      No subscription. No per-run fees from us. You only pay your own API costs per expedition (typically $0.20–$1.50 depending on model and web search usage).
+    </p>
+    <p class="section-body mt-12" style="color:var(--accent);font-size:13px;">
+      This is founding cohort pricing for the v1.0 launch. It will increase after early case studies and feature milestones.
+    </p>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-top">
+          <div class="price-name">Founding Researcher</div>
+          <div class="price-amount">$75</div>
+          <div class="price-desc">For independent thinkers, writers, and the genuinely AI-curious.</div>
+        </div>
+        <div class="price-body">
+          <ul class="price-features">
+            <li>Complete Ruliad Expedition HTML tool (4,400+ lines)</li>
+            <li>Local proxy server script</li>
+            <li>Quick-start setup guide</li>
+            <li>3 example expedition JSON files</li>
+            <li>Light, dark, and high-contrast themes</li>
+          </ul>
+          <div class="price-cta">
+            <a href="#" class="btn btn-ghost">Coming Soon</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="price-card featured">
+        <div class="price-top">
+          <div class="price-name">Founding Pro</div>
+          <div class="price-amount">$100</div>
+          <div class="price-desc">For practitioners who want the full toolkit and want to build their own lenses.</div>
+        </div>
+        <div class="price-body">
+          <ul class="price-features">
+            <li>Everything in Founding Researcher</li>
+            <li>Comprehensive video walkthrough (full expedition, start to finish)</li>
+            <li>Probe customization guide — how to write domain-specific lenses</li>
+            <li>Access to the Expedition Logs archive on Substack</li>
+            <li>Priority feature requests for future versions</li>
+          </ul>
+          <div class="price-cta">
+            <a href="#" class="btn btn-primary">Coming Soon</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What's Included / What's Not -->
+    <div class="boundaries-card">
+      <div class="boundaries-grid">
+        <div>
+          <h4>What you're getting</h4>
+          <ul>
+            <li>A self-hosted research instrument — the tool, the server, and the guides</li>
+            <li>Full source code, readable and modifiable, no obfuscation or DRM</li>
+            <li>Exportable JSON output you can pipe into anything</li>
+            <li>A methodology for thinking, not a subscription to a platform</li>
+          </ul>
+        </div>
+        <div>
+          <h4>What this isn't</h4>
+          <ul>
+            <li>Not a managed service — you run it on your machine with your API keys</li>
+            <li>Not unlimited support — the guide covers setup; if you want hands-on help, that's what the PI service is for</li>
+            <li>Not a finished SaaS product — this is v1.0 from a solo builder, and it works, but expect edges</li>
+            <li>Not a promise of future updates — improvements are planned, not guaranteed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PI Service -->
+    <div class="pi-card">
+      <h3>⬡ Principal Investigator Service</h3>
+      <p>
+        Don't want to run the code yourself? Hire me to run a custom Ruliad topology scan on your specific question — and deliver a full written analysis alongside the raw expedition data.
+      </p>
+      <div class="pi-examples">
+        <div class="pi-example">
+          <strong>Compliance &amp; Risk</strong><br/>
+          "Map the regulatory topology of our AI deployment before the EU AI Act deadline."
+        </div>
+        <div class="pi-example">
+          <strong>Competitive Landscape</strong><br/>
+          "How is our market position being framed across economic, strategic, and legal lenses?"
+        </div>
+        <div class="pi-example">
+          <strong>Policy Analysis</strong><br/>
+          "What are the convergent and contradictory framings of this proposed legislation?"
+        </div>
+        <div class="pi-example">
+          <strong>Organizational Strategy</strong><br/>
+          "Where are our strategic assumptions vulnerable to disciplinary blind spots?"
+        </div>
+      </div>
+      <div class="pi-price">Starting at $300/expedition</div>
+      <div class="pi-note">Includes full JSON export, written synthesis report, and a 30-minute debrief call. Turnaround: 48 hours. Founding cohort pricing — will increase.</div>
+      <div class="mt-12">
+        <a href="#" class="btn btn-ghost" style="border-color:var(--gold-dim);color:var(--gold)">Inquire About PI Service →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     FAQ
+     ═══════════════════════════════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="section-label">FAQ</div>
+    <div class="section-title">Common questions.</div>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What API keys do I need?</div>
+        <div class="faq-a">The tool works with any OpenRouter-compatible API key, which gives you access to DeepSeek R1, Claude, GPT-4, Mistral, and dozens of other models. You can also use a direct Anthropic or OpenAI key. Embedding models and research models are configured separately — the guide walks you through it.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How much does each expedition cost in API fees?</div>
+        <div class="faq-a">Typically $0.20–$1.50 depending on the model and whether web search is enabled. DeepSeek R1 with web search (the default "rigor" mode) is on the lower end. Claude Opus with full grounding is on the higher end. You control the budget per run.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do I need technical skills to use this?</div>
+        <div class="faq-a">You need to be comfortable running a command in a terminal (one command to start the proxy). The Founding Member tier includes a full video walkthrough. If you can install Node.js and paste an API key, you can run expeditions.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What can I actually scan?</div>
+        <div class="faq-a">Anything you'd research. Geopolitical disputes, regulatory questions, philosophical concepts, competitive landscapes, organizational risks, scientific controversies, policy proposals. The tool adapts its disciplinary probes to whatever you ask. Previous expeditions have scanned topics from "the meaning of life" to Pentagon–Anthropic AI policy disputes.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is my data private?</div>
+        <div class="faq-a">The tool runs locally on your machine — there is no intermediary server between you and your chosen API provider, and your expedition data (the JSON, the visualization) stays on your local filesystem. However, your prompts are sent to whichever AI provider you configure. If you route through OpenRouter, your queries transit their infrastructure before reaching the model provider. Each provider has its own data handling policies and jurisdictional realities — DeepSeek is subject to Chinese law, Google retains API inputs for abuse monitoring, and so on. For maximum privacy, use a provider that offers zero-data-retention terms and connect via direct API rather than a routing service. The setup guide covers the privacy tradeoffs of each provider option.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What's the theoretical basis?</div>
+        <div class="faq-a">The methodology is called Ruliad Tomography — named after Stephen Wolfram's concept of the ruliad (the entangled limit of all possible computations). The core insight: LLMs trained on the full corpus of human symbolic output are holographic encodings of collective cognitive structure. By firing multiple independent probes and looking for convergence, you're performing computational tomography on a region of that space. Convergent findings across independent disciplinary lenses are evidence of genuine structural features — not artifacts of any single perspective.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I modify the tool?</div>
+        <div class="faq-a">It's a single HTML file and a proxy script. Everything is readable, modifiable, and yours. Add probes, change the visualization, pipe the JSON into your own analysis pipeline. No obfuscation, no DRM.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <p>
+      Ruliad Expedition Kit v1.0 — Built by Levi<br/>
+      <span style="color:var(--text-dim)">A research instrument, not a chatbot. A way back to thinking, not a faster way to consume.</span>
+    </p>
+  </div>
+</footer>
+
+<script>
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const item=q.parentElement;
+    const wasOpen=item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+    if(!wasOpen) item.classList.add('open');
+  });
+});
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const target=document.querySelector(a.getAttribute('href'));
+    if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'})}
+  });
+});
+</script>
+</body>
+</html>

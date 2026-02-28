@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ruliad Expedition -- Research as Fieldwork</title>
+  <meta
+    name="description"
+    content="Ruliad Expedition is a multi-lens conceptual research tool for exploring complex ideas, mapping convergence and divergence, and generating interpretable research artifacts."
+  />
+  <meta name="theme-color" content="#0b1020" />
+
+  <style>
+    :root {
+      --bg: #070b14;
+      --bg-soft: #0d1426;
+      --card: rgba(255,255,255,0.04);
+      --card-strong: rgba(255,255,255,0.07);
+      --text: #ecf0ff;
+      --muted: #b8c2e6;
+      --line: rgba(255,255,255,0.10);
+      --accent: #8aa7ff;
+      --accent-2: #8ef0d0;
+      --accent-3: #d8a8ff;
+      --danger-soft: rgba(255, 110, 110, 0.12);
+      --shadow: 0 20px 50px rgba(0,0,0,0.35);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --max: 1120px;
+      --tap: 44px;
+      --focus: 0 0 0 3px rgba(138, 167, 255, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(142,240,208,0.10), transparent 60%),
+        radial-gradient(900px 500px at 0% 0%, rgba(138,167,255,0.18), transparent 55%),
+        radial-gradient(800px 500px at 50% 120%, rgba(216,168,255,0.08), transparent 60%),
+        var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+
+    .container {
+      width: min(100% - 1.25rem, var(--max));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      background: #fff;
+      color: #000;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      z-index: 1000;
+    }
+    .skip-link:focus {
+      left: 0.5rem;
+      top: 0.5rem;
+    }
+
+    /* Header */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      background: rgba(7, 11, 20, 0.78);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 64px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-height: var(--tap);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background:
+        conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+      box-shadow: 0 8px 20px rgba(138,167,255,0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 8px;
+      background: rgba(7,11,20,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .nav-actions {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-link {
+      color: var(--muted);
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-link:focus-visible { outline: none; box-shadow: var(--focus); }
+
+    .menu-btn {
+      min-width: var(--tap);
+      min-height: var(--tap);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .menu-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+
+    .mobile-menu {
+      display: none;
+      padding: 0.5rem 0 0.9rem;
+      border-top: 1px solid var(--line);
+    }
+    .mobile-menu.open { display: block; }
+
+    .mobile-menu-grid {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .mobile-menu a {
+      display: block;
+      padding: 0.8rem 0.85rem;
+      border-radius: 12px;
+      color: var(--muted);
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.02);
+      min-height: var(--tap);
+    }
+    .mobile-menu a:hover {
+      color: var(--text);
+      border-color: var(--line);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+    }
+
+    .btn {
+      min-height: var(--tap);
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.16);
+    }
+    .btn:focus-visible { outline: none; box-shadow: var(--focus); }
+    .btn.primary {
+      background: linear-gradient(180deg, rgba(138,167,255,0.22), rgba(138,167,255,0.12));
+      border-color: rgba(138,167,255,0.35);
+    }
+    .btn.primary:hover {
+      background: linear-gradient(180deg, rgba(138,167,255,0.28), rgba(138,167,255,0.14));
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 0.4rem 0.7rem;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      font-size: 0.9rem;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 1rem 0 1.25rem;
+    }
+
+    .hero-shell {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        rgba(255,255,255,0.02);
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 0.95rem;
+      align-content: start;
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 0.92rem;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.7rem, 5vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 58ch;
+    }
+
+    .hero-proof {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.15rem;
+    }
+
+    .metric {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 0.85rem;
+    }
+    .metric strong {
+      display: block;
+      font-size: 0.95rem;
+      line-height: 1.15;
+    }
+    .metric span {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .hero-visual {
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+      min-height: 260px;
+      display: grid;
+      gap: 0.75rem;
+      padding: 0.85rem;
+      align-content: start;
+    }
+
+    .visual-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .window-dots {
+      display: inline-flex;
+      gap: 0.35rem;
+    }
+    .window-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .mini-tabs {
+      display: inline-flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .mini-tabs span {
+      font-size: 0.72rem;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      border-radius: 999px;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .mock-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 0.65rem;
+      min-height: 180px;
+    }
+
+    .mock-panel {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: 0.7rem;
+      display: grid;
+      gap: 0.55rem;
+      align-content: start;
+    }
+
+    .mock-bars {
+      display: grid;
+      gap: 0.35rem;
+    }
+    .mock-bars span {
+      display: block;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .mock-bars span::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: var(--w, 50%);
+      background: linear-gradient(90deg, rgba(138,167,255,0.6), rgba(142,240,208,0.55));
+      border-radius: inherit;
+    }
+
+    .mock-chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .mock-chip-grid span {
+      font-size: 0.72rem;
+      padding: 0.28rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .graph-scribble {
+      border-radius: 10px;
+      height: 110px;
+      background:
+        radial-gradient(circle at 20% 35%, rgba(138,167,255,0.4) 0 2px, transparent 3px),
+        radial-gradient(circle at 55% 45%, rgba(142,240,208,0.45) 0 2px, transparent 3px),
+        radial-gradient(circle at 78% 28%, rgba(216,168,255,0.45) 0 2px, transparent 3px),
+        radial-gradient(circle at 65% 72%, rgba(138,167,255,0.35) 0 2px, transparent 3px),
+        linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .graph-scribble::before,
+    .graph-scribble::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.45;
+      background:
+        linear-gradient(12deg, transparent 47%, rgba(138,167,255,0.32) 49%, rgba(138,167,255,0.32) 51%, transparent 53%),
+        linear-gradient(-18deg, transparent 52%, rgba(142,240,208,0.22) 54%, rgba(142,240,208,0.22) 56%, transparent 58%),
+        linear-gradient(36deg, transparent 41%, rgba(216,168,255,0.22) 43%, rgba(216,168,255,0.22) 45%, transparent 47%);
+      transform: scale(1.18);
+    }
+
+    /* Sections */
+    main section {
+      padding: 1.6rem 0;
+    }
+
+    .section-head {
+      display: grid;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(1.25rem, 4vw, 2rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 65ch;
+    }
+
+    .grid {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 0.95rem;
+      box-shadow: 0 8px 26px rgba(0,0,0,0.12);
+    }
+
+    .card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .steps {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.75rem;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 0.85rem;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background: rgba(138,167,255,0.12);
+      border: 1px solid rgba(138,167,255,0.22);
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .step h3 {
+      margin: 0 0 0.25rem;
+      font-size: 0.98rem;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .quote {
+      border: 1px solid rgba(142,240,208,0.18);
+      background: linear-gradient(180deg, rgba(142,240,208,0.06), rgba(142,240,208,0.03));
+      border-radius: 18px;
+      padding: 1rem;
+    }
+
+    .quote p {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+    }
+
+    .quote footer {
+      margin-top: 0.55rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .list {
+      display: grid;
+      gap: 0.6rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list li {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 0.8rem;
+      color: var(--muted);
+    }
+    .list li strong { color: var(--text); }
+
+    .warning-card {
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)),
+        var(--danger-soft);
+      border-radius: 18px;
+      padding: 1rem;
+    }
+
+    .warning-card h3 { margin: 0 0 0.35rem; }
+    .warning-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .cta {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background:
+        radial-gradient(700px 260px at 95% -20%, rgba(138,167,255,0.20), transparent 70%),
+        radial-gradient(700px 260px at 0% 130%, rgba(142,240,208,0.10), transparent 70%),
+        rgba(255,255,255,0.02);
+      padding: 1.1rem;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .cta h2 {
+      margin: 0;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-size: clamp(1.35rem, 4vw, 2.1rem);
+    }
+    .cta p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 60ch;
+    }
+
+    /* Footer */
+    .site-footer {
+      padding: 2rem 0 5.5rem;
+      color: var(--muted);
+    }
+
+    .footer-shell {
+      display: grid;
+      gap: 0.85rem;
+      border-top: 1px solid var(--line);
+      padding-top: 1rem;
+    }
+
+    .footer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .footer-links a {
+      padding: 0.45rem 0.65rem;
+      border-radius: 10px;
+      border: 1px solid transparent;
+    }
+    .footer-links a:hover {
+      border-color: var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+    }
+
+    /* Sticky mobile CTA bar */
+    .mobile-cta-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      background: rgba(7,11,20,0.88);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--line);
+      padding: 0.55rem 0.7rem calc(0.55rem + env(safe-area-inset-bottom));
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .mobile-cta-bar .text {
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.25;
+    }
+    .mobile-cta-bar .btn {
+      min-height: 42px;
+      padding: 0.55rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    /* Desktop */
+    @media (min-width: 740px) {
+      .container { width: min(100% - 2rem, var(--max)); }
+
+      .menu-btn,
+      .mobile-menu { display: none !important; }
+
+      .nav-actions { display: flex; }
+
+      .hero {
+        padding: 1.25rem 0 1.6rem;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 1rem;
+        padding: 1.1rem;
+      }
+
+      .hero-visual {
+        min-height: 100%;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .cta {
+        grid-template-columns: 1.2fr auto;
+        align-items: end;
+        gap: 1rem;
+      }
+
+      .mobile-cta-bar {
+        display: none;
+      }
+
+      .site-footer {
+        padding-bottom: 2.25rem;
+      }
+    }
+
+    @media (min-width: 980px) {
+      .hero-grid {
+        gap: 1.2rem;
+        padding: 1.25rem;
+      }
+
+      .hero-proof {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .steps {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0);
+      white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a href="#top" class="brand" aria-label="Ruliad Expedition home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Ruliad Expedition</span>
+      </a>
+
+      <nav class="nav-actions" aria-label="Primary">
+        <a class="nav-link" href="#what-it-is">What it is</a>
+        <a class="nav-link" href="#how-it-works">How it works</a>
+        <a class="nav-link" href="#when-to-use">When to use</a>
+        <a class="nav-link" href="#who-its-for">Who it is for</a>
+        <a class="btn" href="#manifesto-note">Read the manifesto note</a>
+        <a class="btn primary" href="#cta">Request beta access</a>
+      </nav>
+
+      <button
+        class="menu-btn"
+        id="menuBtn"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mobileMenu"
+        aria-label="Open menu"
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
+    </div>
+
+    <div class="container mobile-menu" id="mobileMenu" role="dialog" aria-label="Menu">
+      <div class="mobile-menu-grid">
+        <a href="#what-it-is">What it is</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#when-to-use">When to use</a>
+        <a href="#who-its-for">Who it is for</a>
+        <a href="#manifesto-note">Manifesto note</a>
+        <a href="#cta">Request beta access</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero container" id="top" aria-labelledby="hero-title">
+      <div class="hero-shell">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <div class="pill" aria-label="Release status">
+              <span aria-hidden="true">●</span>
+              <span>Experimental beta -- evidence-aware conceptual research mapping</span>
+            </div>
+
+            <div class="eyebrow">Research as fieldwork, not a vending machine.</div>
+
+            <h1 id="hero-title">
+              Explore the terrain of an idea before it collapses into an answer.
+            </h1>
+
+            <p class="lead">
+              Ruliad Expedition is a multi-lens conceptual research tool for navigating complex questions through contrasting probes, mapping convergence and divergence, and producing interpretable artifacts with transparent provenance.
+            </p>
+
+            <div class="btn-row">
+              <a class="btn primary" href="#cta">Request beta access</a>
+              <a class="btn" href="#how-it-works">See how it works</a>
+              <a class="btn" href="#manifesto-note">Why this exists</a>
+            </div>
+
+            <div class="hero-proof" aria-label="Key capabilities">
+              <div class="metric">
+                <strong>Multi-lens inquiry</strong>
+                <span>Probe one target through contrasting frames</span>
+              </div>
+              <div class="metric">
+                <strong>Convergence mapping</strong>
+                <span>See overlap, drift, tension, and recurrence</span>
+              </div>
+              <div class="metric">
+                <strong>Interpretability first</strong>
+                <span>Provenance, grounding signals, and diagnostics</span>
+              </div>
+              <div class="metric">
+                <strong>Artifact export</strong>
+                <span>Graphs, notes, run exports, and reusable outputs</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual" aria-label="Product preview placeholder">
+            <div class="visual-head">
+              <div class="window-dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mini-tabs" aria-hidden="true">
+                <span>Probes</span>
+                <span>Grounding</span>
+                <span>Graph</span>
+                <span>Export</span>
+              </div>
+            </div>
+
+            <div class="mock-grid" aria-hidden="true">
+              <div class="mock-panel">
+                <div class="mock-chip-grid">
+                  <span>Target</span>
+                  <span>Probe A</span>
+                  <span>Probe B</span>
+                  <span>Probe C</span>
+                </div>
+                <div class="graph-scribble"></div>
+                <div class="mock-bars">
+                  <span style="--w:72%"></span>
+                  <span style="--w:46%"></span>
+                  <span style="--w:61%"></span>
+                  <span style="--w:33%"></span>
+                </div>
+              </div>
+              <div class="mock-panel">
+                <div class="mock-chip-grid">
+                  <span>Convergent</span>
+                  <span>Contradictory</span>
+                  <span>Emergent</span>
+                </div>
+                <div class="mock-bars">
+                  <span style="--w:84%"></span>
+                  <span style="--w:58%"></span>
+                  <span style="--w:67%"></span>
+                  <span style="--w:41%"></span>
+                  <span style="--w:76%"></span>
+                  <span style="--w:52%"></span>
+                </div>
+              </div>
+            </div>
+
+            <p class="eyebrow" style="margin:0;">
+              Replace this panel with a real screenshot, short GIF, or 20-second walkthrough clip.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="what-it-is">
+      <div class="container">
+        <div class="section-head">
+          <h2>What this tool is</h2>
+          <p>
+            A bridge between intuition and analysis. It helps turn “I think there is something here” into a visible conceptual topology you can inspect, explain, and revisit.
+          </p>
+        </div>
+
+        <div class="grid three">
+          <article class="card">
+            <h3>Multi-lens conceptual research</h3>
+            <p>
+              Start with a target, then probe it through multiple frameworks, vocabularies, or disciplines to reveal how the idea changes under pressure.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Pattern and tension mapping</h3>
+            <p>
+              Track convergence, divergence, recurrence, contradiction, and semantic drift across probe outputs instead of flattening everything into one answer too early.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Interpretability-oriented artifacts</h3>
+            <p>
+              Generate outputs that separate exploratory observations from grounded interpretations and clearly show where certainty ends.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="manifesto-note">
+      <div class="container">
+        <div class="quote">
+          <p>
+            “Ruliad Expedition is not an oracle. It does not replace judgment. It offers a way to explore the terrain of ideas with more discipline, more visibility, and more humility.”
+          </p>
+          <footer>Manifesto framing, adapted for product landing page copy</footer>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>
+            Use it like an expedition, not a vending machine. The value comes from contrast, structure, and interpretive discipline.
+          </p>
+        </div>
+
+        <div class="steps">
+          <article class="step">
+            <div class="step-num" aria-hidden="true">1</div>
+            <div>
+              <h3>Choose a target</h3>
+              <p>
+                Start with a concept, question, hypothesis, claim, or sentence-level prompt that preserves the contour of what you actually want to investigate.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-num" aria-hidden="true">2</div>
+            <div>
+              <h3>Select probes</h3>
+              <p>
+                Pick lenses with meaningful contrast: disciplines, analytic styles, ideological frames, domain vocabularies, or deliberate counter-frames.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-num" aria-hidden="true">3</div>
+            <div>
+              <h3>Run the expedition</h3>
+              <p>
+                Generate the field of outputs, then inspect clusters, repeated terms, reframings, and tensions. The shape of the idea space is part of the result.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-num" aria-hidden="true">4</div>
+            <div>
+              <h3>Interpret before concluding</h3>
+              <p>
+                Look for convergence zones and drift before you lock in a claim. Treat the map as evidence of structure, not a substitute for judgment.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-num" aria-hidden="true">5</div>
+            <div>
+              <h3>Ground and annotate key terms</h3>
+              <p>
+                Use external grounding systems where appropriate to improve interpretability and diagnostics, while keeping provider lookups separate from relevance.
+              </p>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-num" aria-hidden="true">6</div>
+            <div>
+              <h3>Export research artifacts</h3>
+              <p>
+                Create graphs, notes, run exports, and writeups that distinguish exploratory observations, grounded interpretations, and responsible claims.
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="when-to-use">
+      <div class="container">
+        <div class="section-head">
+          <h2>When to use it</h2>
+          <p>
+            This shines when your question is conceptually rich, easy to oversimplify, or vulnerable to bias from a single framing.
+          </p>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h3>Especially good for</h3>
+            <ul class="list" aria-label="Good fit use cases">
+              <li><strong>Thesis formation</strong> -- when you need to understand the shape of an idea before committing to a claim.</li>
+              <li><strong>Research agenda design</strong> -- compare frames and identify where to investigate next.</li>
+              <li><strong>Hypothesis pressure-testing</strong> -- surface tension and recurrence across lenses.</li>
+              <li><strong>Essay or Substack development</strong> -- map structure before drafting confident prose.</li>
+              <li><strong>Cross-disciplinary analysis</strong> -- see which concepts travel well and which dissolve.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Not the best fit for</h3>
+            <ul class="list" aria-label="Poor fit use cases">
+              <li><strong>Quick factual lookup</strong> -- use a simpler tool if you just need one fact fast.</li>
+              <li><strong>Auto-validation of truth claims</strong> -- this supports inquiry and interpretation, not automatic proof.</li>
+              <li><strong>Persuasion-first workflows</strong> -- it is designed to clarify terrain, not manufacture certainty.</li>
+              <li><strong>One-click final answers</strong> -- the point is structured exploration before conclusion.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="who-its-for">
+      <div class="container">
+        <div class="section-head">
+          <h2>Who it is for</h2>
+          <p>
+            People who do not just want answers. People who want better questions, better maps, and better ways of seeing.
+          </p>
+        </div>
+
+        <div class="grid three">
+          <article class="card">
+            <h3>Independent researchers & writers</h3>
+            <p>
+              Build interpretable conceptual maps before drafting essays, investigations, newsletters, or long-form arguments.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Students, scholars, and analysts</h3>
+            <p>
+              Explore layered questions, compare frameworks, and preserve provenance while working toward theses, reports, or policy analysis.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Systems thinkers & AI evaluators</h3>
+            <p>
+              Inspect conceptual structure at scale and separate generation from interpretation in AI-assisted inquiry workflows.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="principles">
+      <div class="container">
+        <div class="section-head">
+          <h2>Design principles</h2>
+          <p>
+            The product is strongest when the interface reinforces the epistemic stance.
+          </p>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>Interpretability before polish</h3>
+            <p>
+              The tool should make conceptual structure visible, including ambiguity, disagreement, and uncertainty. Diagnostics are a feature, not a leak.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Grounding is support, not veto</h3>
+            <p>
+              External semantic systems can help canonicalize or annotate terms, but absence of a provider match is not evidence that a claim is irrelevant.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Separate observation from claim</h3>
+            <p>
+              Good artifacts distinguish exploratory findings, grounded interpretations, and conclusions that can be responsibly stated.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Operator-guided inquiry</h3>
+            <p>
+              This is a research instrument. It helps a human think with structure. It does not replace judgment, ethics, or interpretation.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="beta-status">
+      <div class="container">
+        <div class="warning-card">
+          <h3>Current status -- experimental beta</h3>
+          <p>
+            Ruliad Expedition is being productized in public. Expect active iteration on grounding, graph readability, and workflow ergonomics. Expect transparent changelogs and an emphasis on reproducible exports over mystery-box polish.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="cta">
+      <div class="container">
+        <div class="cta">
+          <div>
+            <h2>Want to try Ruliad Expedition?</h2>
+            <p>
+              Join the early-access list for beta releases, demos, and methodology notes. Ideal if you are a researcher, writer, student, analyst, or curious systems thinker who wants to pressure-test ideas with more structure.
+            </p>
+          </div>
+          <div class="btn-row">
+            <a class="btn primary" href="mailto:you@example.com?subject=Ruliad%20Expedition%20Beta%20Access">Request beta access</a>
+            <a class="btn" href="#top">Back to top</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-shell">
+      <div class="footer-meta">
+        <div>
+          <strong style="color: var(--text);">Ruliad Expedition</strong>
+          <div style="font-size: 0.92rem;">A multi-lens conceptual research instrument</div>
+        </div>
+
+        <div class="footer-links" aria-label="Footer links">
+          <a href="#what-it-is">What it is</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#cta">Beta access</a>
+        </div>
+      </div>
+
+      <div style="font-size: 0.88rem; color: var(--muted);">
+        Built for structured wandering. Designed for interpretability. Not an oracle.
+      </div>
+    </div>
+  </footer>
+
+  <div class="mobile-cta-bar" aria-label="Mobile call to action">
+    <div class="text">
+      Experimental beta for researchers, writers, and systems thinkers.
+    </div>
+    <a class="btn primary" href="#cta">Join beta</a>
+  </div>
+
+  <script>
+    (function () {
+      const menuBtn = document.getElementById("menuBtn");
+      const mobileMenu = document.getElementById("mobileMenu");
+      const menuLinks = mobileMenu ? mobileMenu.querySelectorAll("a") : [];
+
+      function closeMenu() {
+        if (!mobileMenu || !menuBtn) return;
+        mobileMenu.classList.remove("open");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.setAttribute("aria-label", "Open menu");
+      }
+
+      function toggleMenu() {
+        if (!mobileMenu || !menuBtn) return;
+        const isOpen = mobileMenu.classList.toggle("open");
+        menuBtn.setAttribute("aria-expanded", String(isOpen));
+        menuBtn.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+      }
+
+      if (menuBtn) {
+        menuBtn.addEventListener("click", toggleMenu);
+      }
+
+      menuLinks.forEach(link => {
+        link.addEventListener("click", closeMenu);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
+      });
+
+      // Close mobile menu if viewport grows to desktop size
+      window.addEventListener("resize", () => {
+        if (window.innerWidth >= 740) closeMenu();
+      });
+    })();
+  </script>
+</body>
+</html>
