@@ -20,6 +20,4 @@ export const TAB_ORDER=[generatorTabBtn,plotTabBtn].filter(Boolean);
 
 export const themeSelectGlobalEl=document.getElementById("theme-select-global");
 
-// Hybrid compatibility: modules import via export, legacy call-sites use window.*
-// Remove once all modules import directly from this file.
-Object.assign(window, { discInputsEl, setupEl, plotPanelEl, progressEl, vizEl, generatorTabBtn, plotTabBtn, TAB_ORDER, themeSelectGlobalEl });
+// All refs are const DOM nodes — no setters needed; importers receive the live binding.

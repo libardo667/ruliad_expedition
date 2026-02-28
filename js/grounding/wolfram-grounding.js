@@ -1,5 +1,5 @@
 import { GROUNDING_ELIGIBILITY_VALUES, SOURCE_TYPE_LABELS } from '../core/constants.js';
-import { CURRENT_RUN_ID, RUN_STATE, WOLFRAM_GROUNDING_DIAGNOSTICS } from '../core/state.js';
+import { CURRENT_RUN_ID, RUN_STATE, WOLFRAM_GROUNDING_DIAGNOSTICS, setWolframGroundingDiagnostics } from '../core/state.js';
 import { normalizeMode } from '../api/provider.js';
 import { buildWolframTermCacheKey, getWolframTermCache, setWolframTermCache } from './wolfram-cache.js';
 import { buildNoPlaintextReasons, canonicalizeWolframLabelForQuery, compactWolframText, extractWolframStructured, fetchWolframJSON, isWolframLowSignalText, resolveWolframChosenPod, resolveWolframTemplateToken, sanitizeWolframToken, scoreWolframSnippet, selectWolframSnippetFromParsed, serializeWolframParsed, wolframPublicInputUrl } from './wolfram-parse.js';
@@ -221,7 +221,7 @@ export function recordWolframGroundingDiagnostic(entry){
   WOLFRAM_GROUNDING_DIAGNOSTICS.push(item);
   upsertAmbiguityFromDiagnostic(item);
   if(WOLFRAM_GROUNDING_DIAGNOSTICS.length>4000){
-    WOLFRAM_GROUNDING_DIAGNOSTICS=WOLFRAM_GROUNDING_DIAGNOSTICS.slice(-4000);
+    setWolframGroundingDiagnostics(WOLFRAM_GROUNDING_DIAGNOSTICS.slice(-4000));
   }
   if(RUN_STATE){
     RUN_STATE.wolframGroundingDiagnostics=[...WOLFRAM_GROUNDING_DIAGNOSTICS];

@@ -1,5 +1,5 @@
 import { DEFAULT_DISCS } from '../core/constants.js';
-import { DISCS, PROMPT_PREVIEW_RENDERING, PROMPT_TEMPLATE_OVERRIDES } from '../core/state.js';
+import { DISCS, PROMPT_PREVIEW_RENDERING, PROMPT_TEMPLATE_OVERRIDES, setPromptPreviewRendering } from '../core/state.js';
 import { showToast } from './notifications.js';
 import { escapeHtml } from '../core/utils.js';
 import { normalizeMode } from '../api/provider.js';
@@ -165,7 +165,7 @@ export function refreshPromptPreview(){
     updateRunReadinessSummary();
     return;
   }
-  PROMPT_PREVIEW_RENDERING=true;
+  setPromptPreviewRendering(true);
   try{
     syncPromptPreviewDiscOptions();
     const cfg=readApiConfig();
@@ -184,7 +184,7 @@ export function refreshPromptPreview(){
     updatePromptKindHelp(kind,discName);
     updatePromptOverrideSummary(kind,discName,bundle);
   }finally{
-    PROMPT_PREVIEW_RENDERING=false;
+    setPromptPreviewRendering(false);
     updateRunReadinessSummary();
   }
 }

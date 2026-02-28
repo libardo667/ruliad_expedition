@@ -1,5 +1,5 @@
 import { GENERATION_WORKBENCH_WIDTH_STORAGE_KEY, SIDEBAR_WIDTH_DEFAULT } from '../core/constants.js';
-import { ACTIVE_ARTIFACT_KEY, activeTab, nodeColorMode, plotInited, showGroundingOverlays } from '../core/state.js';
+import { ACTIVE_ARTIFACT_KEY, activeTab, plotInited, setNodeColorMode, setShowGroundingOverlays } from '../core/state.js';
 import { discInputsEl, themeSelectGlobalEl } from '../core/refs.js';
 import { loadWolframCaches } from '../core/storage.js';
 import { initTabAccessibility, switchMainTab, toggleZenMode } from './tabs.js';
@@ -56,9 +56,9 @@ initTabAccessibility();
 
 initNodeFilterControls();
 
-document.getElementById("node-color-mode-select").addEventListener("change",e=>{nodeColorMode=e.target.value==="grounding"?"grounding":"type";renderGroundingLegend();if(plotInited&&activeTab==="plot"){renderPlot();}});
+document.getElementById("node-color-mode-select").addEventListener("change",e=>{setNodeColorMode(e.target.value==="grounding"?"grounding":"type");renderGroundingLegend();if(plotInited&&activeTab==="plot"){renderPlot();}});
 
-document.getElementById("grounding-overlay-check").addEventListener("change",e=>{showGroundingOverlays=Boolean(e.target.checked);renderGroundingLegend();if(plotInited&&activeTab==="plot"){renderPlot();}});
+document.getElementById("grounding-overlay-check").addEventListener("change",e=>{setShowGroundingOverlays(Boolean(e.target.checked));renderGroundingLegend();if(plotInited&&activeTab==="plot"){renderPlot();}});
 
 renderGroundingLegend();
 

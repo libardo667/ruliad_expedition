@@ -1,5 +1,5 @@
 import { SOURCE_TYPE_LABELS } from '../core/constants.js';
-import { CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, RUN_STATE, TERMS } from '../core/state.js';
+import { CITATIONS, RUN_STATE, TERMS, setCitationUnmappedSupportingTerms } from '../core/state.js';
 import { normalizeSourceType, normalizeWolframAssumptionText } from '../grounding/wolfram-grounding.js';
 import { buildTermAliasIndex, mapSupportingTermsWithAliases, toCanonicalKey } from './aliases.js';
 import { refreshTermSignalFields } from './grounding-status.js';
@@ -149,7 +149,7 @@ export function collectCitations(){
       if(term&&!term.citations.includes(cite.id)) term.citations.push(cite.id);
     }
   }
-  CITATION_UNMAPPED_SUPPORTING_TERMS=[...unmappedGlobal];
+  setCitationUnmappedSupportingTerms([...unmappedGlobal]);
   refreshTermSignalFields(TERMS);
   if(prevCount!==CITATIONS.length){
     markArtifactsStale(["claims","outline","deep_report","red_team","replication","markdown"]);

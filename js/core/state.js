@@ -84,6 +84,45 @@ export let ACTIVE_ARTIFACT_KEY="";
 
 export let ACTIVE_MODAL_ID="";
 
-// Hybrid compatibility: modules import via export, legacy call-sites use window.*
-// Remove once all modules import directly from this file.
-Object.assign(window, { DISCS, TERMS, activeSlices, activeTypes, showSurfaces, surfaceOpacity, plotInited, sessionConfig, umapModulePromise, nodeColorMode, showGroundingOverlays, LAST_RUN, activeTab, isGenerating, lastReportText, lastClaimsText, lastOutlineText, lastCritiqueText, lastMarkdownText, zenModeEnabled, CALL_LOGS, RUN_STATE, CITATIONS, CURRENT_RUN_ID, CITATION_UNMAPPED_SUPPORTING_TERMS, DISC_SIM_MATRIX, PROJECTION_STABILITY, CA_PROBE_OUTPUT, WOLFRAM_GROUNDING_DIAGNOSTICS, AMBIGUITY_QUEUE, EVIDENCE_FILTER_STATE, WOLFRAM_QUERY_CACHE_MEM, WOLFRAM_TERM_CACHE_MEM, WOLFRAM_CACHE_STORAGE_ENABLED, WOLFRAM_CACHE_LAST_SAVE, PROMPT_TEMPLATE_OVERRIDES, PROMPT_PREVIEW_RENDERING, ARTIFACT_STORE, ARTIFACT_BUSY, ACTIVE_ARTIFACT_KEY, ACTIVE_MODAL_ID });
+// Setters — the only way to reassign these bindings from outside this module.
+// ES modules create read-only live bindings for importers; reassignment must
+// happen inside the defining module via these closures.
+export const setDiscs = v => { DISCS = v; };
+export const setTerms = v => { TERMS = v; };
+export const setActiveSlices = v => { activeSlices = v; };
+export const setActiveTypes = v => { activeTypes = v; };
+export const setShowSurfaces = v => { showSurfaces = v; };
+export const setSurfaceOpacity = v => { surfaceOpacity = v; };
+export const setPlotInited = v => { plotInited = v; };
+export const setSessionConfig = v => { sessionConfig = v; };
+export const setUmapModulePromise = v => { umapModulePromise = v; };
+export const setNodeColorMode = v => { nodeColorMode = v; };
+export const setShowGroundingOverlays = v => { showGroundingOverlays = v; };
+export const setLastRun = v => { LAST_RUN = v; };
+export const setActiveTab = v => { activeTab = v; };
+export const setIsGenerating = v => { isGenerating = v; };
+export const setLastReportText = v => { lastReportText = v; };
+export const setLastClaimsText = v => { lastClaimsText = v; };
+export const setLastOutlineText = v => { lastOutlineText = v; };
+export const setLastCritiqueText = v => { lastCritiqueText = v; };
+export const setLastMarkdownText = v => { lastMarkdownText = v; };
+export const setZenModeEnabled = v => { zenModeEnabled = v; };
+export const setCallLogs = v => { CALL_LOGS = v; };
+export const setRunState = v => { RUN_STATE = v; };
+export const setCitations = v => { CITATIONS = v; };
+export const setCurrentRunId = v => { CURRENT_RUN_ID = v; };
+export const setCitationUnmappedSupportingTerms = v => { CITATION_UNMAPPED_SUPPORTING_TERMS = v; };
+export const setDiscSimMatrix = v => { DISC_SIM_MATRIX = v; };
+export const setProjectionStability = v => { PROJECTION_STABILITY = v; };
+export const setCAProbeOutput = v => { CA_PROBE_OUTPUT = v; };
+export const setWolframGroundingDiagnostics = v => { WOLFRAM_GROUNDING_DIAGNOSTICS = v; };
+export const setAmbiguityQueue = v => { AMBIGUITY_QUEUE = v; };
+export const setEvidenceFilterState = v => { EVIDENCE_FILTER_STATE = v; };
+export const setWolframCacheStorageEnabled = v => { WOLFRAM_CACHE_STORAGE_ENABLED = v; };
+export const setWolframCacheLastSave = v => { WOLFRAM_CACHE_LAST_SAVE = v; };
+export const setPromptPreviewRendering = v => { PROMPT_PREVIEW_RENDERING = v; };
+export const setArtifactStore = v => { ARTIFACT_STORE = v; };
+export const setArtifactBusy = v => { ARTIFACT_BUSY = v; };
+export const setActiveArtifactKey = v => { ACTIVE_ARTIFACT_KEY = v; };
+export const setActiveModalId = v => { ACTIVE_MODAL_ID = v; };
+export const setPromptTemplateOverrides = v => { PROMPT_TEMPLATE_OVERRIDES = v; };

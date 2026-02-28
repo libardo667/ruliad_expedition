@@ -1,4 +1,4 @@
-import { CITATIONS, EVIDENCE_FILTER_STATE } from '../core/state.js';
+import { CITATIONS, EVIDENCE_FILTER_STATE, setEvidenceFilterState as _setEvidenceFilterState } from '../core/state.js';
 import { escapeHtml, safeHttpUrl } from '../core/utils.js';
 import { showToast } from './notifications.js';
 import { openModal } from './modals.js';
@@ -47,7 +47,7 @@ export function getEvidenceFilterState(){
 
 export function setEvidenceFilterState(nextState){
   const prev=getEvidenceFilterState();
-  EVIDENCE_FILTER_STATE={sourceType:String(nextState?.sourceType||prev.sourceType||"all"),termLabel:String(nextState?.termLabel||prev.termLabel||"").trim(),provider:String(nextState?.provider||prev.provider||"all")};
+  _setEvidenceFilterState({sourceType:String(nextState?.sourceType||prev.sourceType||"all"),termLabel:String(nextState?.termLabel||prev.termLabel||"").trim(),provider:String(nextState?.provider||prev.provider||"all")});
 }
 
 export function citationSupportsTerm(cite,termLabel){

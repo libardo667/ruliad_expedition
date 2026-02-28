@@ -1,4 +1,4 @@
-import { CA_PROBE_OUTPUT, CITATIONS, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, TERMS } from '../core/state.js';
+import { CA_PROBE_OUTPUT, CITATIONS, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, TERMS, setCAProbeOutput, setLastRun } from '../core/state.js';
 import { showToast } from '../ui/notifications.js';
 import { assignSemanticPositions } from './launch-expedition.js';
 import { getProbeResultWithRecovery } from './probes.js';
@@ -46,12 +46,12 @@ export async function rerunSynthesis(){
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caOutput));
       RUN_STATE.caProbe=caOutput;
     }else{
-      CA_PROBE_OUTPUT=null;
+      setCAProbeOutput(null);
       RUN_STATE.caProbe=null;
     }
     synthBar.className="synth-bar done";
     synthBar.textContent=`SYNTHESIS COMPLETE - ${synthResult.convergent?.length||0} convergent | ${synthResult.contradictory?.length||0} contradictions | ${synthResult.emergent?.length||0} emergent`;
-    LAST_RUN=buildRunSnapshot(RUN_STATE.target,RUN_STATE.probeResults,synthResult,cfg);
+    setLastRun(buildRunSnapshot(RUN_STATE.target,RUN_STATE.probeResults,synthResult,cfg));
     syncArtifactStoreFromRun();
     markArtifactsStale(["claims","outline","deep_report","red_team","replication","markdown"]);
     renderPlot();
@@ -85,7 +85,7 @@ export async function rerunProbe(discId){
       });
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caOutput));
       RUN_STATE.caProbe=caOutput;
-      LAST_RUN=buildRunSnapshot(target,RUN_STATE.probeResults,RUN_STATE.synthResult||{convergent:[],contradictory:[],emergent:[]},cfg);
+      setLastRun(buildRunSnapshot(target,RUN_STATE.probeResults,RUN_STATE.synthResult||{convergent:[],contradictory:[],emergent:[]},cfg));
       syncArtifactStoreFromRun();
       markArtifactsStale(["claims","outline","deep_report","red_team","replication","markdown"]);
       renderPlot();
@@ -113,10 +113,10 @@ export async function rerunProbe(discId){
       appendDerivedCATermsToTerms(buildCATermsFromMetrics(caOutput));
       RUN_STATE.caProbe=caOutput;
     }else{
-      CA_PROBE_OUTPUT=null;
+      setCAProbeOutput(null);
       RUN_STATE.caProbe=null;
     }
-    LAST_RUN=buildRunSnapshot(target,RUN_STATE.probeResults,RUN_STATE.synthResult||{convergent:[],contradictory:[],emergent:[]},cfg);
+    setLastRun(buildRunSnapshot(target,RUN_STATE.probeResults,RUN_STATE.synthResult||{convergent:[],contradictory:[],emergent:[]},cfg));
     syncArtifactStoreFromRun();
     markArtifactsStale(["claims","outline","deep_report","red_team","replication","markdown"]);
     renderPlot();

@@ -1,4 +1,4 @@
-import { AMBIGUITY_QUEUE, ARTIFACT_BUSY, ARTIFACT_STORE, CA_PROBE_OUTPUT, CITATIONS, DISCS, LAST_RUN, RUN_STATE, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS } from '../core/state.js';
+import { AMBIGUITY_QUEUE, ARTIFACT_BUSY, ARTIFACT_STORE, CA_PROBE_OUTPUT, CITATIONS, DISCS, LAST_RUN, RUN_STATE, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS, setArtifactStore, setArtifactBusy as _setArtifactBusy } from '../core/state.js';
 import { escapeHtml, structuredCloneSafe } from '../core/utils.js';
 import { showToast, updateAmbiguityQueueUIState } from '../ui/notifications.js';
 import { buildWolframCitationContext, formatWolframGroundingStatusLabel } from '../ui/evidence-modal-ui.js';
@@ -27,7 +27,7 @@ export const ARTIFACT_DEFS={
   markdown:{name:"Markdown report",desc:"Substack-ready report export artifact.",kind:"generated"}
 };
 
-export function initArtifactStore(){ARTIFACT_STORE={};for(const key of Object.keys(ARTIFACT_DEFS)){ARTIFACT_STORE[key]={status:"not_generated",stale:false,generatedAt:"",fingerprint:"",contentText:"",contentHTML:"",data:null};}refreshArtifactList();updateArtifactProgress("Idle");}
+export function initArtifactStore(){setArtifactStore({});for(const key of Object.keys(ARTIFACT_DEFS)){ARTIFACT_STORE[key]={status:"not_generated",stale:false,generatedAt:"",fingerprint:"",contentText:"",contentHTML:"",data:null};}refreshArtifactList();updateArtifactProgress("Idle");}
 
 export function updateArtifactProgress(text){const el=document.getElementById("artifact-progress-text");if(el) el.textContent=text||"Idle";}
 
@@ -41,7 +41,7 @@ export function updateDerivedArtifactsReady(){setArtifactReady("raw_terms",build
 
 export function syncArtifactStoreFromRun(){if(!LAST_RUN){initArtifactStore();return;}if(Array.isArray(LAST_RUN?.wolframGroundingDiagnostics)){WOLFRAM_GROUNDING_DIAGNOSTICS=[...LAST_RUN.wolframGroundingDiagnostics];if(RUN_STATE) RUN_STATE.wolframGroundingDiagnostics=[...WOLFRAM_GROUNDING_DIAGNOSTICS];}if(Array.isArray(LAST_RUN?.ambiguityQueue)){AMBIGUITY_QUEUE=LAST_RUN.ambiguityQueue.map(normalizeAmbiguityQueueItem).filter(item=>item?.id);rebuildAmbiguityQueueFromDiagnostics(AMBIGUITY_QUEUE);}else{rebuildAmbiguityQueueFromDiagnostics();}if(LAST_RUN?.caProbe&&typeof LAST_RUN.caProbe==="object"){CA_PROBE_OUTPUT=LAST_RUN.caProbe;}updateDerivedArtifactsReady();if(Array.isArray(LAST_RUN.claimsLedger)&&LAST_RUN.claimsLedger.length){setArtifactReady("claims",{contentText:formatClaimsLedger(LAST_RUN.claimsLedger),data:LAST_RUN.claimsLedger});}if(LAST_RUN.outline){setArtifactReady("outline",{contentText:String(LAST_RUN.outline),data:{text:String(LAST_RUN.outline)}});}if(LAST_RUN.report){setArtifactReady("deep_report",{contentText:String(LAST_RUN.report),data:{text:String(LAST_RUN.report)}});}if(LAST_RUN.redTeamCritique){setArtifactReady("red_team",{contentText:String(LAST_RUN.redTeamCritique),data:{text:String(LAST_RUN.redTeamCritique)}});}if(Array.isArray(LAST_RUN.replication)&&LAST_RUN.replication.length){const txt=LAST_RUN.replication.map(r=>r.error?`- ${r.model}: ERROR ${r.error}`:`- ${r.model}: term overlap ${(r.termOverlap*100).toFixed(1)}% | contradiction overlap ${(r.contradictionOverlap*100).toFixed(1)}% | emergent overlap ${(r.emergentOverlap*100).toFixed(1)}%`).join("\n");setArtifactReady("replication",{contentText:txt,data:LAST_RUN.replication});}if(LAST_RUN.markdown){setArtifactReady("markdown",{contentText:String(LAST_RUN.markdown),data:{text:String(LAST_RUN.markdown)}});}updateAmbiguityQueueUIState();renderCAPanel();refreshArtifactList();}
 
-export function setArtifactBusy(busy,label=""){ARTIFACT_BUSY=Boolean(busy);updateArtifactProgress(busy?label||"Working...":"Idle");const regenBtns=document.querySelectorAll("[data-art-regen]");for(const btn of regenBtns){btn.disabled=ARTIFACT_BUSY;}}
+export function setArtifactBusy(busy,label=""){_setArtifactBusy(Boolean(busy));updateArtifactProgress(busy?label||"Working...":"Idle");const regenBtns=document.querySelectorAll("[data-art-regen]");for(const btn of regenBtns){btn.disabled=ARTIFACT_BUSY;}}
 
 export async function withArtifactTask(label,fn){if(ARTIFACT_BUSY){showToast("Another artifact task is running.");return null;}setArtifactBusy(true,label);try{return await fn();}finally{setArtifactBusy(false);}}
 

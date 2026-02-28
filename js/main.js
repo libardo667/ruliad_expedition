@@ -1,8 +1,7 @@
 // js/main.js — auto-generated entry point
 // Import order: core → api → domain → grounding → pipeline → embedding → plot → artifacts → ui → io
 //
-// Imports are side-effect only for now (all symbols also assigned to window.* in state/refs).
-// As modules mature, replace side-effect imports with named imports.
+// Modules use named imports/exports throughout; no window.* compatibility layer needed.
 
 import './core/constants.js';
 import './core/refs.js';

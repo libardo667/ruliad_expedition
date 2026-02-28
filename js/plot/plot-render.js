@@ -1,4 +1,4 @@
-import { CURRENT_RUN_ID, DISCS, LAST_RUN, activeSlices, activeTab, activeTypes, isGenerating, plotInited, showSurfaces } from '../core/state.js';
+import { CURRENT_RUN_ID, DISCS, LAST_RUN, activeSlices, activeTab, activeTypes, isGenerating, plotInited, showSurfaces, setPlotInited } from '../core/state.js';
 import { switchMainTab } from '../ui/tabs.js';
 import { renderCAPanel } from '../ca/render-ca-panel.js';
 import { getPlotLayout } from './plot-layout.js';
@@ -14,4 +14,4 @@ export function showViz(target){isGenerating=false;const label=document.getEleme
 
 export const CONFIG={responsive:true,displaylogo:false,modeBarButtonsToRemove:["toImage","sendDataToCloud"]};
 
-export function renderPlot(){const visibleTerms=getVisibleNodeTerms();document.getElementById("vis-count").textContent=visibleTerms.length;renderNodeFilterResults();const traces=buildTraces(visibleTerms);const layout=getPlotLayout();if(!plotInited){Plotly.newPlot("plot",traces,layout,CONFIG);plotInited=true;}else{Plotly.react("plot",traces,layout,CONFIG);}}
+export function renderPlot(){const visibleTerms=getVisibleNodeTerms();document.getElementById("vis-count").textContent=visibleTerms.length;renderNodeFilterResults();const traces=buildTraces(visibleTerms);const layout=getPlotLayout();if(!plotInited){Plotly.newPlot("plot",traces,layout,CONFIG);setPlotInited(true);}else{Plotly.react("plot",traces,layout,CONFIG);}}

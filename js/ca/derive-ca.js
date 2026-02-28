@@ -1,5 +1,5 @@
 import { PROJECTION_BASE_SEED } from '../core/constants.js';
-import { CA_PROBE_OUTPUT, CITATIONS, DISCS, DISC_SIM_MATRIX, PROJECTION_STABILITY, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS } from '../core/state.js';
+import { CA_PROBE_OUTPUT, CITATIONS, DISCS, DISC_SIM_MATRIX, PROJECTION_STABILITY, TERMS, WOLFRAM_GROUNDING_DIAGNOSTICS, setCAProbeOutput } from '../core/state.js';
 import { RNG, clampInt, structuredCloneSafe } from '../core/utils.js';
 import { normalizeMode } from '../api/provider.js';
 import { extractWolframStructured, fetchWolframJSON, selectWolframSnippetFromParsed } from '../grounding/wolfram-parse.js';
@@ -146,7 +146,7 @@ export async function deriveReplicationCAFingerprint(target,cfg,probeResults,syn
       spreadFinal:Number(caResult?.metrics?.spreadFinal??caResult?.metrics?.spread??0)||0
     };
   }finally{
-    CA_PROBE_OUTPUT=prevCAOutput;
+    setCAProbeOutput(prevCAOutput);
   }
 }
 
@@ -365,7 +365,7 @@ export function appendDerivedCATermsToTerms(caTerms){
 
 export async function deriveCAFromRun(target,cfg,probeResults,synthResult,embeddingDiagnostics){
   if(!cfg?.enableComputationalIrreducibility){
-    CA_PROBE_OUTPUT=null;
+    setCAProbeOutput(null);
     return null;
   }
   const diagnostics=embeddingDiagnostics&&typeof embeddingDiagnostics==="object"?embeddingDiagnostics:{};
@@ -539,6 +539,6 @@ export async function deriveCAFromRun(target,cfg,probeResults,synthResult,embedd
     groundingStatsSnapshot:groundingStats,
     embeddingDiagnosticsSnapshot:structuredCloneSafe({similarityMatrix,discSimilarityMatrix:similarityMatrix,projectionStability:diagnostics?.projectionStability??PROJECTION_STABILITY})
   };
-  CA_PROBE_OUTPUT=out;
+  setCAProbeOutput(out);
   return out;
 }

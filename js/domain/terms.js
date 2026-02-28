@@ -1,5 +1,5 @@
 import { TYPE_PRIORITY } from '../core/constants.js';
-import { DISCS, TERMS } from '../core/state.js';
+import { DISCS, TERMS, setTerms } from '../core/state.js';
 import { scoreWolframSnippet } from '../grounding/wolfram-parse.js';
 import { clampGroundingSnippetScore, hasExactConceptPhraseMatch, hasHighAlignmentConceptMatch, isCompositeSyntheticTermLabel } from '../grounding/wolfram-score.js';
 import { buildWolframEntityRef, mergeGroundingBlocks, normalizeGroundingBlock } from '../grounding/wolfram-grounding.js';
@@ -229,5 +229,5 @@ export function buildTerms(probeResults,synthResult){
   for(const item of (synthResult.emergent||[])){
     addRawTerm(raw,{label:item.label,description:item.description,descriptions:{synthesisSummary:String(item.description||"")},centrality:0.5,slices:[],type:"emergent",description_source:"synthesis",description_provenance:[{source:"synthesis",stage:"synthesis",note:"Emergent synthesis insight"}],grounding:normalizeGroundingBlock({groundingEligibility:"eligible",groundingSkipReason:"Synthesis-stage term; direct WA grounding is only attempted on probe-origin terms."},{defaultStatus:"not_attempted"})});
   }
-  TERMS=mergeRawTerms(raw);
+  setTerms(mergeRawTerms(raw));
 }
