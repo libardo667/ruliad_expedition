@@ -347,6 +347,7 @@
             <button class="menu-item" id="export-menu-bundle" type="button">Export Bundle (.zip)</button>
           </div>
         </div>
+        <button class="reset-btn" id="controls-btn" title="Toggle controls panel">CONTROLS</button>
         <button class="reset-btn" id="zen-mode-btn" type="button" aria-pressed="false" title="Hide top menu and left panel for cinematic capture">ZEN MODE</button>
         <button class="reset-btn" id="new-run-btn" title="Reset current run and start new expedition">NEW</button>
       </div>
@@ -356,9 +357,32 @@
     </div>
   </div>
   <div id="viz-body">
-    <div id="sidebar">
-      <div><div class="sec-label">PROBE DISCIPLINES</div><div id="disc-list"></div><div style="margin-top:8px;display:flex;align-items:center;gap:8px;padding:4px;cursor:pointer" id="surf-toggle"><input type="checkbox" id="surf-check" checked style="cursor:pointer"/><label for="surf-check" style="font-size:13px;color:var(--muted);cursor:pointer;letter-spacing:.5px">PROBE SURFACES</label></div><div style="padding:0 4px 4px;display:flex;flex-direction:column;gap:4px"><label for="surf-opacity-range" style="font-size:11px;color:var(--muted);letter-spacing:.5px">SURFACE OPACITY <span id="surf-opacity-value">9%</span></label><input type="range" id="surf-opacity-range" min="0" max="35" step="1" value="9" aria-label="Probe surface opacity"/></div></div>
-      <div><div class="sec-label">TERM CATEGORIES</div><div id="type-list"></div></div>
+    <div id="plot-wrap"><div id="plot"></div></div>
+  </div>
+  <!-- Vignette overlay (position:fixed so it composites above the WebGL canvas) -->
+  <div id="plot-vignette"></div>
+  <!-- Panel triggers -->
+  <button class="panel-trigger trigger-left" id="controls-trigger" aria-label="Open controls panel"><span class="trigger-arrow">&#8250;</span></button>
+  <button class="panel-trigger trigger-bottom" id="diagnostics-trigger" aria-label="Open diagnostics panel"><span class="trigger-arrow">&#8593;</span></button>
+  <!-- Onboarding hint tags (dismissed on first panel open via sessionStorage) -->
+  <div class="panel-hint" id="controls-hint">CONTROLS ›</div>
+  <div class="panel-hint panel-hint-bottom" id="diagnostics-hint">↑ DIAGNOSTICS</div>
+  <div class="panel-hint panel-hint-plot" id="plot-nav-hint">← controls &nbsp;·&nbsp; ↑ diagnostics</div>
+  <!-- Controls floating panel -->
+  <div class="floating-panel" id="controls-panel">
+    <div class="floating-panel-header">
+      <span class="floating-panel-title">CONTROLS</span>
+      <button class="floating-panel-close" aria-label="Close controls">&#215;</button>
+    </div>
+    <div class="floating-panel-body">
+      <div>
+        <div class="sec-label">PROBE DISCIPLINES</div>
+        <div id="disc-list"></div>
+      </div>
+      <div>
+        <div class="sec-label">TERM CATEGORIES</div>
+        <div id="type-list"></div>
+      </div>
       <div>
         <div class="sec-label">NODE COLOR MODE</div>
         <div class="field-group" style="margin-top:6px">
@@ -392,7 +416,32 @@
         <div class="matrix-note" id="node-filter-summary" style="margin-top:6px">No nodes loaded.</div>
         <div id="node-filter-results"></div>
       </div>
-      <div id="detail"><div class="sec-label">SELECTED</div><h3 id="d-label"></h3><div class="detail-type" id="d-type"></div><div class="detail-desc" id="d-desc"></div><div class="dtags" id="d-slices"></div><div class="sec-label" style="margin-top:10px">EVIDENCE</div><div class="card-list" id="d-citations"></div><button class="reset-btn" id="clear-btn" style="margin-top:8px;font-size:11px">CLEAR</button></div>
+    </div>
+  </div>
+  <!-- Term detail floating panel -->
+  <div class="floating-panel" id="term-detail-panel">
+    <div class="floating-panel-header">
+      <span class="floating-panel-title">SELECTED</span>
+      <button class="floating-panel-close" aria-label="Close term detail">&#215;</button>
+    </div>
+    <div class="floating-panel-body">
+      <div id="detail">
+        <h3 id="d-label"></h3>
+        <div class="detail-type" id="d-type"></div>
+        <div class="detail-desc" id="d-desc"></div>
+        <div class="dtags" id="d-slices"></div>
+        <div class="sec-label" style="margin-top:10px">EVIDENCE</div>
+        <div class="card-list" id="d-citations"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Diagnostics floating panel -->
+  <div class="floating-panel" id="diagnostics-panel">
+    <div class="floating-panel-header">
+      <span class="floating-panel-title">DIAGNOSTICS</span>
+      <button class="floating-panel-close" aria-label="Close diagnostics">&#215;</button>
+    </div>
+    <div class="floating-panel-body">
       <div id="embedding-diagnostics">
         <div class="sec-label">PROJECTION CHECKS</div>
         <div class="matrix-note" id="disc-sim-status">No embedding diagnostics yet.</div>
@@ -420,8 +469,6 @@
       </div>
       <div id="stats"><div class="sec-label">CORPUS</div><div id="stat-rows"></div></div>
     </div>
-    <div id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Resize plot sidebar" tabindex="0"></div>
-    <div id="plot-wrap"><div id="plot"></div></div>
   </div>
 </div>
 </div>

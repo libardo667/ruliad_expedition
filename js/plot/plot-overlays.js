@@ -1,5 +1,5 @@
 import { FALLBACK_DIRS } from '../core/constants.js';
-import { DISCS, TERMS, activeSlices, activeTypes, nodeColorMode, showSurfaces, surfaceOpacity } from '../core/state.js';
+import { DISCS, SEMANTIC_EDGES, TERMS, activeSlices, activeTypes, nodeColorMode } from '../core/state.js';
 import { normalize3 } from '../embedding/vector-math.js';
 import { getVisibleNodeTerms } from './sidebar.js';
 
@@ -7,15 +7,13 @@ import { getVisibleNodeTerms } from './sidebar.js';
 // Source: ruliad_expedition_v1.1.html
 // Module: js/plot/plot-overlays.js
 
-export function clamp01(v){return Math.max(0,Math.min(1,Number(v)||0));}
+const EDGE_TYPE_COLORS={analogical:"#3b82f6",causal:"#22c55e",contradictory:"#ff9500",complementary:"#a855f7",hierarchical:"#6b7280",instantiates:"#00cfff"};
 
-export function clampSurfaceOpacity(v){return Math.max(0,Math.min(0.35,Number(v)||0));}
+export function clamp01(v){return Math.max(0,Math.min(1,Number(v)||0));}
 
 export function fallbackDirection(idx){return FALLBACK_DIRS[idx%FALLBACK_DIRS.length]||[1,0,0];}
 
 export function computeDisciplineAnchors(poolTerms=TERMS){const anchors={};for(const d of DISCS){const points=(poolTerms||[]).filter(t=>t.slices.includes(d.id));if(!points.length){anchors[d.id]=fallbackDirection(d.id).map(v=>v*1.2);continue;}const centroid=[0,0,0];for(const term of points){centroid[0]+=term.pos[0];centroid[1]+=term.pos[1];centroid[2]+=term.pos[2];}centroid[0]/=points.length;centroid[1]/=points.length;centroid[2]/=points.length;if(Math.hypot(centroid[0],centroid[1],centroid[2])<0.08){const dir=fallbackDirection(d.id);anchors[d.id]=[dir[0]*0.9,dir[1]*0.9,dir[2]*0.9];}else{anchors[d.id]=centroid;}}return anchors;}
-
-export function buildSurface(discId,anchors,poolTerms=TERMS){const points=(poolTerms||[]).filter(t=>t.slices.includes(discId));if(points.length<3) return null;const col=DISCS[discId]?.col||"#fff";const cx=points.reduce((s,t)=>s+t.pos[0],0)/points.length;const cy=points.reduce((s,t)=>s+t.pos[1],0)/points.length;const cz=points.reduce((s,t)=>s+t.pos[2],0)/points.length;const baseDir=anchors[discId]||fallbackDirection(discId);const dir=normalize3(baseDir,fallbackDirection(discId));const tmp=Math.abs(dir[0])<0.9?[1,0,0]:[0,1,0];const u=[tmp[1]*dir[2]-tmp[2]*dir[1],tmp[2]*dir[0]-tmp[0]*dir[2],tmp[0]*dir[1]-tmp[1]*dir[0]];const unitU=normalize3(u,[0,1,0]);const v=[dir[1]*unitU[2]-dir[2]*unitU[1],dir[2]*unitU[0]-dir[0]*unitU[2],dir[0]*unitU[1]-dir[1]*unitU[0]];const angles=points.map(term=>{const dx=term.pos[0]-cx,dy=term.pos[1]-cy,dz=term.pos[2]-cz;return Math.atan2(dx*v[0]+dy*v[1]+dz*v[2],dx*unitU[0]+dy*unitU[1]+dz*unitU[2]);});const sorted=[...points.map((_,i)=>i)].sort((a,b)=>angles[a]-angles[b]);const x=[cx],y=[cy],z=[cz];for(const idx of sorted){x.push(points[idx].pos[0]);y.push(points[idx].pos[1]);z.push(points[idx].pos[2]);}x.push(points[sorted[0]].pos[0]);y.push(points[sorted[0]].pos[1]);z.push(points[sorted[0]].pos[2]);const i=[],j=[],k=[];const n=sorted.length;for(let q=1;q<=n;q++){i.push(0);j.push(q);k.push(q<n?q+1:1);}return {type:"mesh3d",x,y,z,i,j,k,color:col,opacity:clampSurfaceOpacity(surfaceOpacity),hoverinfo:"none",showlegend:false,flatshading:true,lighting:{ambient:0.9,diffuse:0.1}};}
 
 export function markerSizeByCentrality(term,minSize,maxSize){const c=clamp01(term?.centrality??0.5);return minSize+(maxSize-minSize)*c;}
 
@@ -23,9 +21,47 @@ export function citationColorForTerm(term){const count=Array.isArray(term?.citat
 
 export function getEmergentRingColor(){const theme=document.documentElement.getAttribute("data-theme")||"light";if(theme==="dark") return "#67e8f9";if(theme==="contrast") return "#00ffff";return "#0e7490";}
 
-export function buildTraces(visibleTerms=getVisibleNodeTerms()){const traces=[];const pool=Array.isArray(visibleTerms)?visibleTerms:[];const anchors=computeDisciplineAnchors(pool);if(showSurfaces){for(const d of DISCS){if(!activeSlices.has(d.id)) continue;const surface=buildSurface(d.id,anchors,pool);if(surface) traces.push(surface);}}for(const d of DISCS){if(!activeSlices.has(d.id)) continue;const dir=normalize3(anchors[d.id],fallbackDirection(d.id));const tip=dir.map(v=>v*1.55);const labelPos=dir.map(v=>v*1.72);traces.push({type:"scatter3d",mode:"lines",x:[0,tip[0]],y:[0,tip[1]],z:[0,tip[2]],line:{color:d.col+"28",width:1.2},hoverinfo:"none",showlegend:false});traces.push({type:"scatter3d",mode:"text",x:[labelPos[0]],y:[labelPos[1]],z:[labelPos[2]],text:[d.abbr],textfont:{color:d.col,size:9,family:"Courier New"},textposition:"middle center",hoverinfo:"none",showlegend:false});}
+export function buildSemanticEdgeTraces(visibleTerms){
+  if(!SEMANTIC_EDGES?.relationships?.length) return [];
+  const pool=Array.isArray(visibleTerms)?visibleTerms:[];
+  const posMap=new Map();
+  for(const t of pool) posMap.set(t.label.toLowerCase(),t.pos);
+
+  const byType={};
+  for(const rel of SEMANTIC_EDGES.relationships){
+    const posA=posMap.get(rel.term_a.toLowerCase());
+    const posB=posMap.get(rel.term_b.toLowerCase());
+    if(!posA||!posB) continue;
+    if(!byType[rel.type]) byType[rel.type]=[];
+    byType[rel.type].push({posA,posB,strength:rel.strength,rationale:rel.rationale,term_a:rel.term_a,term_b:rel.term_b});
+  }
+
+  const traces=[];
+  for(const [type,rels] of Object.entries(byType)){
+    const color=EDGE_TYPE_COLORS[type]||"#888888";
+    const edgeX=[],edgeY=[],edgeZ=[];
+    const hoverX=[],hoverY=[],hoverZ=[],hoverText=[];
+
+    for(const rel of rels){
+      edgeX.push(rel.posA[0],rel.posB[0],null);
+      edgeY.push(rel.posA[1],rel.posB[1],null);
+      edgeZ.push(rel.posA[2],rel.posB[2],null);
+      hoverX.push((rel.posA[0]+rel.posB[0])/2);
+      hoverY.push((rel.posA[1]+rel.posB[1])/2);
+      hoverZ.push((rel.posA[2]+rel.posB[2])/2);
+      hoverText.push(`${rel.term_a} \u2194 ${rel.term_b}<br>${type}<br>${rel.rationale}`);
+    }
+
+    traces.push({type:"scatter3d",mode:"lines",name:`Edge: ${type}`,x:edgeX,y:edgeY,z:edgeZ,line:{color,width:1.5},opacity:0.45,hoverinfo:"none",showlegend:true,legendgroup:`edge_${type}`});
+    traces.push({type:"scatter3d",mode:"markers",name:`Edge: ${type}`,x:hoverX,y:hoverY,z:hoverZ,text:hoverText,hovertemplate:"%{text}<extra></extra>",marker:{color,size:3,opacity:0},showlegend:false,legendgroup:`edge_${type}`});
+  }
+  return traces;
+}
+
+export function buildTraces(visibleTerms=getVisibleNodeTerms()){const traces=[];const pool=Array.isArray(visibleTerms)?visibleTerms:[];const anchors=computeDisciplineAnchors(pool);for(const d of DISCS){if(!activeSlices.has(d.id)) continue;const dir=normalize3(anchors[d.id],fallbackDirection(d.id));const tip=dir.map(v=>v*1.55);const labelPos=dir.map(v=>v*1.72);traces.push({type:"scatter3d",mode:"lines",x:[0,tip[0]],y:[0,tip[1]],z:[0,tip[2]],line:{color:d.col+"28",width:1.2},hoverinfo:"none",showlegend:false});traces.push({type:"scatter3d",mode:"text",x:[labelPos[0]],y:[labelPos[1]],z:[labelPos[2]],text:[d.abbr],textfont:{color:d.col,size:9,family:"Courier New"},textposition:"middle center",hoverinfo:"none",showlegend:false});}
 if(activeTypes.has("unique")){for(const d of DISCS){if(!activeSlices.has(d.id)) continue;const ts=pool.filter(t=>t.type==="unique"&&t.slices[0]===d.id);if(!ts.length) continue;const colors=ts.map(t=>nodeColorMode==="citations"?citationColorForTerm(t):d.col);traces.push({type:"scatter3d",mode:"markers",name:d.abbr,x:ts.map(t=>t.pos[0]),y:ts.map(t=>t.pos[1]),z:ts.map(t=>t.pos[2]),text:ts.map(t=>t.label),customdata:ts.map(t=>clamp01(t.centrality)),hovertemplate:`<b>%{text}</b><br>${d.name}<br>centrality %{customdata:.2f}<br><i>unique</i><extra></extra>`,marker:{color:colors,size:ts.map(t=>markerSizeByCentrality(t,6,14)),opacity:nodeColorMode==="citations"?0.92:0.85,symbol:"circle",line:{color:nodeColorMode==="citations"?"#0f172a66":d.col+"66",width:nodeColorMode==="citations"?1.1:0.5}},legendgroup:d.abbr,showlegend:true});}} 
 if(activeTypes.has("convergent")){const ts=pool.filter(t=>t.type==="convergent");if(ts.length){const colors=ts.map(t=>{if(nodeColorMode==="citations") return citationColorForTerm(t);const n=t.slices.length;if(n>=6) return "#fff";if(n>=4) return "#aaaaff";if(n>=2) return "#7777cc";return "#5555aa";});traces.push({type:"scatter3d",mode:"markers",name:"Convergent",x:ts.map(t=>t.pos[0]),y:ts.map(t=>t.pos[1]),z:ts.map(t=>t.pos[2]),text:ts.map(t=>t.label),customdata:ts.map(t=>t.slices.length),hovertemplate:"<b>%{text}</b><br>%{customdata} disciplines<br><i>convergent</i><extra></extra>",marker:{color:colors,size:ts.map(t=>markerSizeByCentrality(t,8,18)+(t.slices.length/(DISCS.length||7))*4),opacity:nodeColorMode==="citations"?0.95:0.92,symbol:"diamond",line:{color:nodeColorMode==="citations"?"#0f172a88":"#ffffff44",width:nodeColorMode==="citations"?1.2:0.5}},legendgroup:"convergent",showlegend:true});}}
 if(activeTypes.has("contradictory")){const ts=pool.filter(t=>t.type==="contradictory");if(ts.length){const edgeX=[],edgeY=[],edgeZ=[];for(const term of ts){for(const slice of term.slices){if(!activeSlices.has(slice)) continue;const anchor=anchors[slice];if(!anchor) continue;edgeX.push(term.pos[0],anchor[0],null);edgeY.push(term.pos[1],anchor[1],null);edgeZ.push(term.pos[2],anchor[2],null);}}if(edgeX.length){traces.push({type:"scatter3d",mode:"lines",name:"Contradiction Edges",x:edgeX,y:edgeY,z:edgeZ,line:{color:"#ff950044",width:1.3},hoverinfo:"none",legendgroup:"contradictory",showlegend:false});}const colors=ts.map(t=>nodeColorMode==="citations"?citationColorForTerm(t):"#ff9500");traces.push({type:"scatter3d",mode:"markers",name:"Contradictory",x:ts.map(t=>t.pos[0]),y:ts.map(t=>t.pos[1]),z:ts.map(t=>t.pos[2]),text:ts.map(t=>t.label),hovertemplate:"<b>%{text}</b><br><i>tension zone</i><extra></extra>",marker:{color:colors,size:ts.map(t=>markerSizeByCentrality(t,12,22)),opacity:1,symbol:"cross",line:{color:nodeColorMode==="citations"?"#0f172a88":"#ffcc00",width:nodeColorMode==="citations"?1.3:1.5}},legendgroup:"contradictory",showlegend:true});}}
 if(activeTypes.has("emergent")){const ts=pool.filter(t=>t.type==="emergent");if(ts.length){const ringColor=getEmergentRingColor();traces.push({type:"scatter3d",mode:"markers+text",name:"Emergent",x:ts.map(t=>t.pos[0]),y:ts.map(t=>t.pos[1]),z:ts.map(t=>t.pos[2]),text:ts.map(t=>t.label),textposition:"top center",textfont:{color:ringColor,size:9,family:"Courier New"},hovertemplate:"<b>%{text}</b><br><i>synthesis only</i><extra></extra>",marker:{color:ringColor,size:ts.map(t=>markerSizeByCentrality(t,14,26)),opacity:1,symbol:"circle-open",line:{color:ringColor,width:2.6}},legendgroup:"emergent",showlegend:true});}}
+traces.push(...buildSemanticEdgeTraces(pool));
 return traces;}

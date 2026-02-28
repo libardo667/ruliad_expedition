@@ -1,4 +1,4 @@
-import { ARTIFACT_STORE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, PROMPT_TEMPLATE_OVERRIDES, RUN_STATE, TERMS } from '../core/state.js';
+import { ARTIFACT_STORE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, PROMPT_TEMPLATE_OVERRIDES, RUN_STATE, SEMANTIC_EDGES, TERMS } from '../core/state.js';
 import { clampInt, hashString, structuredCloneSafe } from '../core/utils.js';
 import { callLLMJSON } from '../api/llm.js';
 import { extractJSON } from '../api/json-recovery.js';
@@ -81,7 +81,8 @@ export function buildRunSnapshot(target,probeResults,synthResult,cfg){
     replication:LAST_RUN?.replication||[],
     outline:LAST_RUN?.outline||"",
     markdown:LAST_RUN?.markdown||"",
-    caProbe:structuredCloneSafe(CA_PROBE_OUTPUT)
+    caProbe:structuredCloneSafe(CA_PROBE_OUTPUT),
+    semanticEdges:structuredCloneSafe(SEMANTIC_EDGES)
   };
 }
 

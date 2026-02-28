@@ -1,10 +1,10 @@
-import { GENERATION_WORKBENCH_WIDTH_STORAGE_KEY, SIDEBAR_WIDTH_DEFAULT } from '../core/constants.js';
+import { GENERATION_WORKBENCH_WIDTH_STORAGE_KEY } from '../core/constants.js';
 import { ACTIVE_ARTIFACT_KEY, activeTab, plotInited, setNodeColorMode } from '../core/state.js';
 import { discInputsEl, themeSelectGlobalEl } from '../core/refs.js';
 import { initTabAccessibility, switchMainTab, toggleZenMode } from './tabs.js';
 import { applyTheme } from './theme.js';
 import { addProbeSpec, clearApiKey, clearSources, findStories, generateOrthogonalLenses, initGenerationPanelQol, initProgressiveDisclosure, initSourcesPanel, initWorkbenchJumpNav, onProbeActionClick, renderDisciplineInputs, syncApiModeNote, syncCAOverrideUI, toggleApiKey, useSelectedSources } from './setup-panel.js';
-import { applyGenerationWorkbenchLeftWidth, applySidebarWidth, initGenerationWorkbenchResizer, initSidebarResizer } from './resizers.js';
+import { applyGenerationWorkbenchLeftWidth, initGenerationWorkbenchResizer } from './resizers.js';
 import { closeModal, handleModalKeyboard } from './modals.js';
 import { applyPromptPreviewOverride, refreshPromptPreview, resetPromptPreviewOverride, syncPromptPreviewDiscOptions } from './prompt-preview.js';
 import { showEvidenceModal } from './evidence-modal-ui.js';
@@ -31,8 +31,6 @@ initProgressiveDisclosure();
 
 initSourcesPanel();
 
-initSidebarResizer();
-
 initGenerationWorkbenchResizer();
 
 initWorkbenchJumpNav();
@@ -41,7 +39,6 @@ document.getElementById("launch-btn").addEventListener("click",launchExpedition)
 
 document.getElementById("reset-btn").addEventListener("click",resetToSetup);
 
-document.getElementById("clear-btn").addEventListener("click",()=>{document.getElementById("detail").style.display="none";});
 
 document.getElementById("toggle-key-btn").addEventListener("click",toggleApiKey);
 
@@ -195,9 +192,6 @@ document.getElementById("ca-probe-check")?.addEventListener("change",syncCAOverr
 syncCAOverrideUI();
 
 window.addEventListener("resize",()=>{
-  const raw=getComputedStyle(document.documentElement).getPropertyValue("--sidebar-width").replace("px","").trim();
-  const width=Number(raw);
-  applySidebarWidth(Number.isFinite(width)?width:SIDEBAR_WIDTH_DEFAULT,{persist:true});
   const wbRaw=Number(sessionStorage.getItem(GENERATION_WORKBENCH_WIDTH_STORAGE_KEY));
   if(Number.isFinite(wbRaw)) applyGenerationWorkbenchLeftWidth(wbRaw,{persist:true});
   if(plotInited&&activeTab==="plot"){try{Plotly.Plots.resize(document.getElementById("plot"));}catch{}}
@@ -212,3 +206,40 @@ initArtifactStore();
 syncPromptPreviewDiscOptions();
 
 refreshPromptPreview();
+
+// Floating panel open/close helpers
+const PANEL_TRIGGER_MAP={"controls-panel":"controls-trigger","diagnostics-panel":"diagnostics-trigger"};
+function syncTrigger(panelId,isOpen){const tid=PANEL_TRIGGER_MAP[panelId];if(tid) document.getElementById(tid)?.classList.toggle("panel-open",isOpen);}
+function togglePanel(id){const isOpen=document.getElementById(id).classList.toggle("panel-open");syncTrigger(id,isOpen);dismissHintForPanel(id);}
+function closePanel(id){document.getElementById(id).classList.remove("panel-open");syncTrigger(id,false);}
+
+function dismissHintForPanel(panelId){
+  if(panelId==="controls-panel"&&!sessionStorage.getItem("hint_controls")){
+    sessionStorage.setItem("hint_controls","1");
+    document.getElementById("controls-hint")?.remove();
+    document.getElementById("plot-nav-hint")?.remove();
+  }
+  if(panelId==="diagnostics-panel"&&!sessionStorage.getItem("hint_diagnostics")){
+    sessionStorage.setItem("hint_diagnostics","1");
+    document.getElementById("diagnostics-hint")?.remove();
+  }
+}
+
+// Suppress hints already dismissed in a previous session
+if(sessionStorage.getItem("hint_controls")){
+  document.getElementById("controls-hint")?.remove();
+  document.getElementById("plot-nav-hint")?.remove();
+}
+if(sessionStorage.getItem("hint_diagnostics")){
+  document.getElementById("diagnostics-hint")?.remove();
+}
+
+// Panel trigger buttons
+document.getElementById("controls-trigger").addEventListener("click",()=>togglePanel("controls-panel"));
+document.getElementById("controls-btn").addEventListener("click",()=>togglePanel("controls-panel"));
+document.getElementById("diagnostics-trigger").addEventListener("click",()=>togglePanel("diagnostics-panel"));
+
+// X close buttons on all floating panels
+document.querySelectorAll(".floating-panel-close").forEach(btn=>{
+  btn.addEventListener("click",()=>closePanel(btn.closest(".floating-panel").id));
+});

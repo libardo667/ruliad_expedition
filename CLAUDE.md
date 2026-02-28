@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Brand Identity
+
+The product is being rebranded from "Ruliad Expedition" to **Parallax** — viewing a concept from multiple vantage points to triangulate its true shape. The two modes:
+- **Parallax Explore** (formerly "Expedition Mode") — concept-first, plot-primary
+- **Parallax Lens** (formerly "News Lens Mode") — article-first, text-primary
+
+The rebrand is in progress. Internal codenames and repo structure still reference the old name. See `majors_and_minors.md` Minor #4 for the full changelist.
+
 ## Running the Project
 
 ```bash
@@ -41,14 +49,16 @@ Auth resolution: uses client `Authorization: Bearer ...` header if present, fall
 3. **Second-pass cleanup** — optional deduplication pass (rigor quality profile only).
 4. **Term building** — `buildTerms()` merges probe + synthesis results into flat `TERMS[]` array.
 5. **Semantic positioning** — `assignSemanticPositions()` embeds all terms via the embeddings API then projects to 3D (UMAP-style via inline JS, with stability reruns for consistency). Falls back to deterministic geometry if embeddings fail.
-6. **CA probe** — optional computational irreducibility fingerprint derived from run (cellular automata).
-7. **Visualization** — `renderPlot()` creates/updates a Plotly 3D scatter plot.
+6. **Semantic edges** — `extractSemanticEdges()` sends all terms to the LLM to identify typed, weighted relationships (analogical, causal, contradictory, complementary, hierarchical, instantiates). On rigor profile, `refinePositionsWithEdges()` runs a force-directed layout to pull related terms closer. Skipped on fast profile. Edges render as colored lines in the 3D plot.
+7. **CA probe** — optional computational irreducibility fingerprint derived from run (cellular automata).
+8. **Visualization** — `renderPlot()` creates/updates a Plotly 3D scatter plot with semantic edge overlays.
 
 ### Key Global State (all in `js/core/state.js`)
 
 - `DISCS[]` — Active discipline/probe specs `{id, name, abbr, col, kind}`
 - `TERMS[]` — All positioned terms `{label, type, slices[], pos[], citations[]}`
 - `CITATIONS[]` — All collected citations from probes
+- `SEMANTIC_EDGES` — LLM-identified relationships between terms `{relationships[], generatedAt, termCount, batchCount}`
 - `LAST_RUN`, `RUN_STATE` — Current run snapshot/state
 - `CALL_LOGS[]` — LLM call log (visible in the Calls modal)
 - `sessionConfig` — Current API config from the setup form
@@ -70,9 +80,9 @@ Auth resolution: uses client `Authorization: Bearer ...` header if present, fall
 
 | Profile | Terms/probe | Behavior |
 |---------|------------|----------|
-| `fast` | 6–8 | Low temp, large embed batch |
-| `balanced` | 8–10 | Default |
-| `rigor` | 10–14 | Low temp, second-pass term cleanup |
+| `fast` | 6–8 | Low temp, large embed batch, no semantic edges |
+| `balanced` | 8–10 | Default, semantic edges (no position refinement) |
+| `rigor` | 10–14 | Low temp, second-pass term cleanup, semantic edges + force-directed position refinement |
 
 ### Prompt Customization
 

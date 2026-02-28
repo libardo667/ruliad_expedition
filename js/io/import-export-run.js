@@ -1,5 +1,5 @@
 import { COLORS } from '../core/constants.js';
-import { ARTIFACT_STORE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, PROMPT_TEMPLATE_OVERRIDES, RUN_STATE, TERMS, setCAProbeOutput, setCallLogs, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setLastRun, setProjectionStability, setPromptTemplateOverrides, setRunState, setTerms } from '../core/state.js';
+import { ARTIFACT_STORE, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, LAST_RUN, PROJECTION_STABILITY, PROMPT_TEMPLATE_OVERRIDES, RUN_STATE, SEMANTIC_EDGES, TERMS, setCAProbeOutput, setCallLogs, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setLastRun, setProjectionStability, setPromptTemplateOverrides, setRunState, setSemanticEdges, setTerms } from '../core/state.js';
 import { clampInt, structuredCloneSafe } from '../core/utils.js';
 import { showToast } from '../ui/notifications.js';
 import { switchMainTab } from '../ui/tabs.js';
@@ -61,6 +61,9 @@ export function hydrateRunFromImport(data){
   setDiscSimMatrix(data?.embeddingDiagnostics?.similarityMatrix&&typeof data.embeddingDiagnostics.similarityMatrix==="object"?data.embeddingDiagnostics.similarityMatrix:null);
   setProjectionStability(data?.embeddingDiagnostics?.projectionStability&&typeof data.embeddingDiagnostics.projectionStability==="object"?data.embeddingDiagnostics.projectionStability:null);
   setCAProbeOutput(data?.caProbe&&typeof data.caProbe==="object"?data.caProbe:null);
+  if(data?.semanticEdges&&Array.isArray(data.semanticEdges?.relationships)){
+    setSemanticEdges({relationships:data.semanticEdges.relationships.filter(r=>r.term_a&&r.term_b&&typeof r.strength==="number"),generatedAt:data.semanticEdges.generatedAt||new Date().toISOString(),termCount:data.semanticEdges.termCount||0,batchCount:data.semanticEdges.batchCount||1});
+  }else{setSemanticEdges(null);}
   setCitations(Array.isArray(data.citations)?data.citations.map((c,i)=>({id:Number.isInteger(c.id)?c.id:i,source_type:normalizeSourceType(c.source_type,c.publisher),url:c.url||"",title:c.title||"",publisher:c.publisher||"",date:c.date||"",quote_or_snippet:c.quote_or_snippet||"",relevance:c.relevance||"",supporting_terms:Array.isArray(c.supporting_terms)?c.supporting_terms.map(t=>String(t||"").trim()).filter(Boolean):[],supporting_terms_raw:Array.isArray(c.supporting_terms_raw)?c.supporting_terms_raw.map(t=>String(t||"").trim()).filter(Boolean):Array.isArray(c.supporting_terms)?c.supporting_terms.map(t=>String(t||"").trim()).filter(Boolean):[],supporting_term_mappings:Array.isArray(c.supporting_term_mappings)?c.supporting_term_mappings.map(normalizeAliasMappingEntry).filter(Boolean):[],unmapped_supporting_terms:Array.isArray(c.unmapped_supporting_terms)?c.unmapped_supporting_terms.map(t=>String(t||"").trim()).filter(Boolean):[],probeId:c.probeId})):[]);
   setCitationUnmappedSupportingTerms(dedupeCasefold(CITATIONS.flatMap(c=>Array.isArray(c.unmapped_supporting_terms)?c.unmapped_supporting_terms:[]),220));
   refreshTermSignalFields(TERMS);

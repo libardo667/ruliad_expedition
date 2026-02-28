@@ -1,5 +1,5 @@
 import { COLORS, PROJECTION_BASE_SEED, PROJECTION_STABILITY_RUNS } from '../core/constants.js';
-import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, TERMS, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSessionConfig, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
+import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, SEMANTIC_EDGES, TERMS, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSemanticEdges, setSessionConfig, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
 import { progressEl } from '../core/refs.js';
 import { clampInt } from '../core/utils.js';
 import { setProbeState, showToast } from '../ui/notifications.js';
@@ -21,6 +21,8 @@ import { renderCAPanel } from '../ca/render-ca-panel.js';
 import { normalizeEmbeddingVector } from '../embedding/vector-math.js';
 import { applyFallbackPositions, normalizePointCloud, projectVectorsTo3D } from '../embedding/projection.js';
 import { computeDiscSimilarityMatrix, computeProjectionStability, renderEmbeddingDiagnostics } from '../embedding/diagnostics.js';
+import { extractSemanticEdges } from '../embedding/semantic-edges.js';
+import { refinePositionsWithEdges } from '../embedding/force-layout.js';
 import { showViz } from '../plot/plot-render.js';
 import { clearNodeFilters, renderNodeFilterResults } from '../plot/sidebar.js';
 import { initArtifactStore, syncArtifactStoreFromRun } from '../artifacts/artifact-store.js';
@@ -135,6 +137,35 @@ export async function launchExpedition(){
     setDiscSimMatrix(null);
     setProjectionStability(null);
   }
+  setSemanticEdges(null);
+  if(quality.id!=="fast"&&TERMS.length>=4){
+    synthBar.className="synth-bar running";
+    synthBar.textContent="SEMANTIC EDGES - analyzing relationships between terms...";
+    try{
+      const edgeResult=await extractSemanticEdges(target,cfg,quality);
+      if(edgeResult&&edgeResult.relationships.length>0){
+        setSemanticEdges(edgeResult);
+        if(quality.id==="rigor"){
+          synthBar.textContent="SEMANTIC EDGES - refining positions with force layout...";
+          const termIndex=new Map();
+          for(let i=0;i<TERMS.length;i++) termIndex.set(TERMS[i].label.toLowerCase().trim(),i);
+          const currentPositions=TERMS.map(t=>[...t.pos]);
+          const refined=refinePositionsWithEdges(currentPositions,edgeResult.relationships,termIndex);
+          for(let i=0;i<TERMS.length;i++) TERMS[i].pos=refined[i]||TERMS[i].pos;
+        }
+        synthBar.className="synth-bar done";
+        synthBar.textContent=`SEMANTIC EDGES COMPLETE - ${edgeResult.relationships.length} relationships identified`;
+      }else{
+        synthBar.className="synth-bar done";
+        synthBar.textContent="SEMANTIC EDGES - no relationships extracted";
+      }
+    }catch(err){
+      console.warn("Semantic edge extraction failed:",err);
+      setSemanticEdges(null);
+      synthBar.className="synth-bar error";
+      synthBar.textContent="SEMANTIC EDGES SKIPPED - proceeding without relationship graph";
+    }
+  }
   if(cfg.enableComputationalIrreducibility){
     synthBar.className="synth-bar running";
     synthBar.textContent="COMPUTATIONAL IRREDUCIBILITY - deriving CA from expedition topology...";
@@ -172,4 +203,4 @@ export async function launchExpedition(){
 
 export async function assignSemanticPositions(target,cfg,setStatus){const notify=(msg)=>{if(typeof setStatus==="function") setStatus(msg);};setDiscSimMatrix(null);setProjectionStability(null);const embeddingInputs=TERMS.map(term=>buildEmbeddingText(term,target));const embedModel=String(cfg?.embeddingModel||"").trim()||"(unspecified embedding model)";const vectors=await callEmbeddings(embeddingInputs,cfg,(batchNo,total)=>{notify(`VECTOR LAYOUT - ${embedModel} batch ${batchNo}/${total}...`);});const normalizedVectors=vectors.map(normalizeEmbeddingVector);setDiscSimMatrix(computeDiscSimilarityMatrix(normalizedVectors));notify("VECTOR LAYOUT - projecting semantic manifold to 3D...");const basePoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,PROJECTION_BASE_SEED),1.45);for(let i=0;i<TERMS.length;i++){TERMS[i].pos=basePoints[i]||[0,0,0];}const rerunCount=Math.max(0,Math.min(4,PROJECTION_STABILITY_RUNS-1));const reruns=[];for(let idx=0;idx<rerunCount;idx++){const seed=PROJECTION_BASE_SEED+idx+1;notify(`VECTOR LAYOUT - projection stability check ${idx+1}/${rerunCount}...`);const runPoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,seed),1.45);reruns.push({seed,points:runPoints});}setProjectionStability(computeProjectionStability(basePoints,reruns));renderEmbeddingDiagnostics();}
 
-export function resetToSetup(){if(plotInited) Plotly.purge("plot");setPlotInited(false);setTerms([]);setDiscs([]);setCitations([]);setCallLogs([]);setRunState(null);setCurrentRunId(null);setActiveSlices(new Set());setActiveTypes(new Set());setSessionConfig(null);setLastRun(null);setDiscSimMatrix(null);setProjectionStability(null);setCAProbeOutput(null);setCitationUnmappedSupportingTerms([]);setLastReportText("");setLastClaimsText("");setLastOutlineText("");setLastCritiqueText("");setLastMarkdownText("");setActiveArtifactKey("");setIsGenerating(false);setEvidenceFilterState({sourceType:"all",termLabel:""});clearNodeFilters();document.getElementById("evidence-filter-bar").innerHTML="";document.getElementById("evidence-modal-content").innerHTML="";document.getElementById("detail").style.display="none";renderCAPanel();renderNodeFilterResults();closeModal("raw-modal");closeModal("report-modal");closeModal("evidence-modal");closeModal("claims-modal");closeModal("outline-modal");closeModal("critique-modal");closeModal("replication-modal");closeModal("artifact-modal");setArtifactDrawer(false);setExportMenu(false);initArtifactStore();renderDisciplineInputs(clampInt(document.getElementById("lens-count-input")?.value||7,2,12),getCurrentProbeSpecs());switchMainTab("generator",{silent:true});}
+export function resetToSetup(){if(plotInited) Plotly.purge("plot");setPlotInited(false);setTerms([]);setDiscs([]);setCitations([]);setCallLogs([]);setRunState(null);setCurrentRunId(null);setActiveSlices(new Set());setActiveTypes(new Set());setSessionConfig(null);setLastRun(null);setDiscSimMatrix(null);setProjectionStability(null);setCAProbeOutput(null);setSemanticEdges(null);setCitationUnmappedSupportingTerms([]);setLastReportText("");setLastClaimsText("");setLastOutlineText("");setLastCritiqueText("");setLastMarkdownText("");setActiveArtifactKey("");setIsGenerating(false);setEvidenceFilterState({sourceType:"all",termLabel:""});clearNodeFilters();document.getElementById("evidence-filter-bar").innerHTML="";document.getElementById("evidence-modal-content").innerHTML="";document.getElementById("detail").style.display="none";renderCAPanel();renderNodeFilterResults();closeModal("raw-modal");closeModal("report-modal");closeModal("evidence-modal");closeModal("claims-modal");closeModal("outline-modal");closeModal("critique-modal");closeModal("replication-modal");closeModal("artifact-modal");setArtifactDrawer(false);setExportMenu(false);initArtifactStore();renderDisciplineInputs(clampInt(document.getElementById("lens-count-input")?.value||7,2,12),getCurrentProbeSpecs());switchMainTab("generator",{silent:true});}

@@ -24,6 +24,8 @@ import './embedding/diagnostics.js';
 import './embedding/projection.js';
 import './embedding/umap-loader.js';
 import './embedding/vector-math.js';
+import './embedding/force-layout.js';
+import './embedding/semantic-edges.js';
 import './plot/plot-layout.js';
 import './plot/plot-overlays.js';
 import './plot/plot-render.js';

@@ -1,5 +1,5 @@
 import { TYPE_CFG } from '../core/constants.js';
-import { DISCS, TERMS } from '../core/state.js';
+import { DISCS, SEMANTIC_EDGES, TERMS } from '../core/state.js';
 import { escapeHtml } from '../core/utils.js';
 import { renderEvidenceCardsInto } from '../ui/evidence-modal-ui.js';
 import { applyDisplayDescriptionForTerm, normalizeTermDescriptions } from '../domain/terms.js';
@@ -14,9 +14,7 @@ import { getVisibleNodeTerms } from './sidebar.js';
 export function showTermDetail(term){
   if(!term) return;
   const detail=document.getElementById("detail");
-  detail.style.display="block";
   detail.style.borderColor=(TYPE_CFG[term.type]?.col||"#444")+"44";
-  detail.setAttribute("tabindex","-1");
   document.getElementById("d-label").textContent=term.label;
   const typeEl=document.getElementById("d-type");
   typeEl.textContent=term.type.toUpperCase();
@@ -35,7 +33,7 @@ export function showTermDetail(term){
   const citeEl=document.getElementById("d-citations");
   const linked=getLinkedCitationsForTerm(term);
   renderEvidenceCardsInto(citeEl,linked,{variant:"compact",currentTermLabel:term.label});
-  detail.focus();
+  document.getElementById("term-detail-panel").classList.add("panel-open");
 }
 
 export function formatProvenanceLine(item){const source=String(item?.source||"unknown").toUpperCase();const impact=String(item?.impact||item?.stage||"").trim();const note=String(item?.note||"").trim();const query=String(item?.query||"").trim();const parts=[`[${source}]`];if(impact) parts.push(impact);if(note) parts.push(note);if(query) parts.push(`query: ${query}`);return parts.join(" | ");}
@@ -73,8 +71,26 @@ export function buildTermDescriptionDetail(term){
     `<div class="sec-label" style="margin-top:8px">WHY THIS NODE EXISTS</div>`,
     `<div style="font-size:12px;color:var(--muted)">${escapeHtml(whyNode)}</div>`,
     `<div style="font-size:12px;color:var(--muted);margin-top:3px">Probe slices: ${escapeHtml(sliceNames.join(" | ")||"synthesis only")}</div>`,
-    `<div style="font-size:12px;color:var(--muted);margin-top:3px">Node class logic: ${escapeHtml(term.type)} (${escapeHtml(TYPE_CFG[term.type]?.desc||"")})</div>`
+    `<div style="font-size:12px;color:var(--muted);margin-top:3px">Node class logic: ${escapeHtml(term.type)} (${escapeHtml(TYPE_CFG[term.type]?.desc||"")})</div>`,
+    buildRelationshipsSection(term)
   ].filter(Boolean).join("");
+}
+
+const REL_TYPE_COLORS={analogical:"#3b82f6",causal:"#22c55e",contradictory:"#ff9500",complementary:"#a855f7",hierarchical:"#6b7280",instantiates:"#00cfff"};
+
+function buildRelationshipsSection(term){
+  if(!SEMANTIC_EDGES?.relationships?.length) return "";
+  const label=term.label.toLowerCase();
+  const connected=SEMANTIC_EDGES.relationships.filter(r=>r.term_a.toLowerCase()===label||r.term_b.toLowerCase()===label);
+  if(!connected.length) return "";
+  connected.sort((a,b)=>b.strength-a.strength);
+  const rows=connected.slice(0,8).map(rel=>{
+    const other=rel.term_a.toLowerCase()===label?rel.term_b:rel.term_a;
+    const color=REL_TYPE_COLORS[rel.type]||"#888";
+    const strengthPct=Math.round(rel.strength*100);
+    return `<div style="margin-top:5px;font-size:12px"><span style="color:${color};font-weight:bold">${escapeHtml(rel.type)}</span> <span style="color:var(--text)">\u2194 <strong>${escapeHtml(other)}</strong></span> <span style="color:var(--muted)">(${strengthPct}%)</span><div style="color:var(--muted);font-style:italic;margin-top:2px">${escapeHtml(rel.rationale)}</div></div>`;
+  }).join("");
+  return `<div class="sec-label" style="margin-top:8px">SEMANTIC RELATIONSHIPS</div>${rows}`;
 }
 
 export function onPlotClick(data){

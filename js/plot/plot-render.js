@@ -1,4 +1,4 @@
-import { CURRENT_RUN_ID, DISCS, LAST_RUN, activeSlices, activeTab, activeTypes, isGenerating, plotInited, showSurfaces, setPlotInited, setIsGenerating, setActiveSlices, setActiveTypes, setShowSurfaces } from '../core/state.js';
+import { CURRENT_RUN_ID, DISCS, LAST_RUN, activeSlices, activeTab, activeTypes, isGenerating, plotInited, setPlotInited, setIsGenerating, setActiveSlices, setActiveTypes } from '../core/state.js';
 import { switchMainTab } from '../ui/tabs.js';
 import { renderCAPanel } from '../ca/render-ca-panel.js';
 import { getPlotLayout } from './plot-layout.js';
@@ -10,8 +10,8 @@ import { buildSidebar, buildStats, getVisibleNodeTerms, renderNodeFilterResults 
 // Source: ruliad_expedition_v1.1.html
 // Module: js/plot/plot-render.js
 
-export function showViz(target){setIsGenerating(false);const label=document.getElementById("viz-target-label");label.textContent=target.toUpperCase();label.title=(CURRENT_RUN_ID||LAST_RUN?.runId||"");setActiveSlices(new Set(DISCS.map(d=>d.id)));setActiveTypes(new Set(["unique","convergent","contradictory","emergent"]));setShowSurfaces(true);document.getElementById("surf-check").checked=true;buildSidebar();buildStats();renderCAPanel();renderPlot();document.getElementById("plot").on("plotly_click",onPlotClick);switchMainTab(activeTab==="generator"?"generator":"plot",{silent:true});}
+export function showViz(target){setIsGenerating(false);const label=document.getElementById("viz-target-label");label.textContent=target.toUpperCase();label.title=(CURRENT_RUN_ID||LAST_RUN?.runId||"");setActiveSlices(new Set(DISCS.map(d=>d.id)));setActiveTypes(new Set(["unique","convergent","contradictory","emergent"]));buildSidebar();buildStats();renderCAPanel();renderPlot();document.getElementById("plot").on("plotly_click",onPlotClick);switchMainTab(activeTab==="generator"?"generator":"plot",{silent:true});}
 
-export const CONFIG={responsive:true,displaylogo:false,modeBarButtonsToRemove:["toImage","sendDataToCloud"]};
+export const CONFIG={responsive:true,displaylogo:false,displayModeBar:false};
 
 export function renderPlot(){const visibleTerms=getVisibleNodeTerms();document.getElementById("vis-count").textContent=visibleTerms.length;renderNodeFilterResults();const traces=buildTraces(visibleTerms);const layout=getPlotLayout();if(!plotInited){Plotly.newPlot("plot",traces,layout,CONFIG);setPlotInited(true);}else{Plotly.react("plot",traces,layout,CONFIG);}}

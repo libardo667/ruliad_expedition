@@ -1,12 +1,14 @@
-## Product Architecture Vision (established Feb 2026)
+## Product Architecture Vision — Parallax (established Feb 2026)
+
+**Parallax**: viewing a concept from multiple vantage points to triangulate its true shape.
 
 The app has two primary modes and they are intentional inverses of each other:
 
-**Expedition Mode** (plot-first): Entry → "I have a concept I want to map." Landing page → Expedition Mode → Simple or Advanced disambiguation → run → primary output is the 3D semantic map; text artifacts (claims, outline, deep report, etc.) available on demand via the ARTIFACTS button. The sidebar/plot view is the experience.
+**Parallax Explore** (plot-first, formerly "Expedition Mode"): Entry → "I have a concept I want to map." Landing page → Parallax Explore → Simple or Advanced disambiguation → run → primary output is the 3D semantic map with relationship edges; text artifacts (claims, outline, deep report, etc.) available on demand via the ARTIFACTS button. The plot view is the experience.
 
-**News Lens Mode** (text-first): Entry → "I have a news event I want to understand from multiple angles." Landing page → News Lens → seed URL → FIND STORIES → select sources → run → primary output is an auto-generated text artifact library (claims, evidence comparison, outline, key quotes per perspective) presented upfront as a neat package. The 3D UMAP plot is available as an optional additional step for users who want to explore the semantic topology, but it is NOT the default landing point. The artifact generation runs as part of the pipeline, not as an afterthought requiring manual button clicks.
+**Parallax Lens** (text-first, formerly "News Lens Mode"): Entry → "I have a news event I want to understand from multiple angles." Landing page → Parallax Lens → seed URL → FIND STORIES → select sources → run → primary output is an auto-generated text artifact library (claims, evidence comparison, outline, key quotes per perspective) presented upfront as a neat package. The 3D UMAP plot is available as an optional additional step for users who want to explore the semantic topology, but it is NOT the default landing point. The artifact generation runs as part of the pipeline, not as an afterthought requiring manual button clicks.
 
-**Landing page** therefore becomes three clear paths: EXPEDITION MODE | NEWS LENS | LOAD AN EXAMPLE. The SIMPLE/ADVANCED disambiguation lives inside Expedition Mode where it belongs. Both modes share the same underlying probe → synthesis → embedding pipeline; only the entry UX and primary output surface differ.
+**Landing page** therefore becomes three clear paths: PARALLAX EXPLORE | PARALLAX LENS | LOAD AN EXAMPLE. The SIMPLE/ADVANCED disambiguation lives inside Explore mode where it belongs. Both modes share the same underlying probe → synthesis → embedding → semantic edges pipeline; only the entry UX and primary output surface differ.
 
 ---
 
@@ -64,8 +66,20 @@ During an expedition you get a spinner, but no sense of "Probe 3 of 6... Running
 3. Copy Buttons on All Text Outputs
 Artifact text (deep reports, claims lists, outlines, markdown) has no copy button. Users are highlighting and Ctrl+C-ing. Every text output box needs a clipboard icon.
 
-4. App Branding/Identity
-The product needs a real name, a tagline, and at minimum a favicon and <title> that isn't a filename. This sounds cosmetic but it matters the moment you share a link.
+4. App Branding/Identity — "Parallax" Rebrand Changelist
+The product is rebranding from "Ruliad Expedition" to **Parallax**. Tagline: *"See every angle at once."* Full changelist:
+- [ ] **HTML `<title>` + favicon**: change from filename to "Parallax" + design/add a favicon
+- [ ] **Landing page cards**: EXPEDITION MODE → PARALLAX EXPLORE, NEWS LENS → PARALLAX LENS
+- [ ] **Header/topbar**: replace any "Ruliad Expedition" text with "Parallax"
+- [ ] **Entry point filename**: rename `ruliad_expedition_modular.html` → `index.html` (update proxy fallback list in `proxy_server.mjs`)
+- [ ] **CSS class/ID audit**: rename `.expedition-*` classes if any exist to `.parallax-*` or neutral names
+- [ ] **Status bar messages**: "EXPEDITION" prefix in synthBar messages → neutral or "PARALLAX" where user-facing
+- [ ] **Tab labels**: "GENERATION PANEL" → context-dependent ("EXPLORE SETUP" / "LENS SETUP" depending on mode)
+- [ ] **Export metadata**: run snapshot JSON could include `{ app: "parallax", version: "..." }`
+- [ ] **Console/toast messages**: audit for "expedition" references in user-visible strings
+- [ ] **README / docs**: update repo description, any markdown references
+- [ ] **Sample run filenames**: `*_expedition_full.json` → `*_parallax.json` or just `*.json`
+- [ ] **Prompt text**: audit `prompt-builders.js` for any user-visible "expedition" language (system prompts use "research expert" — likely fine as-is)
 
 5. Tooltip/Help Text Audit
 "rigor," "replication models," "CA probe," "source policy" — these are insider terms. Do a pass replacing or supplementing every cryptic label with plain-English tooltips. The CA probe section especially needs explanation for non-technical users.
@@ -89,8 +103,14 @@ Probe discipline colors are used in the 3D plot but often disappear in the list/
 Two related quality fixes. (A) The second-pass term dedup step currently runs only in rigor quality mode. Balanced mode should run a lighter version: a single LLM pass that merges obvious near-synonym labels (e.g., "Military action" / "Joint Military Operations" / "Pre-emptive Attack") without the full cleanup. On politically dense topics this can reduce raw term count by 20–30%, making the 3D plot and sidebar substantially less noisy. (B) The synthesis prompt currently detects convergence via textual label similarity, which causes it to miss semantically identical concepts under different names ("Humanitarian Toll" and "Civilian Casualties" count as two separate things rather than one convergent finding). Improve the synthesis prompt to: canonicalize labels when it detects near-synonym convergence, and explicitly instruct the model to compare terms by what they *mean*, not just whether the text matches. Both changes compound: better label normalization → more accurate synthesis attribution → a cleaner, more trustworthy map.
 
 
-13. Two-Mode Experience Redesign (landing page + output surfaces)
-Implement the architecture vision above. The landing page becomes three distinct entry cards: EXPEDITION MODE, NEWS LENS, LOAD AN EXAMPLE — each linking to a purpose-built experience. Expedition Mode: move SIMPLE/ADVANCED disambiguation inside this path, keep the existing generation workbench and plot view as the primary output. News Lens Mode: after the run completes, the primary output is an auto-generated artifact library (at minimum: claims ledger, evidence per perspective, key quotes per column/discipline, and a narrative synthesis paragraph). The 3D UMAP plot is offered as an optional "EXPLORE IN 3D" step, not the landing point. Artifact auto-generation fires in the pipeline after synthesis, without requiring user interaction. The "GENERATION PANEL" tab label and dual-tab structure may need rethinking — in News Lens the concept of "generation workbench" doesn't apply; the user's job is done after USE SELECTED SOURCES + RUN.
+13. Two-Mode Experience Redesign — "Parallax" Rebrand (landing page + output surfaces)
+The product is being rebranded from "Ruliad Expedition" to **Parallax** — viewing a concept from multiple vantage points to triangulate its true shape. The name captures exactly what both modes do: you only understand the real shape of an idea by looking at it from several disciplinary or editorial angles at once.
+
+**Parallax Explore** (formerly Expedition Mode, plot-first): concept → Simple/Advanced → run → 3D semantic map with semantic relationship edges is the primary output; text artifacts on demand.
+
+**Parallax Lens** (formerly News Lens Mode, text-first): seed URL → FIND STORIES → sources → run → auto-generated text artifact library is the PRIMARY deliverable (claims, evidence per perspective, narrative synthesis); 3D plot is an optional "EXPLORE IN 3D" step.
+
+The landing page becomes three distinct entry cards: PARALLAX EXPLORE | PARALLAX LENS | LOAD AN EXAMPLE — each linking to a purpose-built experience. Artifact auto-generation fires in the pipeline after synthesis for Lens mode without requiring user interaction. The "GENERATION PANEL" tab label and dual-tab structure may need rethinking — in Lens mode the concept of "generation workbench" doesn't apply; the user's job is done after USE SELECTED SOURCES + RUN. See Minor #4 for the full rebrand changelist.
 
 14. Plot View + Sidebar Redesign / Visualization Library Investigation
 The current sidebar (320px wide, 9 stacked sections) is visually dense and unreadable as a primary interface. The sidebar is not sacred — other approaches are on the table. Open design questions: (a) Should we replace or supplement Plotly.js? Candidates: Three.js (more control, beautiful custom scenes), D3 force-directed 2D (more legible for most users, easier to click into terms), or a 2D UMAP scatter with D3 (simpler navigation than 3D). (b) **Sidebar is eliminated entirely.** The plot is the full canvas. Three floating overlay panels replace it, all in the same visual style (same card appearance, same X dismiss button): (1) Controls panel — disc toggles, type toggles, color mode, text search; floats over the plot, toggled from the topbar. (2) Term detail panel — updates in-place on each node click, persists until X clicked. (3) Diagnostics panel — embedding matrix, CA panel, corpus stats; power-user, floating, X to close. No sidebar column, no permanent left panel, no layout shift when panels open/close. Panel triggers: `var(--accent)`-colored semicircles on the left edge (controls) and bottom edge (diagnostics), arrow in `var(--accent-fg)` — theme-aware, no hardcoded color needed. On hover near them: translate ~8px toward center + morph from semicircle to full circle (border-radius transition), revert on hover-out. On click: panel slides out with a smooth ease + small spring bounce. Term detail panel has no trigger — opens on node click.

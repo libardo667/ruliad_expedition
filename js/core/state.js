@@ -10,10 +10,6 @@ export let activeSlices=new Set();
 
 export let activeTypes=new Set();
 
-export let showSurfaces=true;
-
-export let surfaceOpacity=0.09;
-
 export let plotInited=false;
 
 export let sessionConfig=null;
@@ -58,6 +54,8 @@ export let PROJECTION_STABILITY=null;
 
 export let CA_PROBE_OUTPUT=null;
 
+export let SEMANTIC_EDGES=null;
+
 export let EVIDENCE_FILTER_STATE={sourceType:"all",termLabel:""};
 
 export let PROMPT_TEMPLATE_OVERRIDES={};
@@ -81,8 +79,6 @@ export const setDiscs = v => { DISCS = v; };
 export const setTerms = v => { TERMS = v; };
 export const setActiveSlices = v => { activeSlices = v; };
 export const setActiveTypes = v => { activeTypes = v; };
-export const setShowSurfaces = v => { showSurfaces = v; };
-export const setSurfaceOpacity = v => { surfaceOpacity = v; };
 export const setPlotInited = v => { plotInited = v; };
 export const setSessionConfig = v => { sessionConfig = v; };
 export const setUmapModulePromise = v => { umapModulePromise = v; };
@@ -105,6 +101,7 @@ export const setCitationUnmappedSupportingTerms = v => { CITATION_UNMAPPED_SUPPO
 export const setDiscSimMatrix = v => { DISC_SIM_MATRIX = v; };
 export const setProjectionStability = v => { PROJECTION_STABILITY = v; };
 export const setCAProbeOutput = v => { CA_PROBE_OUTPUT = v; };
+export const setSemanticEdges = v => { SEMANTIC_EDGES = v; };
 export const setEvidenceFilterState = v => { EVIDENCE_FILTER_STATE = v; };
 export const setPromptPreviewRendering = v => { PROMPT_PREVIEW_RENDERING = v; };
 export const setArtifactStore = v => { ARTIFACT_STORE = v; };

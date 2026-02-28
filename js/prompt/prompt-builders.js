@@ -25,3 +25,47 @@ export function buildProbeUserPrompt(target,discName,quality,cfg){
 export function buildSynthesisPrompt(target,probeResults,quality,cfg={}){const allTerms=probeResults.map(r=>`DISCIPLINE ${r.discId} (${DISCS[r.discId]?.name}):\nSummary: ${r.summary}\nTerms: ${(r.terms||[]).map(t=>t.label).join(", ")}\nClaims: ${(r.claims_or_findings||[]).join("; ")}`).join("\n\n");const sourcePreamble=cfg?.sourceText?`\n(Probes are grounded in provided source material — weight source-based evidence over general knowledge.)\n`:"";return `These are research summaries about "${target}" from ${DISCS.length} independent disciplines:${sourcePreamble}\n\n${allTerms}\n\nIdentify:\n1. CONVERGENT: concepts that appear across 2+ disciplines\n2. CONTRADICTORY: genuine tensions between disciplines\n3. EMERGENT: insights visible only after cross-disciplinary integration\n\nReturn only this JSON:\n{\n  "convergent": [\n    {"label": "shared concept", "disciplines": [0,1,3], "description": "why it converges"}\n  ],\n  "contradictory": [\n    {"label": "tension description", "disciplines": [0,2], "description": "what the tension is"}\n  ],\n  "emergent": [\n    {"label": "synthesis insight", "description": "what appears only in integration"}\n  ]\n}\n\nInclude ${quality.synthConvergent} convergent, ${quality.synthContradictory} contradictory, and ${quality.synthEmergent} emergent items.`;}
 
 export function buildRedTeamPrompt(target,probeResults,synthResult,cfg={}){const probeSummaries=probeResults.map(r=>`${DISCS[r.discId]?.name}: ${r.summary} | Claims: ${(r.claims_or_findings||[]).join("; ")}`).join("\n");const contradictions=(synthResult.contradictory||[]).map(c=>`${c.label} (${(c.disciplines||[]).map(i=>DISCS[i]?.name||i).join(" vs ")})`).join("\n");const emergent=(synthResult.emergent||[]).map(e=>e.label).join(", ");return `You are a skeptical reviewer. Attack weak joints, missing confounders, overgeneralizations, and citation risks.\n\nTopic: ${target}\n\nProbe summaries:\n${probeSummaries}\n\nContradictions:\n${contradictions}\n\nEmergent ideas:\n${emergent}\n\nReturn a concise critique with:\n- 3-6 high-risk claims\n- what evidence would falsify them\n- missing perspectives or datasets\n- any citation red flags`;}
+
+export function buildRelationshipSystemPrompt(){return "You are a knowledge graph analyst specializing in cross-disciplinary semantic relationships. Respond only with valid JSON.";}
+
+export function buildRelationshipUserPrompt(target,terms,discs,quality){
+  const targetRelCount=Math.round(terms.length*2.5);
+  const termList=terms.map((t,i)=>{
+    const discNames=(t.slices||[]).map(id=>discs[id]?.name).filter(Boolean).join(", ")||"synthesis";
+    return `${i+1}. "${t.label}" [${t.type}] (${discNames}): ${t.description||"no description"}`;
+  }).join("\n");
+  return `Topic: "${target}"
+
+Research terms from a multi-disciplinary expedition:
+${termList}
+
+Identify the ${targetRelCount} most meaningful semantic relationships between these terms.
+
+Relationship types:
+- analogical: term_a and term_b illuminate the same pattern from different domains
+- causal: term_a drives, produces, or enables term_b
+- contradictory: term_a and term_b represent genuine tensions or incompatible frames
+- complementary: term_a and term_b are distinct but mutually reinforcing
+- hierarchical: term_b is an instance, subset, or specialization of term_a
+- instantiates: term_a is the abstract principle; term_b is a concrete example
+
+Rules:
+- Only use exact term labels from the numbered list above
+- Do not create relationships between a term and itself
+- Prefer cross-discipline relationships over within-discipline ones
+- Strength is 0.0-1.0; reserve 0.85+ for strong, unambiguous relationships
+- Keep rationale to one sentence
+- Respond with only the JSON object
+
+{
+  "relationships": [
+    {
+      "term_a": "exact label",
+      "term_b": "exact label",
+      "strength": 0.8,
+      "type": "analogical",
+      "rationale": "one-sentence explanation"
+    }
+  ]
+}`;
+}
