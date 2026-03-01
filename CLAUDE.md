@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Brand Identity
 
-The product is being rebranded from "Ruliad Expedition" to **Parallax** — viewing a concept from multiple vantage points to triangulate its true shape. The two modes:
+The product is **Parallax** — viewing a concept from multiple vantage points to triangulate its true shape. Tagline: "See every angle at once." The two modes:
 - **Parallax Explore** (formerly "Expedition Mode") — concept-first, plot-primary
 - **Parallax Lens** (formerly "News Lens Mode") — article-first, text-primary
 
-The rebrand is in progress. Internal codenames and repo structure still reference the old name. See `majors_and_minors.md` Minor #4 for the full changelist.
+The user-facing rebrand is complete. Internal function names (e.g. `launchExpedition`) and the repo directory name still use old names but are not user-visible.
 
 ## Running the Project
 
@@ -29,7 +29,7 @@ On Windows/PowerShell use `$env:OPENROUTER_API_KEY="..."` syntax. Restart the se
 This is a modular application with no build step and no npm dependencies:
 
 - **[proxy_server.mjs](proxy_server.mjs)** — Pure Node.js ESM proxy (~130 lines). No external packages; requires Node v18+.
-- **[ruliad_expedition_modular.html](ruliad_expedition_modular.html)** — Entry point that loads CSS and JS modules. External CDN deps: Plotly.js 2.27.0 and JSZip 3.10.1.
+- **[index.html](index.html)** — Entry point that loads CSS and JS modules. External CDN deps: Plotly.js 2.27.0 and JSZip 3.10.1.
 - **[js/main.js](js/main.js)** — ES module entry point (imports all modules in dependency order).
 
 ### Proxy Server Routes
@@ -38,11 +38,12 @@ This is a modular application with no build step and no npm dependencies:
 |--------|------|-------------|
 | `POST` | `/api/llm/chat/completions` | Proxies to OpenRouter chat API |
 | `POST` | `/api/llm/embeddings` | Proxies to OpenRouter embeddings API |
+| `GET`  | `/api/sample-runs` | Lists JSON files in `sample_runs/` directory |
 | `GET`  | `/*` | Static file serving from CWD |
 
 Auth resolution: uses client `Authorization: Bearer ...` header if present, falls back to `OPENROUTER_API_KEY` env var.
 
-### Frontend Expedition Flow
+### Frontend Analysis Flow
 
 1. **Probe phase** — parallel LLM calls (one per discipline) using `buildProbeUserPrompt`. Each returns JSON: `{summary, terms[], claims_or_findings[], citations[], confidence_notes}`. In News Lens mode, each probe receives only its column's pre-summarized article text via `cfg.sourceByDisc[discName]`.
 2. **Synthesis phase** — second LLM call with all probe results, returns `{convergent[], contradictory[], emergent[]}` via `buildSynthesisPrompt`.
@@ -88,9 +89,9 @@ Auth resolution: uses client `Authorization: Bearer ...` header if present, fall
 
 Prompts can be overridden per-run via the "Prompt Workbench" panel. Override keys: `probe_system`, `probe_user`, `synthesis`, `lens_generation`, `artifact_deep_report`, `artifact_claims`, `artifact_outline`, `artifact_red_team`, `artifact_replication`, `artifact_markdown`. Stored in `PROMPT_TEMPLATE_OVERRIDES`. The old "mad libs" prompt fields (`promptIntent`, `promptLensEmphasis`, `promptHardConstraints`, `promptOutputStyle`, `promptArtifactFocus`) were removed — they were never wired to DOM inputs and produced empty strings at runtime.
 
-### News Lens Mode (Sources)
+### Parallax Lens Mode (Sources)
 
-When the user selects NEWS LENS from the landing page, `js/ui/setup-panel.js` drives the panel. The entry point is a seed URL input ("Article URL to explore"), not a topic string.
+When the user selects PARALLAX LENS from the landing page, `js/ui/setup-panel.js` drives the panel. The entry point is a seed URL input ("Article URL to explore"), not a topic string.
 
 **Seed-anchored FIND STORIES flow:**
 1. User pastes a specific article URL and clicks FIND STORIES
@@ -112,13 +113,7 @@ When the user selects NEWS LENS from the landing page, `js/ui/setup-panel.js` dr
 
 ### Default File Resolution
 
-When `GET /` is requested, the proxy searches for the main HTML in this order:
-1. `ruliad_expedition_modular.html` ← active entry point
-2. `ruliad_expedition_v1.1.html`
-3. `ruliad_expedition_2.23.26.html`
-4. `ruliad_expedition.html`
-5. `ruliad_expedition copy.html`
-6. `index.html`
+When `GET /` is requested, the proxy serves `index.html`.
 
 ## Product Roadmap
 

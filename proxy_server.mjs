@@ -1,5 +1,5 @@
 import http from "node:http";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -67,7 +67,7 @@ async function proxyOpenRouter(req, res, kind) {
       "Content-Type": "application/json",
       "Authorization": auth,
       "HTTP-Referer": req.headers.origin || "http://localhost",
-      "X-Title": "Ruliad Expedition Tool Proxy"
+      "X-Title": "Parallax Proxy"
     },
     body: JSON.stringify(body)
   });
@@ -124,7 +124,7 @@ async function fetchUrlHandler(req, res) {
   const results = await Promise.all(urls.map(async (url) => {
     try {
       const resp = await fetch(String(url), {
-        headers: { "User-Agent": "Ruliad Expedition Tool/1.0" },
+        headers: { "User-Agent": "Parallax/1.0" },
         redirect: "follow",
         signal: AbortSignal.timeout(15000)
       });
@@ -157,25 +157,24 @@ function safeJoin(root, requestPath) {
 }
 
 async function resolveDefaultRequestPath() {
-  const candidates = [
-    "/ruliad_expedition_modular.html",
-    "/ruliad_expedition_v1.1.html",
-    "/ruliad_expedition_2.23.26.html",
-    "/ruliad_expedition.html",
-    "/ruliad_expedition copy.html",
-    "/index.html"
-  ];
-  for (const candidate of candidates) {
-    const full = safeJoin(ROOT, candidate);
-    if (!full) continue;
-    try {
-      const info = await stat(full);
-      if (info.isFile()) return candidate;
-    } catch {
-      // Candidate missing; keep searching.
-    }
+  return "/index.html";
+}
+
+async function listSampleRuns(req, res) {
+  const dir = path.join(ROOT, "sample_runs");
+  try {
+    const files = await readdir(dir);
+    const runs = files
+      .filter(f => f.endsWith(".json"))
+      .map(f => {
+        const base = f.replace(/\.json$/, "");
+        const label = base.replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+        return { filename: f, label };
+      });
+    send(res, 200, JSON.stringify(runs), { "Content-Type": MIME[".json"] });
+  } catch {
+    send(res, 200, JSON.stringify([]), { "Content-Type": MIME[".json"] });
   }
-  return "/ruliad_expedition_modular.html";
 }
 
 async function serveStatic(req, res) {
@@ -210,6 +209,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && pathname === "/api/llm/chat/completions") return await proxyOpenRouter(req, res, "chat");
     if (req.method === "POST" && pathname === "/api/llm/embeddings") return await proxyOpenRouter(req, res, "embeddings");
     if (req.method === "POST" && pathname === "/api/fetch-url") return await fetchUrlHandler(req, res);
+    if (req.method === "GET" && pathname === "/api/sample-runs") return await listSampleRuns(req, res);
     if (req.method === "GET" || req.method === "HEAD") return await serveStatic(req, res);
     send(res, 405, "Method not allowed", { "Content-Type": MIME[".txt"] });
   } catch (err) {

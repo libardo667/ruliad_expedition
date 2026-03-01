@@ -3,7 +3,7 @@ import { callLLMJSON } from '../api/llm.js';
 import { extractJSON } from '../api/json-recovery.js';
 import { buildRelationshipSystemPrompt, buildRelationshipUserPrompt } from '../prompt/prompt-builders.js';
 // Module: js/embedding/semantic-edges.js
-// LLM-based semantic relationship extraction between expedition terms.
+// LLM-based semantic relationship extraction between terms.
 
 const VALID_TYPES=new Set(["analogical","causal","contradictory","complementary","hierarchical","instantiates"]);
 const BATCH_THRESHOLD=50;

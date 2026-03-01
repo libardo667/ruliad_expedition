@@ -1,4 +1,4 @@
-// Curated RSS feed configs and article scoring utilities for the News Lens (Sources) mode.
+// Curated RSS feed configs and article scoring utilities for the Parallax Lens (Sources) mode.
 
 export const STOPWORDS = new Set([
   "the","and","for","that","this","with","from","have","been","they","will",
@@ -173,7 +173,7 @@ export function tokenize(text) {
     .filter(w => w.length >= 4 && !STOPWORDS.has(w));
 }
 
-// Score an article against the expedition topic (0–100)
+// Score an article against the topic (0–100)
 export function scoreArticle(article, topicTokens) {
   if (!topicTokens.length) return 0;
   const haystack = new Set(tokenize((article.title || "") + " " + (article.description || "")));

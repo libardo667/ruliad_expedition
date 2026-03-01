@@ -21,7 +21,7 @@ export async function refreshHistoryList() {
     const runs = await loadRunHistory();
     list.innerHTML = "";
     if (!runs.length) {
-      list.innerHTML = '<div class="history-empty">No saved runs yet. Complete an expedition to auto-save it here.</div>';
+      list.innerHTML = '<div class="history-empty">No saved runs yet. Complete a run to auto-save it here.</div>';
       return;
     }
     for (const run of runs) list.appendChild(makeHistoryCard(run));
@@ -65,7 +65,7 @@ function makeHistoryCard(run) {
     const blob = new Blob([JSON.stringify(run, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `ruliad-run-${(run.target || "run").replace(/\s+/g, "-").slice(0, 30)}-${date.replace(/[\s,]/g, "")}.json`;
+    a.download = `parallax-run-${(run.target || "run").replace(/\s+/g, "-").slice(0, 30)}-${date.replace(/[\s,]/g, "")}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
