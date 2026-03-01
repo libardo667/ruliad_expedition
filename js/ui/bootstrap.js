@@ -1,11 +1,9 @@
-import { GENERATION_WORKBENCH_WIDTH_STORAGE_KEY } from '../core/constants.js';
-import { ACTIVE_ARTIFACT_KEY, activeTab, galleryActive, plotInited, setNodeColorMode } from '../core/state.js';
+import { ACTIVE_ARTIFACT_KEY, activeTab, galleryActive, plotInited, setActiveSetupMode, setNodeColorMode } from '../core/state.js';
 import { toggleGallery } from '../plot/gallery.js';
 import { discInputsEl, themeSelectGlobalEl } from '../core/refs.js';
 import { initTabAccessibility, switchMainTab, toggleZenMode } from './tabs.js';
 import { applyTheme } from './theme.js';
-import { addProbeSpec, clearApiKey, clearSources, findStories, generateOrthogonalLenses, initGenerationPanelQol, initProgressiveDisclosure, initSourcesPanel, initWorkbenchJumpNav, launchLensRun, onProbeActionClick, renderDisciplineInputs, syncApiModeNote, syncCAOverrideUI, toggleApiKey } from './setup-panel.js';
-import { applyGenerationWorkbenchLeftWidth, initGenerationWorkbenchResizer } from './resizers.js';
+import { addProbeSpec, clearApiKey, clearSources, findStories, generateOrthogonalLenses, initGenerationPanelQol, initProgressiveDisclosure, initSourcesPanel, launchLensRun, onProbeActionClick, renderDisciplineInputs, syncApiModeNote, syncCAOverrideUI, toggleApiKey } from './setup-panel.js';
 import { closeModal, handleModalKeyboard } from './modals.js';
 import { applyPromptPreviewOverride, refreshPromptPreview, resetPromptPreviewOverride, syncPromptPreviewDiscOptions } from './prompt-preview.js';
 import { showEvidenceModal } from './evidence-modal-ui.js';
@@ -31,11 +29,8 @@ initProgressiveDisclosure();
 
 initSourcesPanel();
 
-initGenerationWorkbenchResizer();
 
-initWorkbenchJumpNav();
-
-document.getElementById("launch-btn").addEventListener("click",launchExpedition);
+document.getElementById("launch-btn").addEventListener("click",()=>{setActiveSetupMode("explore");launchExpedition();});
 
 document.getElementById("reset-btn").addEventListener("click",resetToSetup);
 
@@ -199,7 +194,17 @@ document.addEventListener("keydown",handleModalKeyboard);
 
 document.addEventListener("click",e=>{const menu=document.getElementById("export-menu");const btn=document.getElementById("export-menu-btn");if(!menu.classList.contains("open")) return;if(e.target===btn||btn.contains(e.target)||menu.contains(e.target)) return;setExportMenu(false);});
 
-document.getElementById("api-mode").addEventListener("change",syncApiModeNote);
+document.getElementById("api-mode").addEventListener("change",e=>{const lens=document.getElementById("lens-api-mode");if(lens) lens.value=e.target.value;syncApiModeNote();});
+
+document.getElementById("lens-api-mode")?.addEventListener("change",e=>{document.getElementById("api-mode").value=e.target.value;syncApiModeNote();});
+
+// Sync API key between panels
+document.getElementById("api-key-input").addEventListener("input",e=>{const lens=document.getElementById("lens-api-key-input");if(lens) lens.value=e.target.value;});
+document.getElementById("lens-api-key-input")?.addEventListener("input",e=>{document.getElementById("api-key-input").value=e.target.value;});
+
+// Lens panel key show/clear buttons
+document.getElementById("lens-toggle-key-btn")?.addEventListener("click",()=>{const inp=document.getElementById("lens-api-key-input");if(!inp) return;const isHidden=inp.type==="password";inp.type=isHidden?"text":"password";document.getElementById("lens-toggle-key-btn").textContent=isHidden?"HIDE":"SHOW";const mainInp=document.getElementById("api-key-input");if(mainInp) mainInp.type=inp.type;const mainBtn=document.getElementById("toggle-key-btn");if(mainBtn) mainBtn.textContent=isHidden?"HIDE":"SHOW";});
+document.getElementById("lens-clear-key-btn")?.addEventListener("click",()=>{const inp=document.getElementById("lens-api-key-input");if(inp) inp.value="";document.getElementById("api-key-input").value="";});
 
 syncApiModeNote();
 
@@ -208,14 +213,18 @@ document.getElementById("ca-probe-check")?.addEventListener("change",syncCAOverr
 syncCAOverrideUI();
 
 window.addEventListener("resize",()=>{
-  const wbRaw=Number(sessionStorage.getItem(GENERATION_WORKBENCH_WIDTH_STORAGE_KEY));
-  if(Number.isFinite(wbRaw)) applyGenerationWorkbenchLeftWidth(wbRaw,{persist:true});
   if(plotInited&&activeTab==="plot"&&!galleryActive){try{Plotly.Plots.resize(document.getElementById("plot"));}catch{}}
 });
 
 applyTheme(sessionStorage.getItem("parallax_theme")||"light",false);
 
-switchMainTab("generator",{silent:true,focusTarget:false});
+// Restore saved mode or default to landing
+const savedMode=sessionStorage.getItem("parallax_setup_mode");
+if(savedMode==="explore"||savedMode==="lens"){
+  switchMainTab(savedMode,{silent:true,focusTarget:false});
+}else{
+  switchMainTab("landing",{silent:true,focusTarget:false});
+}
 
 initArtifactStore();
 

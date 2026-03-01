@@ -4,11 +4,11 @@
 
 The app has two primary modes and they are intentional inverses of each other:
 
-**Parallax Explore** (plot-first, formerly "Expedition Mode"): Entry → "I have a concept I want to map." Landing page → Parallax Explore → Simple or Advanced disambiguation → run → primary output is the 3D semantic map with relationship edges; text artifacts (claims, outline, deep report, etc.) available on demand via the ARTIFACTS button. The plot view is the experience.
+**Parallax Explore** (plot-first, formerly "Expedition Mode"): Entry → "I have a concept I want to map." Landing page → EXPLORE tab → self-contained config panel with focus concept, probe lenses, and collapsible advanced settings → RUN → inline progress within the panel → auto-swaps to PLOT tab with 3D semantic map. Text artifacts available on demand via the ARTIFACTS button.
 
-**Parallax Lens** (text-first, formerly "News Lens Mode"): Entry → "I have a news event I want to understand from multiple angles." Landing page → Parallax Lens → seed URL → FIND STORIES → select sources → run → primary output is an auto-generated text artifact library (claims, evidence comparison, outline, key quotes per perspective) presented upfront as a neat package. The 3D UMAP plot is available as an optional additional step for users who want to explore the semantic topology, but it is NOT the default landing point. The artifact generation runs as part of the pipeline, not as an afterthought requiring manual button clicks.
+**Parallax Lens** (text-first, formerly "News Lens Mode"): Entry → "I have a news event I want to understand from multiple angles." Landing page → LENS tab → seed URL → FIND STORIES → select sources → RUN ANALYSIS → inline progress within the panel → auto-swaps to DASHBOARD tab with auto-generated text artifact library (claims, evidence comparison, outline, deep report). The 3D UMAP plot is available as an optional "EXPLORE IN 3D" button (two-click: shimmer during embedding → green "VIEW 3D MAP" button when ready).
 
-**Landing page** therefore becomes three clear paths: PARALLAX EXPLORE | PARALLAX LENS | LOAD AN EXAMPLE. The SIMPLE/ADVANCED disambiguation lives inside Explore mode where it belongs. Both modes share the same underlying probe → synthesis → embedding → semantic edges pipeline; only the entry UX and primary output surface differ.
+**Landing page** is a clean 3-way choice: PARALLAX EXPLORE | PARALLAX LENS | LOAD AN EXAMPLE. Each links to a self-contained tab. Both modes share the same underlying probe → synthesis pipeline; only the entry UX, inline progress, and primary output surface differ. The old shared "SETUP" workbench and mode-bar (SIMPLE/LENS/ADVANCED) have been eliminated.
 
 ---
 
@@ -85,12 +85,12 @@ Artifact text (deep reports, claims lists, outlines, markdown) has no copy butto
 The product has been rebranded from "Ruliad Expedition" to **Parallax**. Tagline: *"See every angle at once."* Full changelist:
 - [x] **HTML `<title>`**: changed to "Parallax"
 - [ ] **Favicon**: design/add a favicon (needs a design asset)
-- [x] **Landing page cards**: SIMPLE → PARALLAX EXPLORE, NEWS LENS → PARALLAX LENS, ADVANCED stays
+- [x] **Landing page cards**: PARALLAX EXPLORE, PARALLAX LENS, LOAD AN EXAMPLE (ADVANCED card removed — advanced settings are a collapsible `<details>` inside the Explore tab)
 - [x] **Header/topbar**: logo says "PARALLAX", tagline "See every angle at once.", viz topbar "PARALLAX —"
 - [x] **Entry point filename**: renamed `ruliad_expedition_modular.html` → `index.html`, proxy simplified to serve `index.html`
 - [x] **CSS class/ID audit**: no `.expedition-*` classes existed — clean
 - [x] **Status bar messages**: all user-visible "expedition" strings replaced with "run" or "analysis"
-- [x] **Tab labels**: "GENERATION PANEL" → "SETUP" (neutral, works for both modes)
+- [x] **Tab labels**: 4-tab system: EXPLORE | LENS | PLOT | DASHBOARD (replaces old SETUP | PLOT VIEW | DASHBOARD)
 - [ ] **Export metadata**: run snapshot JSON could include `{ app: "parallax", version: "..." }` — not yet implemented
 - [x] **Console/toast messages**: audited and updated — no user-visible "expedition" references remain
 - [ ] **README / docs**: no README exists yet
@@ -123,16 +123,18 @@ Probe discipline colors are used in the 3D plot but often disappear in the list/
 Two related quality fixes. (A) The second-pass term dedup step currently runs only in rigor quality mode. Balanced mode should run a lighter version: a single LLM pass that merges obvious near-synonym labels (e.g., "Military action" / "Joint Military Operations" / "Pre-emptive Attack") without the full cleanup. On politically dense topics this can reduce raw term count by 20–30%, making the 3D plot and sidebar substantially less noisy. (B) The synthesis prompt currently detects convergence via textual label similarity, which causes it to miss semantically identical concepts under different names ("Humanitarian Toll" and "Civilian Casualties" count as two separate things rather than one convergent finding). Improve the synthesis prompt to: canonicalize labels when it detects near-synonym convergence, and explicitly instruct the model to compare terms by what they *mean*, not just whether the text matches. Both changes compound: better label normalization → more accurate synthesis attribution → a cleaner, more trustworthy map.
 
 
-13. Two-Mode Experience Redesign — "Parallax" Rebrand (landing page + output surfaces) ⚠️ PARTIAL
-~~The product is being rebranded from "Ruliad Expedition" to **Parallax** — viewing a concept from multiple vantage points to triangulate its true shape. The name captures exactly what both modes do: you only understand the real shape of an idea by looking at it from several disciplinary or editorial angles at once.~~
+~~13. Two-Mode Experience Redesign — Self-Contained Mode Tabs~~
+~~DONE. Each mode is now a fully self-contained journey with its own tab, config panel, inline progress, and output destination. The old shared "SETUP" workbench and mode-bar (SIMPLE/LENS/ADVANCED) have been eliminated.~~
 
-**Parallax Explore** (formerly Expedition Mode, plot-first): concept → Simple/Advanced → run → 3D semantic map with semantic relationship edges is the primary output; text artifacts on demand.
+~~**4-tab system:** EXPLORE | LENS | PLOT | DASHBOARD. Landing page is a clean 3-way choice (PARALLAX EXPLORE | PARALLAX LENS | LOAD AN EXAMPLE — no more ADVANCED card).~~
 
-**Parallax Lens** (formerly News Lens Mode, text-first): seed URL → FIND STORIES → sources → run → auto-generated text artifact library is the PRIMARY deliverable (claims, evidence per perspective, narrative synthesis); 3D plot is an optional "EXPLORE IN 3D" step.
+~~**Explore tab** (`#explore-panel`): Focus concept input, probe lenses (add/delete/auto-generate), RUN button always visible. Collapsible `<details id="explore-advanced-settings">` contains model/runtime, source policy, API credentials, advanced experiments, readiness checks, and prompt editor. Inline progress (`#explore-progress`) shows probe list + synth bar inside the panel. On completion → auto-swaps to PLOT tab with 3D viz.~~
 
-~~The landing page becomes three distinct entry cards: PARALLAX EXPLORE | PARALLAX LENS | LOAD AN EXAMPLE — each linking to a purpose-built experience.~~ DONE — landing page has PARALLAX EXPLORE | PARALLAX LENS | ADVANCED | LOAD AN EXAMPLE cards. Tab label changed to "SETUP". All user-visible branding updated.
+~~**Lens tab** (`#lens-panel`): Seed URL input, FIND STORIES, source columns with article selection, RUN ANALYSIS button. Minimal model config in collapsible `<details id="lens-model-settings">` (just research model + quality profile with lens-specific IDs `lens-research-model`, `lens-quality-mode`). Inline progress (`#lens-progress`) shows summarizing → probes → synthesis. On completion → auto-swaps to DASHBOARD tab with artifact grid.~~
 
-**Remaining:** Artifact auto-generation fires in the pipeline after synthesis for Lens mode without requiring user interaction. The dual-tab structure may need rethinking — in Lens mode the concept of "generation workbench" doesn't apply; the user's job is done after USE SELECTED SOURCES + RUN. See Minor #4 for the full rebrand changelist.
+~~**Dashboard tab** (`#dashboard-panel`): Artifact grid with hero cards (evidence, claims, outline, deep report) and secondary cards (raw terms, red team, markdown). Auto-generates claims + outline in parallel, then deep report. EXPLORE IN 3D button uses two-click pattern: first click → shimmer (`.llm-busy` class, no text changes) while embedding runs → button transitions to green "VIEW 3D MAP" (`.explore-ready` class) → second click navigates to plot tab. No auto-jolt.~~
+
+~~**Key architectural changes:** `MODE_STATE` eliminated (each mode has persistent HTML panel). `progressEl` removed from refs (each panel has own inline progress). `activeSetupMode` values simplified to `"landing"` | `"explore"` | `"lens"`. `switchMainTab()` recognizes 5 states: landing/explore/lens/plot/dashboard. Tab guards: PLOT requires `plotInited || TERMS.length`, DASHBOARD requires `LAST_RUN`. `resetToSetup()` returns to landing page. Old workbench resizer code is dead (safe no-ops).~~
 
 ~~14. Plot View + Sidebar Redesign~~
 ~~DONE. Sidebar eliminated entirely. Plot is now the full canvas. Three floating overlay panels replace it, all in the same visual style (same card appearance, same X dismiss button): (1) Controls panel — disc toggles, type toggles, color mode, text search; floats over the plot, toggled from topbar or left-edge semicircle trigger. (2) Term detail panel — updates in-place on each node click, persists until X clicked. (3) Diagnostics panel — embedding matrix, CA panel, corpus stats; power-user, floating, X to close via bottom-edge semicircle trigger. Panel triggers are `var(--accent)`-colored semicircles with `var(--accent-fg)` arrows, theme-aware. On hover: translate ~8px toward center + morph from semicircle to full circle (border-radius transition). On click: panel animates out with smooth ease + spring bounce. Visualization: Plotly.js 3D scatter with semantic edge overlay traces.~~

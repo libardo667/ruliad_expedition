@@ -29,9 +29,9 @@ export function readApiConfig(){return {
   caStepsOverride:parseOptionalInt(document.getElementById("ca-steps-input")?.value,16,240),
   caWidthOverride:parseOptionalInt(document.getElementById("ca-width-input")?.value,31,401),
   promptTemplateOverrides:structuredCloneSafe(PROMPT_TEMPLATE_OVERRIDES),
-  sourceText:activeSetupMode==="sources"?(SOURCE_MATERIAL?.text||""):"",
-  sourceUrls:activeSetupMode==="sources"?(SOURCE_MATERIAL?.urls||[]):[],
-  sourceByDisc:activeSetupMode==="sources"?(SOURCE_MATERIAL?.byDisc||null):null
+  sourceText:activeSetupMode==="lens"?(SOURCE_MATERIAL?.text||""):"",
+  sourceUrls:activeSetupMode==="lens"?(SOURCE_MATERIAL?.urls||[]):[],
+  sourceByDisc:activeSetupMode==="lens"?(SOURCE_MATERIAL?.byDisc||null):null
 };}
 
 export function validateApiConfig(cfg){if(!cfg.researchModel) return "Please enter a research model id.";if(!cfg.embeddingModel) return "Please enter an embedding model id.";if(normalizeMode(cfg)==="direct"&&!cfg.apiKey) return "Please enter an API key for direct mode.";if(normalizeMode(cfg)==="direct"&&cfg.apiKey&&!cfg.apiKey.startsWith("sk-or-")) return "Expected an OpenRouter key (starts with sk-or-).";return "";}

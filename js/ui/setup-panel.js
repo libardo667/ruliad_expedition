@@ -1,8 +1,8 @@
 import { COLORS, DEFAULT_DISCS } from '../core/constants.js';
-import { MODE_STATE, SOURCE_MATERIAL, activeSetupMode, setActiveSetupMode, setSourceMaterial } from '../core/state.js';
+import { SOURCE_MATERIAL, setActiveSetupMode, setSourceMaterial } from '../core/state.js';
 import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems, scoreArticleWithSeed, temporalRelevanceBonus, softScoreArticle, buildGoogleNewsRssUrl, generateSearchQueries, normalizeBraveResults, normalizeNewsApiResults, deduplicateArticles } from '../domain/news-sources.js';
 import { discInputsEl } from '../core/refs.js';
-import { clampInt, structuredCloneSafe } from '../core/utils.js';
+import { clampInt } from '../core/utils.js';
 import { showToast } from './notifications.js';
 import { refreshPromptPreview, syncPromptPreviewDiscOptions } from './prompt-preview.js';
 import { callLLM, callLLMJSON, getQualityProfile, readApiConfig, validateApiConfig } from '../api/llm.js';
@@ -171,7 +171,7 @@ export function clearApiKey(){const input=document.getElementById("api-key-input
 
 export async function generateOrthogonalLenses(){const target=document.getElementById("target-input").value.trim();if(!target){showToast("Enter a target concept first.");return;}const count=clampInt(document.getElementById("lens-count-input")?.value,2,12);const cfg=readApiConfig();const cfgError=validateApiConfig(cfg);if(cfgError){showToast(cfgError);return;}const btn=document.getElementById("gen-lenses-btn");const prev=btn.textContent;btn.disabled=true;btn.textContent="GENERATING...";btn.classList.add("llm-busy");try{const defaults=buildLensGenerationPrompt(target,count,cfg);const built=resolvePromptBundleWithOverrides("lens_generation",{target,cfg,quality:getQualityProfile(cfg.qualityMode),defaults});const raw=await callLLMJSON(built.systemPrompt,built.userPrompt,cfg);const parsed=extractJSON(raw);let list=[];if(Array.isArray(parsed)) list=parsed;else if(Array.isArray(parsed.disciplines)) list=parsed.disciplines;else if(Array.isArray(parsed.lenses)) list=parsed.lenses;const cleaned=[];const seen=new Set();for(const item of list){const name=String(item||"").replace(/^\d+[\).\-\s]*/,"").trim();const key=name.toLowerCase();if(!name||seen.has(key)) continue;seen.add(key);cleaned.push(name);}while(cleaned.length<count){const fallback=DEFAULT_DISCS[cleaned.length%DEFAULT_DISCS.length];const key=fallback.toLowerCase();if(!seen.has(key)){seen.add(key);cleaned.push(fallback);}else{cleaned.push(`Lens ${cleaned.length+1}`);}}renderDisciplineInputs(count,cleaned.slice(0,count));showToast(`Generated ${count} orthogonal lenses.`);}catch(err){console.error("Lens generation failed:",err);showToast("Lens generation failed. Check key/model and try again.");}finally{btn.disabled=false;btn.textContent=prev;btn.classList.remove("llm-busy");refreshPromptPreview();}}
 
-export function syncApiModeNote(){const mode=document.getElementById("api-mode").value;const note=document.getElementById("api-mode-note");if(mode==="proxy"){note.textContent="Proxy mode is backend-ready. Add server routes at /api/llm/chat/completions and /api/llm/embeddings.";}else{note.textContent="Direct mode sends model requests from this page (tab-memory key only). CA probe still simulates locally in direct mode.";}}
+export function syncApiModeNote(){const mode=document.getElementById("api-mode").value;const note=document.getElementById("api-mode-note");const lensNote=document.getElementById("lens-api-mode-note");const proxyMsg="Proxy mode is backend-ready. Add server routes at /api/llm/chat/completions and /api/llm/embeddings.";const directMsg="Direct mode sends model requests from this page (tab-memory key only). CA probe still simulates locally in direct mode.";if(note) note.textContent=mode==="proxy"?proxyMsg:directMsg;if(lensNote) lensNote.textContent=mode==="proxy"?proxyMsg:directMsg;}
 
 export function syncCAOverrideUI(){
   const enabled=Boolean(document.getElementById("ca-probe-check")?.checked);
@@ -181,185 +181,33 @@ export function syncCAOverrideUI(){
 
 // ── Per-mode state save/restore ───────────────────────────────────────────────
 
-function captureModeState(){
-  return {
-    targetValue:document.getElementById("target-input")?.value||"",
-    lensCount:document.getElementById("lens-count-input")?.value||"7",
-    discSpecs:getCurrentProbeSpecs(),
-    discColors:Array.from(document.querySelectorAll(".disc-input")).map(el=>el.dataset.color||""),
-    seedUrl:document.getElementById("seed-url-input")?.value||"",
-    anchorRowHtml:document.getElementById("seed-anchor-row")?.innerHTML||"",
-    anchorRowVisible:document.getElementById("seed-anchor-row")?.style.display!=="none",
-    sourceColumnsHtml:document.getElementById("source-columns")?.innerHTML||"",
-    sourceColumnsVisible:document.getElementById("source-columns")?.style.display!=="none",
-    sourceUseRowVisible:document.getElementById("source-use-row")?.style.display!=="none",
-    sourceStatus:document.getElementById("source-status")?.textContent||"",
-    lensSelectValue:document.getElementById("lens-select")?.value||"political",
-    sourceMaterial:structuredCloneSafe(SOURCE_MATERIAL),
-  };
-}
-
-function restoreModeState(snapshot){
-  if(!snapshot) return;
-  const targetEl=document.getElementById("target-input");
-  if(targetEl) targetEl.value=snapshot.targetValue;
-  renderDisciplineInputs(
-    snapshot.discSpecs.length||7,
-    snapshot.discSpecs,
-    snapshot.discColors
-  );
-  const lensCountEl=document.getElementById("lens-count-input");
-  if(lensCountEl) lensCountEl.value=snapshot.lensCount;
-  const seedEl=document.getElementById("seed-url-input");
-  if(seedEl) seedEl.value=snapshot.seedUrl;
-  const anchorRow=document.getElementById("seed-anchor-row");
-  if(anchorRow){anchorRow.innerHTML=snapshot.anchorRowHtml;anchorRow.style.display=snapshot.anchorRowVisible?"block":"none";}
-  const sourceCols=document.getElementById("source-columns");
-  if(sourceCols){sourceCols.innerHTML=snapshot.sourceColumnsHtml;sourceCols.style.display=snapshot.sourceColumnsVisible?"grid":"none";}
-  const useRow=document.getElementById("source-use-row");
-  if(useRow) useRow.style.display=snapshot.sourceUseRowVisible?"flex":"none";
-  const statusEl=document.getElementById("source-status");
-  if(statusEl) statusEl.textContent=snapshot.sourceStatus;
-  const lensSelect=document.getElementById("lens-select");
-  if(lensSelect) lensSelect.value=snapshot.lensSelectValue;
-  setSourceMaterial(snapshot.sourceMaterial||{urls:[],text:"",titles:[],byDisc:{}});
-}
-
-function defaultModeState(mode){
-  const base={
-    targetValue:"",
-    lensCount:"7",
-    discSpecs:DEFAULT_DISCS.slice(0,7),
-    discColors:COLORS.slice(0,7),
-    seedUrl:"",
-    anchorRowHtml:"",
-    anchorRowVisible:false,
-    sourceColumnsHtml:"",
-    sourceColumnsVisible:false,
-    sourceUseRowVisible:false,
-    sourceStatus:"",
-    lensSelectValue:"political",
-    sourceMaterial:{urls:[],text:"",titles:[],byDisc:{}},
-  };
-  if(mode==="sources"){
-    base.discSpecs=DEFAULT_DISCS.slice(0,3);
-    base.discColors=COLORS.slice(0,3);
-    base.lensCount="3";
-  }
-  return base;
-}
-
-function persistModeStateToSession(){
-  try{
-    const serializable={};
-    for(const[mode,snap] of Object.entries(MODE_STATE)){
-      if(!snap) continue;
-      serializable[mode]={
-        targetValue:snap.targetValue,
-        lensCount:snap.lensCount,
-        discSpecs:snap.discSpecs,
-        discColors:snap.discColors,
-        seedUrl:snap.seedUrl,
-        lensSelectValue:snap.lensSelectValue,
-      };
-    }
-    sessionStorage.setItem("parallax_mode_state",JSON.stringify(serializable));
-  }catch{/* quota exceeded */}
-}
-
 export function initProgressiveDisclosure(){
-  const workbench=document.getElementById("generation-workbench");
-  const setup=document.getElementById("setup");
-  const simpleBtn=document.getElementById("setup-mode-simple-btn");
-  const sourcesBtn=document.getElementById("setup-mode-sources-btn");
-  const advancedBtn=document.getElementById("setup-mode-advanced-btn");
-  const promptToggleBtn=document.getElementById("setup-prompt-pane-btn");
-  if(!workbench||!simpleBtn) return;
-
-  function applyMode(mode,promptVisible){
-    const isSimple=(mode==="simple");
-    const isSources=(mode==="sources");
-    const isAdvanced=(mode==="advanced");
-    const isLanding=(mode==="landing");
-
-    // Save current mode state before switching
-    const prevMode=activeSetupMode;
-    if(prevMode!=="landing"&&prevMode!==mode){
-      MODE_STATE[prevMode]=captureModeState();
-    }
-
-    setup.classList.toggle("mode-landing",isLanding);
-    setup.classList.toggle("simple-mode",isSimple);
-    workbench.classList.toggle("simple-mode",isSimple);
-    workbench.classList.toggle("sources-mode",isSources);
-    workbench.classList.toggle("prompt-pane-hidden",isAdvanced&&!promptVisible);
-    [simpleBtn,sourcesBtn,advancedBtn].forEach(b=>b&&b.classList.remove("mode-active"));
-    if(isSimple) simpleBtn?.classList.add("mode-active");
-    if(isSources) sourcesBtn?.classList.add("mode-active");
-    if(isAdvanced) advancedBtn?.classList.add("mode-active");
-    if(promptToggleBtn){
-      promptToggleBtn.style.display=isAdvanced?"":"none";
-      promptToggleBtn.textContent=promptVisible?"HIDE PROMPT EDITOR":"SHOW PROMPT EDITOR";
-    }
-    sessionStorage.setItem("parallax_setup_mode",mode);
-    sessionStorage.setItem("parallax_prompt_pane_visible",String(promptVisible));
-
-    // Restore target mode state after switching
-    setActiveSetupMode(mode);
-    if(!isLanding){
-      const snapshot=MODE_STATE[mode];
-      if(!snapshot&&mode==="advanced"&&MODE_STATE["simple"]){
-        // Advanced inherits from Explore on first entry
-        restoreModeState(MODE_STATE["simple"]);
-      }else if(snapshot){
-        restoreModeState(snapshot);
-      }else{
-        restoreModeState(defaultModeState(mode));
-      }
-      MODE_STATE[mode]=captureModeState();
-    }
-    persistModeStateToSession();
-  }
-
-  // Landing card buttons
+  // Landing card buttons → switch to the appropriate mode tab
   document.querySelectorAll("[data-mode]").forEach(btn=>{
-    btn.addEventListener("click",()=>applyMode(btn.dataset.mode,false));
-  });
-  simpleBtn?.addEventListener("click",()=>applyMode("simple",false));
-  sourcesBtn?.addEventListener("click",()=>applyMode("sources",false));
-  advancedBtn?.addEventListener("click",()=>{
-    const pv=sessionStorage.getItem("parallax_prompt_pane_visible")==="true";
-    applyMode("advanced",pv);
-  });
-  promptToggleBtn?.addEventListener("click",()=>{
-    const next=sessionStorage.getItem("parallax_prompt_pane_visible")!=="true";
-    applyMode("advanced",next);
+    btn.addEventListener("click",async ()=>{
+      const mode=btn.dataset.mode;
+      if(mode==="explore"||mode==="lens"){
+        setActiveSetupMode(mode);
+        sessionStorage.setItem("parallax_setup_mode",mode);
+        const { switchMainTab } = await import('./tabs.js');
+        switchMainTab(mode,{focusTarget:true});
+      }
+    });
   });
 
   // Hard refresh (Ctrl+F5): navigation type is "reload" AND transferSize > 0
-  // (page fetched from network, not cache). Normal F5 hits cache (transferSize 0)
-  // so saved mode is preserved. Hard refresh clears it → landing page.
   const navEntry=performance?.getEntriesByType?.("navigation")?.[0];
   if(navEntry?.type==="reload"&&navEntry?.transferSize>0){
     sessionStorage.removeItem("parallax_setup_mode");
-    sessionStorage.removeItem("parallax_prompt_pane_visible");
-    sessionStorage.removeItem("parallax_mode_state");
   }
 
-  // Restore lightweight per-mode state from sessionStorage (survives soft refresh)
-  try{
-    const raw=sessionStorage.getItem("parallax_mode_state");
-    if(raw){
-      const parsed=JSON.parse(raw);
-      for(const mode of ["simple","sources","advanced"]){
-        if(parsed[mode]) MODE_STATE[mode]={...defaultModeState(mode),...parsed[mode]};
-      }
-    }
-  }catch{/* corrupt data */}
-
-  const savedMode=sessionStorage.getItem("parallax_setup_mode")||"landing";
-  const savedPV=sessionStorage.getItem("parallax_prompt_pane_visible")==="true";
-  applyMode(savedMode,savedPV);
+  // Restore last active mode from sessionStorage (survives soft refresh)
+  const savedMode=sessionStorage.getItem("parallax_setup_mode");
+  if(savedMode==="explore"||savedMode==="lens"){
+    setActiveSetupMode(savedMode);
+    // Deferred: bootstrap.js will call switchMainTab after all modules load
+    sessionStorage.setItem("parallax_setup_mode",savedMode);
+  }
 }
 
 // ── News Lens: per-column runtime feed state (may be edited by user) ──────────
@@ -1300,7 +1148,17 @@ export function launchLensRun() {
     showToast("Need articles from at least 2 perspectives."); return;
   }
 
-  // Import and call launchExpedition dynamically to avoid circular imports
+  // Sync lens-panel inputs to the main form elements
+  const lensModel = document.getElementById("lens-research-model")?.value;
+  const lensQuality = document.getElementById("lens-quality-mode")?.value;
+  const lensApiMode = document.getElementById("lens-api-mode")?.value;
+  const lensApiKey = document.getElementById("lens-api-key-input")?.value;
+  if (lensModel) { const el = document.getElementById("research-model-input"); if (el) el.value = lensModel; }
+  if (lensQuality) { const el = document.getElementById("quality-mode-select"); if (el) el.value = lensQuality; }
+  if (lensApiMode) { const el = document.getElementById("api-mode"); if (el) el.value = lensApiMode; }
+  if (lensApiKey) { const el = document.getElementById("api-key-input"); if (el) el.value = lensApiKey; }
+
+  setActiveSetupMode("lens");
   import('../pipeline/launch-expedition.js').then(mod => mod.launchExpedition());
 }
 

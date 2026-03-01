@@ -1,6 +1,5 @@
 import { COLORS, PROJECTION_BASE_SEED, PROJECTION_STABILITY_RUNS } from '../core/constants.js';
-import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, MODE_STATE, PROJECTION_STABILITY, RUN_STATE, SEMANTIC_EDGES, SOURCE_MATERIAL, TERMS, activeSetupMode, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSemanticEdges, setSessionConfig, setSourceMaterial, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
-import { progressEl } from '../core/refs.js';
+import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, PROJECTION_STABILITY, RUN_STATE, SEMANTIC_EDGES, SOURCE_MATERIAL, TERMS, activeSetupMode, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSemanticEdges, setSessionConfig, setSourceMaterial, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
 import { clampInt } from '../core/utils.js';
 import { setProbeState, showToast } from '../ui/notifications.js';
 import { switchMainTab } from '../ui/tabs.js';
@@ -67,12 +66,25 @@ export async function launchExpedition(){
   setRunState({runId:CURRENT_RUN_ID,target,config:cfg,probeResults:[],synthResult:{convergent:[],contradictory:[],emergent:[]},generatedAt:new Date().toISOString(),caProbe:null});
   setDiscs(discSpecs.map((spec,i)=>({id:i,name:spec.name,abbr:makeAbbr(spec.name),col:spec.color||COLORS[i%COLORS.length],kind:spec.kind})));
   setIsGenerating(true);
-  switchMainTab("plot",{silent:true});
-  const prog=progressEl;
-  prog.style.display="flex";
+  const isLensMode = activeSetupMode === "lens";
+
+  // Show inline progress in the active mode's panel (don't switch tabs)
+  const progressContainer = isLensMode
+    ? document.getElementById("lens-progress")
+    : document.getElementById("explore-progress");
+  if(progressContainer) progressContainer.classList.add("active");
+
+  // Target label
+  const targetLabelEl = isLensMode
+    ? document.getElementById("lens-prog-target-label")
+    : document.getElementById("prog-target-label");
   const sourceLabel=cfg.sourceUrls?.length?` | SOURCES: ${cfg.sourceUrls.length} URL(s)`:"";
-  document.getElementById("prog-target-label").textContent=`TARGET: ${target.toUpperCase()} | CHAT MODEL: ${cfg.researchModel} | EMBED MODEL: ${cfg.embeddingModel} | QUALITY: ${quality.id.toUpperCase()} | WEB: ${cfg.webSearch?"ON":"OFF"} | CA: ${cfg.enableComputationalIrreducibility?"ON":"OFF"}${sourceLabel}`;
-  const probeListEl=document.getElementById("probe-list");
+  if(targetLabelEl) targetLabelEl.textContent=`TARGET: ${target.toUpperCase()} | CHAT MODEL: ${cfg.researchModel} | EMBED MODEL: ${cfg.embeddingModel} | QUALITY: ${quality.id.toUpperCase()} | WEB: ${cfg.webSearch?"ON":"OFF"} | CA: ${cfg.enableComputationalIrreducibility?"ON":"OFF"}${sourceLabel}`;
+
+  // Probe list
+  const probeListEl = isLensMode
+    ? document.getElementById("lens-probe-list")
+    : document.getElementById("probe-list");
   probeListEl.innerHTML="";
   for(const d of DISCS){const el=document.createElement("div");el.className="probe-item";el.innerHTML=`<div class="probe-dot idle" id="dot-${d.id}"></div><span class="probe-name" style="color:${d.col}">${d.name}</span><span class="probe-status" id="status-${d.id}">QUEUED</span><div class="probe-progress-track"><div class="probe-progress-fill" id="probe-fill-${d.id}"></div></div>`;probeListEl.appendChild(el);}
   // Overall progress bar
@@ -80,10 +92,13 @@ export async function launchExpedition(){
   overallBar.className="overall-progress";
   overallBar.innerHTML=`<div class="overall-progress-label" id="overall-progress-label">0 of ${DISCS.length} probes complete</div><div class="overall-progress-track"><div class="overall-progress-fill" id="overall-progress-fill"></div></div>`;
   probeListEl.after(overallBar);
+
+  // Synth bar — use the one in the active progress container
+  const synthBarId = isLensMode ? "lens-synth-bar" : "synth-bar";
+
   // Lens mode: summarize sources inline if not yet done
-  const isLensMode = activeSetupMode === "sources";
   if(isLensMode && (!SOURCE_MATERIAL.byDisc || !Object.keys(SOURCE_MATERIAL.byDisc).length)){
-    const synthBarEarly=document.getElementById("synth-bar");
+    const synthBarEarly=document.getElementById(synthBarId);
     synthBarEarly.className="synth-bar running";
     synthBarEarly.textContent="SUMMARIZING SOURCES...";
     const selectedCards=[...document.querySelectorAll(".source-pick-card.selected")];
@@ -91,7 +106,6 @@ export async function launchExpedition(){
       synthBarEarly.textContent=`SUMMARIZING SOURCES - ${done} of ${total} articles...`;
     });
     setSourceMaterial({urls:sumResult.successful.map(r=>r.url),text:sumResult.combined,byDisc:sumResult.byDisc,titles:sumResult.successful.map(r=>r.title||r.url)});
-    // Refresh cfg with new source material
     cfg.sourceText=sumResult.combined;
     cfg.sourceUrls=sumResult.successful.map(r=>r.url);
     cfg.sourceByDisc=sumResult.byDisc;
@@ -126,7 +140,7 @@ export async function launchExpedition(){
   const probeResults=await Promise.all(probePromises);
   RUN_STATE.probeResults=probeResults;
   RUN_STATE.caProbe=null;
-  const synthBar=document.getElementById("synth-bar");
+  const synthBar=document.getElementById(synthBarId);
   synthBar.className="synth-bar running";
   synthBar.textContent="SYNTHESIS - identifying convergences, contradictions, emergent features...";
   let synthResult={convergent:[],contradictory:[],emergent:[]};
@@ -242,6 +256,9 @@ export async function launchExpedition(){
   syncArtifactStoreFromRun();
   setIsGenerating(false);
   await new Promise(resolve=>setTimeout(resolve,500));
+  // Hide inline progress
+  if(progressContainer) progressContainer.classList.remove("active");
+
   if(isLensMode){
     // Lens mode: land on dashboard, auto-generate artifacts
     const { renderDashboard, autoGenerateLensArtifacts } = await import('../ui/lens-dashboard.js');
@@ -250,9 +267,10 @@ export async function launchExpedition(){
     autoGenerateLensArtifacts(target,cfg);
   }else{
     showViz(target);
+    switchMainTab("plot",{silent:true});
   }
 }
 
 export async function assignSemanticPositions(target,cfg,setStatus){const notify=(msg)=>{if(typeof setStatus==="function") setStatus(msg);};setDiscSimMatrix(null);setProjectionStability(null);const embeddingInputs=TERMS.map(term=>buildEmbeddingText(term,target));const embedModel=String(cfg?.embeddingModel||"").trim()||"(unspecified embedding model)";const vectors=await callEmbeddings(embeddingInputs,cfg,(batchNo,total)=>{notify(`VECTOR LAYOUT - ${embedModel} batch ${batchNo}/${total}...`);});const normalizedVectors=vectors.map(normalizeEmbeddingVector);setDiscSimMatrix(computeDiscSimilarityMatrix(normalizedVectors));notify("VECTOR LAYOUT - projecting semantic manifold to 3D...");const basePoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,PROJECTION_BASE_SEED),1.45);for(let i=0;i<TERMS.length;i++){TERMS[i].pos=basePoints[i]||[0,0,0];}const rerunCount=Math.max(0,Math.min(4,PROJECTION_STABILITY_RUNS-1));const reruns=[];for(let idx=0;idx<rerunCount;idx++){const seed=PROJECTION_BASE_SEED+idx+1;notify(`VECTOR LAYOUT - projection stability check ${idx+1}/${rerunCount}...`);const runPoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,seed),1.45);reruns.push({seed,points:runPoints});}setProjectionStability(computeProjectionStability(basePoints,reruns));renderEmbeddingDiagnostics();}
 
-export function resetToSetup(){disposeGallery();if(plotInited) Plotly.purge("plot");setPlotInited(false);setTerms([]);setDiscs([]);setCitations([]);setCallLogs([]);setRunState(null);setCurrentRunId(null);setActiveSlices(new Set());setActiveTypes(new Set());setSessionConfig(null);setLastRun(null);setDiscSimMatrix(null);setProjectionStability(null);setCAProbeOutput(null);setSemanticEdges(null);setCitationUnmappedSupportingTerms([]);setLastReportText("");setLastClaimsText("");setLastOutlineText("");setLastCritiqueText("");setLastMarkdownText("");setActiveArtifactKey("");setIsGenerating(false);setEvidenceFilterState({sourceType:"all",termLabel:""});clearNodeFilters();document.getElementById("evidence-filter-bar").innerHTML="";document.getElementById("evidence-modal-content").innerHTML="";document.getElementById("detail").style.display="none";renderCAPanel();renderNodeFilterResults();closeModal("raw-modal");closeModal("report-modal");closeModal("evidence-modal");closeModal("claims-modal");closeModal("outline-modal");closeModal("critique-modal");closeModal("replication-modal");closeModal("artifact-modal");setArtifactDrawer(false);setExportMenu(false);initArtifactStore();if(activeSetupMode&&activeSetupMode!=="landing"){MODE_STATE[activeSetupMode]=null;}renderDisciplineInputs(clampInt(document.getElementById("lens-count-input")?.value||7,2,12),getCurrentProbeSpecs());switchMainTab("generator",{silent:true});}
+export function resetToSetup(){disposeGallery();if(plotInited) Plotly.purge("plot");setPlotInited(false);setTerms([]);setDiscs([]);setCitations([]);setCallLogs([]);setRunState(null);setCurrentRunId(null);setActiveSlices(new Set());setActiveTypes(new Set());setSessionConfig(null);setLastRun(null);setDiscSimMatrix(null);setProjectionStability(null);setCAProbeOutput(null);setSemanticEdges(null);setCitationUnmappedSupportingTerms([]);setLastReportText("");setLastClaimsText("");setLastOutlineText("");setLastCritiqueText("");setLastMarkdownText("");setActiveArtifactKey("");setIsGenerating(false);setEvidenceFilterState({sourceType:"all",termLabel:""});clearNodeFilters();document.getElementById("evidence-filter-bar").innerHTML="";document.getElementById("evidence-modal-content").innerHTML="";document.getElementById("detail").style.display="none";renderCAPanel();renderNodeFilterResults();closeModal("raw-modal");closeModal("report-modal");closeModal("evidence-modal");closeModal("claims-modal");closeModal("outline-modal");closeModal("critique-modal");closeModal("replication-modal");closeModal("artifact-modal");setArtifactDrawer(false);setExportMenu(false);initArtifactStore();renderDisciplineInputs(clampInt(document.getElementById("lens-count-input")?.value||7,2,12),getCurrentProbeSpecs());switchMainTab("landing",{silent:true});}

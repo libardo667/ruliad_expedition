@@ -21,7 +21,7 @@ export let showGroundingOverlays=true;
 
 export let LAST_RUN=null;
 
-export let activeTab="generator";
+export let activeTab="landing";
 
 export let isGenerating=false;
 
@@ -73,8 +73,6 @@ export let SOURCE_MATERIAL={urls:[],text:"",titles:[],byDisc:{}};
 
 export let galleryActive=false;
 
-export let MODE_STATE={simple:null,sources:null,advanced:null};
-
 export let activeSetupMode="landing";
 
 export let isGeneratingArtifacts=false;
@@ -118,6 +116,5 @@ export const setActiveModalId = v => { ACTIVE_MODAL_ID = v; };
 export const setPromptTemplateOverrides = v => { PROMPT_TEMPLATE_OVERRIDES = v; };
 export const setSourceMaterial = v => { SOURCE_MATERIAL = v; };
 export const setGalleryActive = v => { galleryActive = v; };
-export const setModeState = v => { MODE_STATE = v; };
 export const setActiveSetupMode = v => { activeSetupMode = v; };
 export const setIsGeneratingArtifacts = v => { isGeneratingArtifacts = v; };

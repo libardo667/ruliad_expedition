@@ -21,6 +21,9 @@ const ALL_KEYS = [...HERO_KEYS, ...SECONDARY_KEYS];
 export function renderDashboard(target) {
   const label = document.getElementById('dashboard-topic-label');
   if (label) label.textContent = target.toUpperCase();
+  resetExploreReady();
+  const exploreBtn = document.getElementById('dashboard-explore-btn');
+  if (exploreBtn) { exploreBtn.textContent = 'EXPLORE IN 3D'; exploreBtn.classList.remove('explore-ready', 'llm-busy'); }
   refreshDashboardArtifacts();
   wireDashboardButtons();
 }
@@ -116,27 +119,34 @@ function wireDashboardButtons() {
   }
 }
 
-/**
- * Run deferred embedding pipeline, then switch to the plot tab.
- */
+// Two-click pattern: first click embeds (shimmer), second click navigates to 3D
+let _exploreReady = false;
+
 async function launchExploreIn3D() {
+  const btn = document.getElementById('dashboard-explore-btn');
+
+  // If embedding is already done, navigate to plot
+  if (_exploreReady) {
+    const { showViz } = await import('../plot/plot-render.js');
+    showViz(LAST_RUN.target || 'Topic');
+    switchMainTab('plot', { silent: true });
+    return;
+  }
+
   if (!LAST_RUN || !TERMS.length) {
     showToast('No run data available. Run an analysis first.');
     return;
   }
-  const btn = document.getElementById('dashboard-explore-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'EMBEDDING...'; }
+
+  if (btn) { btn.disabled = true; btn.classList.add('llm-busy'); }
 
   try {
     const { assignSemanticPositions } = await import('../pipeline/launch-expedition.js');
     const { extractSemanticEdges } = await import('../embedding/semantic-edges.js');
-    const { showViz } = await import('../plot/plot-render.js');
     const cfg = readApiConfig();
     const target = LAST_RUN.target || 'Topic';
 
-    await assignSemanticPositions(target, cfg, (msg) => {
-      if (btn) btn.textContent = msg.length > 30 ? msg.slice(0, 30) + '...' : msg;
-    });
+    await assignSemanticPositions(target, cfg, () => {});
 
     // Semantic edges (best-effort)
     try {
@@ -149,15 +159,23 @@ async function launchExploreIn3D() {
       console.warn('Semantic edge extraction failed during Explore in 3D:', err);
     }
 
-    showViz(target);
-    switchMainTab('plot', { silent: true });
+    // Mark as ready — button changes to "VIEW 3D MAP" style
+    _exploreReady = true;
+    if (btn) {
+      btn.classList.remove('llm-busy');
+      btn.classList.add('explore-ready');
+      btn.textContent = 'VIEW 3D MAP';
+      btn.disabled = false;
+    }
   } catch (err) {
     console.error('Explore in 3D failed:', err);
     showToast('Embedding failed: ' + (err.message || err));
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'EXPLORE IN 3D'; }
+    if (btn) { btn.classList.remove('llm-busy'); btn.disabled = false; }
   }
 }
+
+// Reset explore-ready state when a new run starts
+export function resetExploreReady() { _exploreReady = false; }
 
 // -- Auto-generation of artifacts after a Lens run --
 
