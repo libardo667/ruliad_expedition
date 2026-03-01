@@ -888,6 +888,34 @@ export async function findStories() {
   }
 }
 
+function showSummarizeOverlay(total) {
+  removeSummarizeOverlay();
+  const overlay = document.createElement('div');
+  overlay.id = 'summarize-overlay';
+  overlay.className = 'sources-progress-overlay';
+  overlay.innerHTML = `
+    <div class="sources-progress-content">
+      <div class="sources-progress-title">SUMMARIZING ARTICLES</div>
+      <div class="sources-progress-bar-track">
+        <div class="sources-progress-bar-fill" id="summarize-bar-fill"></div>
+      </div>
+      <div class="sources-progress-count" id="summarize-count">0 of ${total}</div>
+      <div class="sources-progress-hint">Analysis can begin once summarization completes</div>
+    </div>`;
+  document.getElementById('workbench-section-sources')?.appendChild(overlay);
+}
+
+function updateSummarizeProgress(done, total) {
+  const fill = document.getElementById('summarize-bar-fill');
+  const count = document.getElementById('summarize-count');
+  if (fill) fill.style.width = `${(done / total) * 100}%`;
+  if (count) count.textContent = `${done} of ${total}`;
+}
+
+function removeSummarizeOverlay() {
+  document.getElementById('summarize-overlay')?.remove();
+}
+
 export async function useSelectedSources() {
   const selected = [...document.querySelectorAll(".source-pick-card .card-checkbox:checked")]
     .map(cb => cb.closest(".source-pick-card"))
@@ -912,10 +940,11 @@ export async function useSelectedSources() {
   const launchBtn = document.getElementById("launch-btn");
   const sourcesSection = document.getElementById("workbench-section-sources");
   const prev = btn?.textContent;
-  if (btn) { btn.disabled = true; btn.textContent = "FETCHING ARTICLES…"; }
+  if (btn) btn.disabled = true;
   if (launchBtn) launchBtn.disabled = true;
   if (sourcesSection) sourcesSection.classList.add("sources-loading");
-  setSourceStatus(`Fetching ${urls.length} article(s)…`);
+  showSummarizeOverlay(selected.length);
+  updateSummarizeProgress(0, selected.length);
 
   try {
     const results = await postFetchUrl(urls);
@@ -926,9 +955,13 @@ export async function useSelectedSources() {
     let summarized = successful;
     const cfg = readApiConfig();
     const cfgError = validateApiConfig(cfg);
+    // Update overlay: fetching done, now count fetched articles toward progress
+    const fetchedCount = successful.length;
+    updateSummarizeProgress(fetchedCount, selected.length + fetchedCount);
+
     if (!cfgError && successful.length) {
-      if (btn) btn.textContent = `SUMMARIZING ${successful.length} ARTICLE(S)…`;
-      setSourceStatus(`Summarizing ${successful.length} article(s) with LLM…`);
+      let summarizeDone = 0;
+      const summarizeTotal = successful.length;
       summarized = await Promise.all(successful.map(async r => {
         try {
           const rawText = String(r.text || "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
@@ -939,6 +972,9 @@ export async function useSelectedSources() {
           return { ...r, text: summaryText };
         } catch {
           return r; // fall back to raw text on error
+        } finally {
+          summarizeDone++;
+          updateSummarizeProgress(summarizeDone, summarizeTotal);
         }
       }));
     }
@@ -959,7 +995,9 @@ export async function useSelectedSources() {
     setSourceMaterial({ urls: successful.map(r => r.url), text: combined, byDisc, titles: successful.map(r => r.title || r.url) });
 
     // Auto-populate probe discipline inputs with column labels (ordered by lens config)
-    const activeCols = columns.filter(c => byDisc[c.label]);
+    // Use selectedCols (user's checkbox selections) — not byDisc — so columns with failed fetches still get probes
+    const activeCols = columns.filter(c => selectedCols.has(c.id));
+    for (const c of activeCols) { if (!byDisc[c.label]) byDisc[c.label] = ''; }
     if (activeCols.length >= 2) {
       renderDisciplineInputs(activeCols.length, activeCols.map(c => c.label), activeCols.map(c => c.color));
       syncPromptPreviewDiscOptions();
@@ -972,6 +1010,7 @@ export async function useSelectedSources() {
     setSourceStatus(String(err.message || "Fetch failed."), "err");
     showToast(String(err.message || "Fetch failed."));
   } finally {
+    removeSummarizeOverlay();
     if (btn) { btn.disabled = false; btn.textContent = prev; }
     if (launchBtn) launchBtn.disabled = false;
     if (sourcesSection) sourcesSection.classList.remove("sources-loading");

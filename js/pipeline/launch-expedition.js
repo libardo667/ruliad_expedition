@@ -74,7 +74,19 @@ export async function launchExpedition(){
   document.getElementById("prog-target-label").textContent=`TARGET: ${target.toUpperCase()} | CHAT MODEL: ${cfg.researchModel} | EMBED MODEL: ${cfg.embeddingModel} | QUALITY: ${quality.id.toUpperCase()} | WEB: ${cfg.webSearch?"ON":"OFF"} | CA: ${cfg.enableComputationalIrreducibility?"ON":"OFF"}${sourceLabel}`;
   const probeListEl=document.getElementById("probe-list");
   probeListEl.innerHTML="";
-  for(const d of DISCS){const el=document.createElement("div");el.className="probe-item";el.innerHTML=`<div class="probe-dot idle" id="dot-${d.id}"></div><span class="probe-name" style="color:${d.col}">${d.name}</span><span class="probe-status" id="status-${d.id}">QUEUED</span>`;probeListEl.appendChild(el);}
+  for(const d of DISCS){const el=document.createElement("div");el.className="probe-item";el.innerHTML=`<div class="probe-dot idle" id="dot-${d.id}"></div><span class="probe-name" style="color:${d.col}">${d.name}</span><span class="probe-status" id="status-${d.id}">QUEUED</span><div class="probe-progress-track"><div class="probe-progress-fill" id="probe-fill-${d.id}"></div></div>`;probeListEl.appendChild(el);}
+  // Overall progress bar
+  const overallBar=document.createElement("div");
+  overallBar.className="overall-progress";
+  overallBar.innerHTML=`<div class="overall-progress-label" id="overall-progress-label">0 of ${DISCS.length} probes complete</div><div class="overall-progress-track"><div class="overall-progress-fill" id="overall-progress-fill"></div></div>`;
+  probeListEl.after(overallBar);
+  function updateOverallProgress(){
+    const done=document.querySelectorAll(".probe-item.done, .probe-item.error").length;
+    const fill=document.getElementById("overall-progress-fill");
+    const label=document.getElementById("overall-progress-label");
+    if(fill) fill.style.width=`${(done/DISCS.length)*100}%`;
+    if(label) label.textContent=`${done} of ${DISCS.length} probes complete`;
+  }
   const probePromises=DISCS.map(async(d)=>{
     setProbeState(d.id,"running","RESEARCHING...");
     try{
@@ -84,9 +96,11 @@ export async function launchExpedition(){
       const probeBundle=resolvePromptBundleWithOverrides("probe_user",{discName:d.name,target,cfg:discCfg,quality,defaults:probeDefaults});
       const norm=await getProbeResultWithRecovery({target,discName:d.name,probeSystem:probeBundle.systemPrompt||probeSystem,userMsg:probeBundle.userPrompt,cfg:discCfg});
       setProbeState(d.id,"done",`${norm.terms?.length||0} TERMS`);
+      updateOverallProgress();
       return {discId:d.id,summary:norm.summary,terms:Array.isArray(norm.terms)?norm.terms:[],claims_or_findings:norm.claims_or_findings,citations:norm.citations,confidence_notes:norm.confidence_notes};
     }catch(err){
       setProbeState(d.id,"error","ERROR");
+      updateOverallProgress();
       console.error(`Probe ${d.name} failed:`,err);
       return {discId:d.id,summary:"",terms:[],claims_or_findings:[],citations:[],confidence_notes:""};
     }
