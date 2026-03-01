@@ -1,6 +1,6 @@
 import { COLORS, DEFAULT_DISCS } from '../core/constants.js';
 import { MODE_STATE, SOURCE_MATERIAL, activeSetupMode, setActiveSetupMode, setSourceMaterial } from '../core/state.js';
-import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems, filterByTemporalProximity, scoreArticleWithSeed } from '../domain/news-sources.js';
+import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems, scoreArticleWithSeed, temporalRelevanceBonus, softScoreArticle } from '../domain/news-sources.js';
 import { discInputsEl } from '../core/refs.js';
 import { clampInt, structuredCloneSafe } from '../core/utils.js';
 import { showToast } from './notifications.js';
@@ -169,7 +169,7 @@ export function toggleApiKey(){const input=document.getElementById("api-key-inpu
 
 export function clearApiKey(){const input=document.getElementById("api-key-input");input.value="";input.focus();}
 
-export async function generateOrthogonalLenses(){const target=document.getElementById("target-input").value.trim();if(!target){showToast("Enter a target concept first.");return;}const count=clampInt(document.getElementById("lens-count-input")?.value,2,12);const cfg=readApiConfig();const cfgError=validateApiConfig(cfg);if(cfgError){showToast(cfgError);return;}const btn=document.getElementById("gen-lenses-btn");const prev=btn.textContent;btn.disabled=true;btn.textContent="GENERATING...";try{const defaults=buildLensGenerationPrompt(target,count,cfg);const built=resolvePromptBundleWithOverrides("lens_generation",{target,cfg,quality:getQualityProfile(cfg.qualityMode),defaults});const raw=await callLLMJSON(built.systemPrompt,built.userPrompt,cfg);const parsed=extractJSON(raw);let list=[];if(Array.isArray(parsed)) list=parsed;else if(Array.isArray(parsed.disciplines)) list=parsed.disciplines;else if(Array.isArray(parsed.lenses)) list=parsed.lenses;const cleaned=[];const seen=new Set();for(const item of list){const name=String(item||"").replace(/^\d+[\).\-\s]*/,"").trim();const key=name.toLowerCase();if(!name||seen.has(key)) continue;seen.add(key);cleaned.push(name);}while(cleaned.length<count){const fallback=DEFAULT_DISCS[cleaned.length%DEFAULT_DISCS.length];const key=fallback.toLowerCase();if(!seen.has(key)){seen.add(key);cleaned.push(fallback);}else{cleaned.push(`Lens ${cleaned.length+1}`);}}renderDisciplineInputs(count,cleaned.slice(0,count));showToast(`Generated ${count} orthogonal lenses.`);}catch(err){console.error("Lens generation failed:",err);showToast("Lens generation failed. Check key/model and try again.");}finally{btn.disabled=false;btn.textContent=prev;refreshPromptPreview();}}
+export async function generateOrthogonalLenses(){const target=document.getElementById("target-input").value.trim();if(!target){showToast("Enter a target concept first.");return;}const count=clampInt(document.getElementById("lens-count-input")?.value,2,12);const cfg=readApiConfig();const cfgError=validateApiConfig(cfg);if(cfgError){showToast(cfgError);return;}const btn=document.getElementById("gen-lenses-btn");const prev=btn.textContent;btn.disabled=true;btn.textContent="GENERATING...";btn.classList.add("llm-busy");try{const defaults=buildLensGenerationPrompt(target,count,cfg);const built=resolvePromptBundleWithOverrides("lens_generation",{target,cfg,quality:getQualityProfile(cfg.qualityMode),defaults});const raw=await callLLMJSON(built.systemPrompt,built.userPrompt,cfg);const parsed=extractJSON(raw);let list=[];if(Array.isArray(parsed)) list=parsed;else if(Array.isArray(parsed.disciplines)) list=parsed.disciplines;else if(Array.isArray(parsed.lenses)) list=parsed.lenses;const cleaned=[];const seen=new Set();for(const item of list){const name=String(item||"").replace(/^\d+[\).\-\s]*/,"").trim();const key=name.toLowerCase();if(!name||seen.has(key)) continue;seen.add(key);cleaned.push(name);}while(cleaned.length<count){const fallback=DEFAULT_DISCS[cleaned.length%DEFAULT_DISCS.length];const key=fallback.toLowerCase();if(!seen.has(key)){seen.add(key);cleaned.push(fallback);}else{cleaned.push(`Lens ${cleaned.length+1}`);}}renderDisciplineInputs(count,cleaned.slice(0,count));showToast(`Generated ${count} orthogonal lenses.`);}catch(err){console.error("Lens generation failed:",err);showToast("Lens generation failed. Check key/model and try again.");}finally{btn.disabled=false;btn.textContent=prev;btn.classList.remove("llm-busy");refreshPromptPreview();}}
 
 export function syncApiModeNote(){const mode=document.getElementById("api-mode").value;const note=document.getElementById("api-mode-note");if(mode==="proxy"){note.textContent="Proxy mode is backend-ready. Add server routes at /api/llm/chat/completions and /api/llm/embeddings.";}else{note.textContent="Direct mode sends model requests from this page (tab-memory key only). CA probe still simulates locally in direct mode.";}}
 
@@ -653,7 +653,44 @@ function openArticleModal(art, col) {
   modal.style.display = "flex";
 }
 
-function renderSourceColumns(columns, scoredByColumn) {
+function showExpandSearchPrompt(columns, articlesByColumn, topicTokens, entities, effectivePubDate) {
+  // Remove any existing banner
+  document.querySelector('.expand-search-banner')?.remove();
+
+  const container = document.getElementById("source-columns");
+  if (!container) return;
+
+  const banner = document.createElement('div');
+  banner.className = 'expand-search-banner';
+  banner.innerHTML = `<span>Limited matches found. Expand search to include older articles and looser keyword matching?</span>`;
+  const expandBtn = document.createElement('button');
+  expandBtn.className = 'mini-btn accent';
+  expandBtn.textContent = 'EXPAND SEARCH';
+  expandBtn.addEventListener('click', () => {
+    banner.remove();
+    // Re-score with relaxed params: soft matching, no temporal penalty, higher cap, lower threshold
+    const expandedByColumn = {};
+    for (const col of columns) {
+      const articles = articlesByColumn[col.id] || [];
+      const scored = articles.map(a => ({
+        ...a,
+        relevance: Math.max(0, (entities.length
+          ? Math.max(scoreArticleWithSeed(a, topicTokens, entities), softScoreArticle(a, topicTokens))
+          : Math.max(scoreArticle(a, topicTokens), softScoreArticle(a, topicTokens)))),
+        recency: parseRecency(a.pubDate),
+        mentions: crossMentionCount(a, articlesByColumn, col.id, topicTokens)
+      }));
+      scored.sort((a, b) => b.relevance - a.relevance || a.recency.ms - b.recency.ms);
+      expandedByColumn[col.id] = scored.slice(0, 15);
+    }
+    renderSourceColumns(columns, expandedByColumn, 10); // lower visibility threshold
+    showToast('Search expanded — showing more results with looser matching.');
+  });
+  banner.appendChild(expandBtn);
+  container.parentNode.insertBefore(banner, container);
+}
+
+function renderSourceColumns(columns, scoredByColumn, visibilityThreshold = 20) {
   const container = document.getElementById("source-columns");
   if (!container) return;
   container.innerHTML = "";
@@ -687,8 +724,8 @@ function renderSourceColumns(columns, scoredByColumn) {
       empty.textContent = "No recent stories matching this topic.";
       colDiv.appendChild(empty);
     } else {
-      const highRel = articles.filter(a => a.relevance > 50);
-      const lowRel = articles.filter(a => a.relevance <= 50);
+      const highRel = articles.filter(a => a.relevance > visibilityThreshold);
+      const lowRel = articles.filter(a => a.relevance <= visibilityThreshold);
 
       // High-relevance cards (always visible)
       if (highRel.length) {
@@ -797,11 +834,17 @@ export async function findStories() {
 
   const btn = document.getElementById("find-stories-btn");
   const prev = btn?.textContent;
-  if (btn) { btn.disabled = true; btn.textContent = "READING SEED…"; }
+  if (btn) { btn.disabled = true; btn.textContent = "FINDING STORIES…"; btn.classList.add("llm-busy"); }
   setSourceStatus("Fetching seed article…");
+  // Clear stale state from previous searches so new seed starts fresh
+  document.getElementById("target-input").value = "";
   document.getElementById("seed-anchor-row").style.display = "none";
+  document.getElementById("seed-anchor-row").innerHTML = "";
   document.getElementById("source-columns").style.display = "none";
+  document.getElementById("source-columns").innerHTML = "";
   document.getElementById("source-use-row").style.display = "none";
+  document.querySelector(".expand-search-banner")?.remove();
+  resetColumns();
 
   try {
     // 1. Fetch seed article
@@ -810,7 +853,7 @@ export async function findStories() {
     if (!seedResult?.ok) throw new Error("Could not fetch the seed article. Check the URL and proxy mode.");
 
     // 2. Extract metadata from seed via LLM (graceful fallback if API not configured)
-    if (btn) btn.textContent = "ANALYZING SEED…";
+    // btn stays as "FINDING STORIES…" — status line shows detail
     setSourceStatus("Analyzing seed article…");
     const cfg = readApiConfig();
     const cfgError = validateApiConfig(cfg);
@@ -841,7 +884,7 @@ export async function findStories() {
     const entities = seedMeta.entities;
 
     // 5. Fetch all RSS feeds
-    if (btn) btn.textContent = "FETCHING FEEDS…";
+    // btn stays as "FINDING STORIES…" — status line shows detail
     setSourceStatus(`Fetching ${columns.flatMap(c => c.feeds).length} feed(s)…`);
     const allFeedUrls = [...new Set(columns.flatMap(c => c.feeds))];
     const feedResults = await postFetchUrl(allFeedUrls);
@@ -855,7 +898,7 @@ export async function findStories() {
         if (!r?.ok || !r.raw) continue;
         items.push(...parseFeedItems(r.raw));
       }
-      articlesByColumn[col.id] = filterByTemporalProximity(items, effectivePubDate, 7);
+      articlesByColumn[col.id] = items; // keep all articles; temporal proximity is a scoring bonus, not a hard filter
     }
 
     // 7. Score and rank (entity-aware when entities available, falls back to keyword-only)
@@ -864,17 +907,26 @@ export async function findStories() {
       const articles = articlesByColumn[col.id] || [];
       const scored = articles.map(a => ({
         ...a,
-        relevance: entities.length
+        relevance: Math.max(0, (entities.length
           ? scoreArticleWithSeed(a, topicTokens, entities)
-          : scoreArticle(a, topicTokens),
+          : scoreArticle(a, topicTokens))
+          + temporalRelevanceBonus(a, effectivePubDate, 7)),
         recency: parseRecency(a.pubDate),
         mentions: crossMentionCount(a, articlesByColumn, col.id, topicTokens)
       }));
       scored.sort((a, b) => b.relevance - a.relevance || a.recency.ms - b.recency.ms);
-      scoredByColumn[col.id] = scored.slice(0, 5);
+      scoredByColumn[col.id] = scored.slice(0, 10);
     }
 
     renderSourceColumns(columns, scoredByColumn);
+
+    // Tiered expand search — if results are thin, offer to widen the net
+    const totalHighRel = Object.values(scoredByColumn)
+      .reduce((sum, arts) => sum + arts.filter(a => a.relevance > 20).length, 0);
+    if (totalHighRel / columns.length < 2) {
+      showExpandSearchPrompt(columns, articlesByColumn, topicTokens, entities, effectivePubDate);
+    }
+
     const totalArticles = Object.values(scoredByColumn).reduce((s, a) => s + a.length, 0);
     const anchorDateStr = effectivePubDate && !isNaN(effectivePubDate.getTime())
       ? effectivePubDate.toLocaleDateString()
@@ -884,7 +936,7 @@ export async function findStories() {
     setSourceStatus(String(err.message || "Fetch failed. Check proxy mode."), "err");
     showToast(String(err.message || "Fetch failed."));
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = prev; }
+    if (btn) { btn.disabled = false; btn.textContent = prev; btn.classList.remove("llm-busy"); }
   }
 }
 
@@ -940,7 +992,7 @@ export async function useSelectedSources() {
   const launchBtn = document.getElementById("launch-btn");
   const sourcesSection = document.getElementById("workbench-section-sources");
   const prev = btn?.textContent;
-  if (btn) btn.disabled = true;
+  if (btn) { btn.disabled = true; btn.classList.add("llm-busy"); }
   if (launchBtn) launchBtn.disabled = true;
   if (sourcesSection) sourcesSection.classList.add("sources-loading");
   showSummarizeOverlay(selected.length);
@@ -1011,7 +1063,7 @@ export async function useSelectedSources() {
     showToast(String(err.message || "Fetch failed."));
   } finally {
     removeSummarizeOverlay();
-    if (btn) { btn.disabled = false; btn.textContent = prev; }
+    if (btn) { btn.disabled = false; btn.textContent = prev; btn.classList.remove("llm-busy"); }
     if (launchBtn) launchBtn.disabled = false;
     if (sourcesSection) sourcesSection.classList.remove("sources-loading");
   }

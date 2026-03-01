@@ -207,7 +207,7 @@ export async function launchExpedition(){
     setCAProbeOutput(null);
     RUN_STATE.caProbe=null;
   }
-  if(cfg.redTeam){await runRedTeamPass(true);}
+  if(cfg.redTeam){synthBar.className="synth-bar running";synthBar.textContent="RED TEAM - generating adversarial critique...";await runRedTeamPass(true);synthBar.className="synth-bar done";synthBar.textContent="RED TEAM COMPLETE";}
   setLastRun(buildRunSnapshot(target,probeResults,synthResult,cfg));
   saveRunToHistory(LAST_RUN).catch(()=>{});
   syncArtifactStoreFromRun();

@@ -5,7 +5,11 @@ export const STOPWORDS = new Set([
   "more","also","about","into","which","their","after","when","were","what",
   "said","says","year","over","than","just","some","such","would","could",
   "then","these","those","there","where","while","other","first","last",
-  "news","report","says","amid","amid","week","days","time","make","made"
+  "news","report","says","amid","amid","week","days","time","make","made",
+  // 3-char stopwords (added when lowering min token length to 3)
+  "has","was","are","its","not","but","who","how","did","can","new","old",
+  "get","got","had","now","per","all","any","own","our","may","too","yet",
+  "top","use","set","way","see","two","one","let","ago","say","put","try"
 ]);
 
 // Each column has: id, label, color, feeds (array of RSS URLs)
@@ -170,7 +174,7 @@ export function tokenize(text) {
   return (text || "").toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length >= 4 && !STOPWORDS.has(w));
+    .filter(w => w.length >= 3 && !STOPWORDS.has(w));
 }
 
 // Score an article against the topic (0–100)
@@ -273,4 +277,30 @@ export function scoreArticleWithSeed(article, topicTokens, entities) {
     ? entities.filter(e => entityHaystack.includes(e.toLowerCase())).length / entities.length
     : 0;
   return Math.round((topicScore * 0.6 + entityScore * 0.4) * 100);
+}
+
+// Temporal relevance bonus — soft alternative to hard date-window filtering.
+// Articles within ±windowDays get a bonus; further out get neutral or mild penalty.
+export function temporalRelevanceBonus(article, seedDate, windowDays = 7) {
+  if (!seedDate || isNaN(seedDate.getTime())) return 0;
+  if (!article.pubDate) return 0;
+  const d = new Date(article.pubDate);
+  if (isNaN(d.getTime())) return 0;
+  const daysDiff = Math.abs(d.getTime() - seedDate.getTime()) / (24 * 3_600_000);
+  if (daysDiff <= windowDays) return 10;
+  if (daysDiff <= windowDays * 2) return 0;
+  return -10;
+}
+
+// Soft scoring with prefix matching — catches morphological variants
+// ("strikes"→"strike", "economic"→"economy") via shared 5-char prefix.
+export function softScoreArticle(article, topicTokens) {
+  if (!topicTokens.length) return 0;
+  const haystack = tokenize((article.title || "") + " " + (article.description || ""));
+  let matches = 0;
+  for (const t of topicTokens) {
+    const prefix = t.length >= 5 ? t.slice(0, 5) : t;
+    if (haystack.some(h => h === t || h.startsWith(prefix))) { matches++; }
+  }
+  return Math.round((matches / topicTokens.length) * 100);
 }

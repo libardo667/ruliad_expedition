@@ -56,8 +56,10 @@ input[type=text]:focus,input[type=password]:focus,input[type=number]:focus,selec
 .mini-grid{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center}
 .lens-gen-row{display:grid;grid-template-columns:130px 1fr;gap:8px;align-items:center}
 .api-key-row{display:flex;gap:8px}.api-key-row input{flex:1}
-.mini-btn{background:var(--panel-soft);border:1px solid var(--control-border);color:var(--text);font-family:'Courier New',monospace;font-size:12px;letter-spacing:.5px;padding:0 12px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.mini-btn{background:var(--panel-soft);border:1px solid var(--control-border);color:var(--text);font-family:'Courier New',monospace;font-size:12px;letter-spacing:.5px;padding:0 12px;border-radius:6px;cursor:pointer;white-space:nowrap;position:relative;overflow:hidden}
 .mini-btn:hover{border-color:var(--accent);color:var(--accent)}
+.mini-btn.llm-busy{pointer-events:none;border-color:var(--accent);color:var(--accent)}
+.mini-btn.llm-busy::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--accent) 50%,transparent 100%);animation:probe-shimmer 1.5s ease-in-out infinite}
 .tiny-note{font-size:12px;color:var(--muted);line-height:1.5}
 .toggle-wrap{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--text)}
 .toggle-wrap input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
@@ -217,7 +219,9 @@ body.plot-zen .panel-trigger,body.plot-zen .floating-panel,body.plot-zen .panel-
 .small-btn{background:var(--panel);border:1px solid var(--control-border);color:var(--text);font-family:'Courier New',monospace;font-size:11px;letter-spacing:.4px;padding:4px 8px;border-radius:6px;cursor:pointer}
 .legacy-actions{display:none}
 .viz-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.progress-pill{font-size:11px;color:var(--muted);padding:5px 8px;border:1px dashed var(--border);border-radius:999px;min-width:160px;text-align:center}
+.progress-pill{font-size:11px;color:var(--muted);padding:5px 8px;border:1px dashed var(--border);border-radius:999px;min-width:160px;text-align:center;position:relative;overflow:hidden;transition:color .3s,border-color .3s}
+.progress-pill.busy{color:var(--accent);border-color:var(--accent)}
+.progress-pill.busy::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--accent) 50%,transparent 100%);animation:probe-shimmer 1.5s ease-in-out infinite}
 .projection-tip{font-size:11px;color:var(--muted);padding:4px 8px;border:1px solid var(--border);border-radius:999px;cursor:help}
 .menu-wrap{position:relative}
 .menu-pop{display:none;position:absolute;right:0;top:34px;z-index:1300;background:var(--panel);border:1px solid var(--border);border-radius:8px;min-width:210px;padding:6px}
@@ -333,6 +337,7 @@ body.plot-zen .panel-trigger,body.plot-zen .floating-panel,body.plot-zen .panel-
 .source-status{font-size:12px;padding:4px 0;min-height:20px;color:var(--muted)}
 .source-status.ok{color:#16a34a}
 .source-status.err{color:#dc2626}
+.expand-search-banner{display:flex;align-items:center;gap:12px;justify-content:center;padding:12px 16px;margin-bottom:8px;background:var(--panel-soft);border:1px dashed var(--border);border-radius:8px;font:12px/1.4 'Courier New',monospace;color:var(--muted)}
 .source-columns{display:grid;gap:12px;margin-top:10px}
 @media (min-width:1200px){.source-columns{grid-template-columns:repeat(5,1fr)}}
 @media (min-width:900px) and (max-width:1199px){.source-columns{grid-template-columns:repeat(3,1fr)}}
