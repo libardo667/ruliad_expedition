@@ -20,6 +20,29 @@ export function citationColorForTerm(term){const count=Array.isArray(term?.citat
 
 export function getEmergentRingColor(){const theme=document.documentElement.getAttribute("data-theme")||"light";if(theme==="dark") return "#67e8f9";if(theme==="contrast") return "#00ffff";return "#0e7490";}
 
+function lerp3(a, b, t) {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+function dashedEdgePoints(posA, posB, strength) {
+  const s = Math.max(0, Math.min(1, Number(strength) || 0.5));
+  // dashRatio: strong → near-solid (0.9), weak → clearly dashed (0.3)
+  const dashRatio = 0.3 + 0.6 * s;
+  const numUnits = Math.max(4, Math.round(8 + (1 - s) * 8)); // more units for weaker edges
+  const unitLen = 1 / numUnits;
+  const xs = [], ys = [], zs = [];
+  for (let i = 0; i < numUnits; i++) {
+    const t0 = i * unitLen;
+    const t1 = Math.min(t0 + unitLen * dashRatio, 1);
+    const p0 = lerp3(posA, posB, t0);
+    const p1 = lerp3(posA, posB, t1);
+    xs.push(p0[0], p1[0], null);
+    ys.push(p0[1], p1[1], null);
+    zs.push(p0[2], p1[2], null);
+  }
+  return { xs, ys, zs };
+}
+
 export function buildSemanticEdgeTraces(visibleTerms){
   if(!SEMANTIC_EDGES?.relationships?.length) return [];
   const pool=Array.isArray(visibleTerms)?visibleTerms:[];
@@ -42,16 +65,17 @@ export function buildSemanticEdgeTraces(visibleTerms){
     const hoverX=[],hoverY=[],hoverZ=[],hoverText=[];
 
     for(const rel of rels){
-      edgeX.push(rel.posA[0],rel.posB[0],null);
-      edgeY.push(rel.posA[1],rel.posB[1],null);
-      edgeZ.push(rel.posA[2],rel.posB[2],null);
+      const dashed = dashedEdgePoints(rel.posA, rel.posB, rel.strength);
+      edgeX.push(...dashed.xs);
+      edgeY.push(...dashed.ys);
+      edgeZ.push(...dashed.zs);
       hoverX.push((rel.posA[0]+rel.posB[0])/2);
       hoverY.push((rel.posA[1]+rel.posB[1])/2);
       hoverZ.push((rel.posA[2]+rel.posB[2])/2);
-      hoverText.push(`${rel.term_a} \u2194 ${rel.term_b}<br>${type}<br>${rel.rationale}`);
+      hoverText.push(`${rel.term_a} \u2194 ${rel.term_b}<br>${type} (${(rel.strength*100).toFixed(0)}%)<br>${rel.rationale}`);
     }
 
-    traces.push({type:"scatter3d",mode:"lines",name:`Edge: ${type}`,x:edgeX,y:edgeY,z:edgeZ,line:{color,width:1.5},opacity:0.45,hoverinfo:"none",showlegend:true,legendgroup:`edge_${type}`});
+    traces.push({type:"scatter3d",mode:"lines",name:`Edge: ${type}`,x:edgeX,y:edgeY,z:edgeZ,line:{color,width:2.5},opacity:0.7,hoverinfo:"none",showlegend:true,legendgroup:`edge_${type}`});
     traces.push({type:"scatter3d",mode:"markers",name:`Edge: ${type}`,x:hoverX,y:hoverY,z:hoverZ,text:hoverText,hovertemplate:"%{text}<extra></extra>",marker:{color,size:3,opacity:0},showlegend:false,legendgroup:`edge_${type}`});
   }
   return traces;

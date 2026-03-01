@@ -17,8 +17,7 @@ const EDGE_TYPE_COLORS = {
 
 // ── Node shape helpers ──
 const NODE_RADIUS = 10;
-const VERTICAL_SPACING = 80;
-const HORIZONTAL_SPACING = 120;
+const RING_SPACING = 100;
 const CORD_X_CENTER = 0; // relative; actual center computed from container
 
 // ── Internal state ──
@@ -44,6 +43,7 @@ export function disposeGallery() {
   if (_svgEl) { _svgEl.remove(); _svgEl = null; }
   document.querySelector('.gallery-strand-info')?.remove();
   document.querySelector('.gallery-nav-hint')?.remove();
+  document.querySelector('.gallery-info-panel')?.remove();
   _strands = [];
   _currentStrandIdx = 0;
   _focusedNodeIdx = -1;
@@ -120,7 +120,8 @@ async function enterGallery() {
       const plotEl = document.getElementById('plot');
       if (plotEl) plotEl.style.display = 'none';
       ensureSVG();
-      renderStrand(0);
+      // Defer render by one frame so layout resolves after hiding #plot
+      requestAnimationFrame(() => renderStrand(0));
     }
   });
 
@@ -134,6 +135,7 @@ function exitGallery() {
       if (_svgEl) { _svgEl.remove(); _svgEl = null; }
       document.querySelector('.gallery-strand-info')?.remove();
       document.querySelector('.gallery-nav-hint')?.remove();
+      document.querySelector('.gallery-info-panel')?.remove();
       const plotEl = document.getElementById('plot');
       if (plotEl) plotEl.style.display = '';
       setGalleryActive(false);
@@ -344,16 +346,37 @@ function buildStrand(component, labelMap, discId = null) {
     byDepth.get(d).push(l);
   }
 
-  // Assign positions
+  // Assign radial positions — anchor at center, each depth on a concentric ring
+  // Use golden angle (137.508°) to spread nodes evenly across the full circle,
+  // regardless of how many nodes are at each depth level.
+  const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ~2.399 rad ≈ 137.5°
   const nodes = [];
+  let globalIdx = 0; // running index across all non-anchor nodes
   for (const l of bfsOrder) {
     const d = depth.get(l);
     const row = byDepth.get(d);
     const idxInRow = row.indexOf(l);
-    const rowWidth = (row.length - 1) * HORIZONTAL_SPACING;
-    const x = -rowWidth / 2 + idxInRow * HORIZONTAL_SPACING;
-    const y = d * VERTICAL_SPACING;
-    nodes.push({ label: l, term: labelMap.get(l), depth: d, x, y, idxInRow, rowSize: row.length });
+
+    if (d === 0) {
+      nodes.push({ label: l, term: labelMap.get(l), depth: d, x: 0, y: 0, idxInRow: 0, rowSize: 1 });
+    } else {
+      const radius = d * RING_SPACING;
+      const count = row.length;
+      // For rings with many nodes, spread evenly; for sparse rings, use golden angle
+      let angle;
+      if (count >= 3) {
+        // Enough nodes to fill the ring — distribute evenly with a per-ring offset
+        const ringOffset = d * GOLDEN_ANGLE;
+        angle = ringOffset + (2 * Math.PI * idxInRow) / count;
+      } else {
+        // 1-2 nodes: use global golden angle sequence so they don't stack
+        angle = globalIdx * GOLDEN_ANGLE;
+      }
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+      nodes.push({ label: l, term: labelMap.get(l), depth: d, x, y, idxInRow, rowSize: count });
+      globalIdx++;
+    }
   }
 
   // Disc info for labeling
@@ -395,9 +418,17 @@ function renderStrand(index) {
 
   clearSVG();
 
+  // Get dimensions from parent container chain — the SVG itself may report 0 if layout hasn't resolved
+  const wrap = document.getElementById('plot-wrap');
+  const vizBody = document.getElementById('viz-body');
   const containerRect = _svgEl.getBoundingClientRect();
-  const W = containerRect.width || 800;
-  const H = containerRect.height || 600;
+  const wrapRect = wrap?.getBoundingClientRect();
+  const vizBodyRect = vizBody?.getBoundingClientRect();
+  const W = containerRect.width || wrapRect?.width || vizBodyRect?.width || 800;
+  const H = containerRect.height || wrapRect?.height || vizBodyRect?.height || 600;
+
+  // Set explicit viewBox so content renders even if CSS sizing hasn't resolved
+  _svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const PADDING_TOP = 60;
   const PADDING_BOTTOM = 50;
 
@@ -419,7 +450,8 @@ function renderStrand(index) {
   const scale = Math.min(availW / contentW, availH / contentH, 1.5);
 
   const offsetX = W / 2;
-  const offsetY = PADDING_TOP + 20;
+  const scaledH = contentH * scale;
+  const offsetY = PADDING_TOP + (availH - scaledH) / 2;
 
   function tx(x) { return offsetX + (x - (minX + maxX) / 2) * scale; }
   function ty(y) { return offsetY + (y - minY) * scale; }
@@ -427,28 +459,32 @@ function renderStrand(index) {
   // Set viewBox
   _svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-  // ── Draw main cord (vertical line through anchor column) ──
+  // ── Draw concentric ring guides + radial spokes ──
   const anchorNode = strand.nodes.find(n => n.label === strand.anchor);
   if (anchorNode) {
-    const cordX = tx(anchorNode.x);
-    const cordY1 = ty(minY) - 15;
-    const cordY2 = ty(maxY) + 15;
-    const cord = svgEl('line', {
-      x1: cordX, y1: cordY1, x2: cordX, y2: cordY2,
-      class: 'gallery-cord'
-    });
-    _svgEl.appendChild(cord);
+    const cx = tx(anchorNode.x);
+    const cy = ty(anchorNode.y);
 
-    // Draw branch cords for nodes not on the anchor column
+    // Concentric rings at each depth level (subtle, near-invisible guides)
+    const maxDepth = Math.max(...strand.nodes.map(n => n.depth));
+    for (let d = 1; d <= maxDepth; d++) {
+      const r = d * RING_SPACING * scale;
+      _svgEl.appendChild(svgEl('circle', {
+        cx, cy, r,
+        fill: 'none',
+        class: 'gallery-cord',
+        'stroke-opacity': '0.08'
+      }));
+    }
+
+    // Radial spokes from center to each node
     for (const n of strand.nodes) {
-      if (n.x !== anchorNode.x) {
-        const branchPath = svgEl('line', {
-          x1: tx(anchorNode.x), y1: ty(n.y),
-          x2: tx(n.x), y2: ty(n.y),
-          class: 'gallery-branch'
-        });
-        _svgEl.appendChild(branchPath);
-      }
+      if (n.depth === 0) continue;
+      _svgEl.appendChild(svgEl('line', {
+        x1: cx, y1: cy,
+        x2: tx(n.x), y2: ty(n.y),
+        class: 'gallery-branch'
+      }));
     }
   }
 
@@ -462,22 +498,21 @@ function renderStrand(index) {
     const ax = tx(nodeA.x), ay = ty(nodeA.y);
     const bx = tx(nodeB.x), by = ty(nodeB.y);
 
-    // Circuit-trace routing: L-shaped or Z-shaped paths
+    // Curved edge routing — arc away from center for readability
     let pathD;
-    if (nodeA.depth === nodeB.depth) {
-      // Same depth: horizontal arc
-      const midY = ay - 25 * scale;
-      pathD = `M ${ax} ${ay} Q ${(ax + bx) / 2} ${midY} ${bx} ${by}`;
-    } else if (Math.abs(nodeA.x - nodeB.x) < 1) {
-      // Same column: straight vertical
-      pathD = `M ${ax} ${ay} L ${bx} ${by}`;
-    } else {
-      // L-shaped: go horizontal first, then vertical (circuit trace style)
-      const cornerR = Math.min(8, Math.abs(bx - ax) / 3, Math.abs(by - ay) / 3);
-      const dirX = bx > ax ? 1 : -1;
-      const dirY = by > ay ? 1 : -1;
-      pathD = `M ${ax} ${ay} L ${bx - dirX * cornerR} ${ay} Q ${bx} ${ay} ${bx} ${ay + dirY * cornerR} L ${bx} ${by}`;
-    }
+    const anchorCx = anchorNode ? tx(anchorNode.x) : ax;
+    const anchorCy = anchorNode ? ty(anchorNode.y) : ay;
+    const midX = (ax + bx) / 2;
+    const midY = (ay + by) / 2;
+    const dx = midX - anchorCx;
+    const dy = midY - anchorCy;
+    const dist = Math.hypot(dx, dy) || 1;
+    // Push control point outward from center; more push for same-depth edges
+    const samering = nodeA.depth === nodeB.depth;
+    const push = (samering ? 30 : 15) * scale;
+    const ctrlX = midX + (dx / dist) * push;
+    const ctrlY = midY + (dy / dist) * push;
+    pathD = `M ${ax} ${ay} Q ${ctrlX} ${ctrlY} ${bx} ${by}`;
 
     const edge = svgEl('path', {
       d: pathD,
@@ -500,28 +535,8 @@ function renderStrand(index) {
     _svgEl.appendChild(edgeLabel);
   }
 
-  // ── Edge type legend (bottom-right) ──
+  // ── Edge type legend — collected for HTML overlay panel ──
   const usedTypes = new Set(strand.edges.map(r => r.type));
-  if (usedTypes.size) {
-    const legendG = svgEl('g', { transform: `translate(${W - 140}, ${H - 20 - usedTypes.size * 18})` });
-    let ly = 0;
-    for (const type of usedTypes) {
-      const color = EDGE_TYPE_COLORS[type] || '#888';
-      legendG.appendChild(svgEl('line', {
-        x1: 0, y1: ly + 5, x2: 24, y2: ly + 5,
-        stroke: color, 'stroke-width': 2
-      }));
-      const lt = svgEl('text', {
-        x: 30, y: ly + 9,
-        class: 'gallery-legend-text',
-        fill: color
-      });
-      lt.textContent = type;
-      legendG.appendChild(lt);
-      ly += 18;
-    }
-    _svgEl.appendChild(legendG);
-  }
 
   // ── Draw nodes ──
   const nodeGroups = [];
@@ -542,14 +557,17 @@ function renderStrand(index) {
     const shape = drawNodeShape(term.type, typeCol, n.label === strand.anchor);
     g.appendChild(shape);
 
-    // Label (alternate left/right based on index)
-    const labelSide = (i % 2 === 0) ? 1 : -1;
+    // Label — positioned radially outward from center
+    const angle = Math.atan2(n.y, n.x);
+    const isLeftHalf = Math.abs(angle) > Math.PI / 2;
+    const labelSide = (n.depth === 0) ? 1 : (isLeftHalf ? -1 : 1);
     const labelX = labelSide * (NODE_RADIUS + 8);
     const anchor = labelSide > 0 ? 'start' : 'end';
     const labelText = svgEl('text', {
       x: labelX, y: 4,
       class: 'gallery-label',
-      'text-anchor': anchor
+      'text-anchor': anchor,
+      visibility: 'hidden'
     });
     labelText.textContent = term.label;
     g.appendChild(labelText);
@@ -576,14 +594,33 @@ function renderStrand(index) {
   if (existing) existing.remove();
   document.getElementById('plot-wrap')?.appendChild(infoDiv);
 
-  // ── Nav hint ──
-  let navHint = document.querySelector('.gallery-nav-hint');
-  if (!navHint) {
-    navHint = document.createElement('div');
-    navHint.className = 'gallery-nav-hint';
-    navHint.textContent = '← → strands · ↑ ↓ nodes · esc exit';
-    document.getElementById('plot-wrap')?.appendChild(navHint);
+  // ── Bottom-right control panel (legend + nav hint) ──
+  document.querySelector('.gallery-nav-hint')?.remove();
+  document.querySelector('.gallery-info-panel')?.remove();
+  const infoPanel = document.createElement('div');
+  infoPanel.className = 'gallery-info-panel';
+
+  // Edge type legend
+  if (usedTypes.size) {
+    const legendDiv = document.createElement('div');
+    legendDiv.className = 'gallery-legend';
+    for (const type of usedTypes) {
+      const color = EDGE_TYPE_COLORS[type] || '#888';
+      const row = document.createElement('div');
+      row.className = 'gallery-legend-row';
+      row.innerHTML = `<span class="gallery-legend-line" style="background:${color}"></span><span class="gallery-legend-label" style="color:${color}">${type}</span>`;
+      legendDiv.appendChild(row);
+    }
+    infoPanel.appendChild(legendDiv);
   }
+
+  // Nav hint
+  const navDiv = document.createElement('div');
+  navDiv.className = 'gallery-nav-keys';
+  navDiv.textContent = '← → strands · ↑ ↓ nodes · esc exit';
+  infoPanel.appendChild(navDiv);
+
+  document.getElementById('plot-wrap')?.appendChild(infoPanel);
 
   // Highlight first node
   highlightFocusedNode();
@@ -661,7 +698,10 @@ function drawNodeShape(type, color, isAnchor) {
 function highlightFocusedNode() {
   if (!_svgEl) return;
   _svgEl.querySelectorAll('.gallery-node').forEach((g, i) => {
-    g.classList.toggle('focused', i === _focusedNodeIdx);
+    const isFocused = i === _focusedNodeIdx;
+    g.classList.toggle('focused', isFocused);
+    const label = g.querySelector('.gallery-label');
+    if (label) label.setAttribute('visibility', isFocused ? 'visible' : 'hidden');
   });
 }
 
