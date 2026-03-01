@@ -13,6 +13,7 @@
   <div class="tabs-left" role="tablist" aria-label="Workspace Views">
     <button class="tab-btn active" id="tab-generator-btn" type="button" role="tab" aria-selected="true" aria-controls="setup" tabindex="0">SETUP</button>
     <button class="tab-btn" id="tab-plot-btn" type="button" role="tab" aria-selected="false" aria-controls="plot-panel" tabindex="-1">PLOT VIEW</button>
+    <button class="tab-btn" id="tab-dashboard-btn" type="button" role="tab" aria-selected="false" aria-controls="dashboard-panel" tabindex="-1">DASHBOARD</button>
   </div>
   <div class="tabs-right">
     <button class="mini-btn" id="history-btn" type="button">HISTORY</button>
@@ -164,8 +165,8 @@
             <div class="seed-anchor-row" id="seed-anchor-row" style="display:none"></div>
             <div class="source-columns" id="source-columns" style="display:none"></div>
             <div class="source-use-row" id="source-use-row" style="display:none">
-              <button class="mini-btn accent" id="use-sources-btn" type="button">USE SELECTED SOURCES</button>
               <span class="source-selection-note" id="source-selection-note"></span>
+              <button class="mini-btn accent" id="use-sources-btn" type="button">RUN ANALYSIS</button>
             </div>
             <div class="custom-lens-editor" id="custom-lens-editor" style="display:none">
               <div class="tiny-note">Define your own columns. Each needs a label and at least one RSS URL (one per line).</div>
@@ -465,6 +466,23 @@
     </div>
   </div>
 </div>
+</div>
+<div id="dashboard-panel" role="tabpanel" aria-labelledby="tab-dashboard-btn" tabindex="-1" style="display:none">
+  <div id="dashboard-topbar">
+    <div id="dashboard-topbar-left">
+      <span class="logo" style="margin:0">PARALLAX LENS</span>
+      <span id="dashboard-topic-label"></span>
+    </div>
+    <div id="dashboard-topbar-actions">
+      <button class="mini-btn" id="dashboard-explore-btn" type="button">EXPLORE IN 3D</button>
+      <button class="mini-btn" id="dashboard-new-btn" type="button">NEW RUN</button>
+    </div>
+  </div>
+  <div id="dashboard-artifact-progress" style="display:none">
+    <div id="dashboard-artifact-progress-label"></div>
+    <div class="dashboard-progress-bar"><div class="dashboard-progress-bar-fill" id="dashboard-artifact-bar-fill"></div></div>
+  </div>
+  <div id="dashboard-artifact-grid"></div>
 </div>
 <div id="toast"></div>
 <div id="history-drawer">

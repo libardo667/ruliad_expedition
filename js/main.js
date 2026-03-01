@@ -52,6 +52,7 @@ import './ui/shutter-transition.js';
 import './ui/prompt-preview.js';
 import './ui/resizers.js';
 import './ui/setup-panel.js';
+import './ui/lens-dashboard.js';
 import './ui/tabs.js';
 import './ui/theme.js';
 

@@ -1,6 +1,6 @@
 import { COLORS, DEFAULT_DISCS } from '../core/constants.js';
 import { MODE_STATE, SOURCE_MATERIAL, activeSetupMode, setActiveSetupMode, setSourceMaterial } from '../core/state.js';
-import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems, scoreArticleWithSeed, temporalRelevanceBonus, softScoreArticle } from '../domain/news-sources.js';
+import { LENS_CONFIGS, tokenize, scoreArticle, parseRecency, crossMentionCount, parseFeedItems, scoreArticleWithSeed, temporalRelevanceBonus, softScoreArticle, buildGoogleNewsRssUrl, generateSearchQueries, normalizeBraveResults, normalizeNewsApiResults, deduplicateArticles } from '../domain/news-sources.js';
 import { discInputsEl } from '../core/refs.js';
 import { clampInt, structuredCloneSafe } from '../core/utils.js';
 import { showToast } from './notifications.js';
@@ -193,7 +193,6 @@ function captureModeState(){
     sourceColumnsHtml:document.getElementById("source-columns")?.innerHTML||"",
     sourceColumnsVisible:document.getElementById("source-columns")?.style.display!=="none",
     sourceUseRowVisible:document.getElementById("source-use-row")?.style.display!=="none",
-    sourceBalanceBarVisible:document.getElementById("source-balance-bar")?.style.display!=="none",
     sourceStatus:document.getElementById("source-status")?.textContent||"",
     lensSelectValue:document.getElementById("lens-select")?.value||"political",
     sourceMaterial:structuredCloneSafe(SOURCE_MATERIAL),
@@ -219,8 +218,6 @@ function restoreModeState(snapshot){
   if(sourceCols){sourceCols.innerHTML=snapshot.sourceColumnsHtml;sourceCols.style.display=snapshot.sourceColumnsVisible?"grid":"none";}
   const useRow=document.getElementById("source-use-row");
   if(useRow) useRow.style.display=snapshot.sourceUseRowVisible?"flex":"none";
-  const balBar=document.getElementById("source-balance-bar");
-  if(balBar) balBar.style.display=snapshot.sourceBalanceBarVisible?"flex":"none";
   const statusEl=document.getElementById("source-status");
   if(statusEl) statusEl.textContent=snapshot.sourceStatus;
   const lensSelect=document.getElementById("lens-select");
@@ -240,7 +237,6 @@ function defaultModeState(mode){
     sourceColumnsHtml:"",
     sourceColumnsVisible:false,
     sourceUseRowVisible:false,
-    sourceBalanceBarVisible:false,
     sourceStatus:"",
     lensSelectValue:"political",
     sourceMaterial:{urls:[],text:"",titles:[],byDisc:{}},
@@ -397,13 +393,31 @@ function getCustomColumns() {
 }
 
 async function postFetchUrl(urls) {
-  const resp = await fetch("/api/fetch-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ urls })
-  });
-  if (!resp.ok) throw new Error(`Proxy returned ${resp.status}. Is proxy mode active?`);
-  return (await resp.json()).results || [];
+  const BATCH_SIZE = 10;
+  if (urls.length <= BATCH_SIZE) {
+    const resp = await fetch("/api/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls })
+    });
+    if (!resp.ok) throw new Error(`Proxy returned ${resp.status}. Is proxy mode active?`);
+    return (await resp.json()).results || [];
+  }
+  // Multi-batch: chunk urls into groups, fetch in parallel
+  const batches = [];
+  for (let i = 0; i < urls.length; i += BATCH_SIZE) {
+    batches.push(urls.slice(i, i + BATCH_SIZE));
+  }
+  const batchResults = await Promise.all(batches.map(async batch => {
+    const resp = await fetch("/api/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls: batch })
+    });
+    if (!resp.ok) throw new Error(`Proxy returned ${resp.status}. Is proxy mode active?`);
+    return (await resp.json()).results || [];
+  }));
+  return batchResults.flat();
 }
 
 function setSourceStatus(msg, cls = "") {
@@ -440,35 +454,6 @@ function updateSelectionNote() {
     }
   }
 
-  // Render balance bar
-  renderBalanceBar(columns, countByCol, counts);
-}
-
-function renderBalanceBar(columns, countByCol, counts) {
-  let bar = document.getElementById("source-balance-bar");
-  if (!bar) {
-    bar = document.createElement("div");
-    bar.id = "source-balance-bar";
-    bar.className = "source-balance-bar";
-    const useRow = document.getElementById("source-use-row");
-    if (useRow) useRow.parentNode.insertBefore(bar, useRow.nextSibling);
-  }
-  const max = Math.max(...counts, 1);
-  const mean = counts.reduce((s, n) => s + n, 0) / (counts.length || 1);
-  bar.innerHTML = `<div class="balance-label">Selection balance</div><div class="balance-bars">${
-    columns.map(col => {
-      const n = countByCol[col.id] || 0;
-      const h = Math.round((n / max) * 40);
-      const deviation = Math.abs(n - mean);
-      const barColor = n === 0 ? "#ef4444" : deviation > mean * 0.6 ? "#f59e0b" : col.color;
-      return `<div class="balance-col-wrap">
-        <div class="balance-bar-track"><div class="balance-bar-fill" style="height:${h}px;background:${barColor}"></div></div>
-        <div class="balance-count" style="color:${barColor}">${n}</div>
-        <div class="balance-col-label" style="color:${col.color}">${escHtml(col.label)}</div>
-      </div>`;
-    }).join("")
-  }</div>`;
-  bar.style.display = counts.some(n => n > 0) ? "" : "none";
 }
 
 function openFeedEditPopover(btn, col) {
@@ -571,10 +556,6 @@ function makeSourceCard(art, col) {
 
   card.innerHTML = `
     <div class="card-select-row">
-      <label class="card-checkbox-wrap" title="Select this article">
-        <input type="checkbox" class="card-checkbox"/>
-        <span class="card-checkbox-box"></span>
-      </label>
       <div class="evidence-top" style="flex:1;min-width:0">
         <div class="evidence-title">${escHtml(art.title)}</div>
         <div class="evidence-meta">${escHtml(outlet)} · ${escHtml(art.recency.label)}</div>
@@ -590,22 +571,27 @@ function makeSourceCard(art, col) {
       ${hasMore ? `<button class="source-expand-btn mini-link-btn" type="button">Show more</button>` : ""}
     </div>`;
 
-  // Checkbox toggles selection (multi-select)
-  const checkbox = card.querySelector(".card-checkbox");
-  checkbox.addEventListener("change", e => {
-    e.stopPropagation();
-    card.classList.toggle("selected", checkbox.checked);
-    updateSelectionNote();
+  // Click = toggle selection; hold-click (300ms+) = expand/collapse snippet
+  let pressTimer = null;
+  let didHold = false;
+  card.addEventListener("pointerdown", e => {
+    if (e.target.closest(".source-expand-btn")) return;
+    if (e.button !== 0) return; // left click only
+    didHold = false;
+    pressTimer = setTimeout(() => { didHold = true; toggleCardExpand(card); }, 300);
   });
-
-  // Single click on card body (not checkbox) = expand/collapse snippet
-  card.addEventListener("click", e => {
-    if (e.target.closest(".card-checkbox-wrap") || e.target.closest(".source-expand-btn")) return;
-    if (e.detail === 2) return; // handled by dblclick
-    toggleCardExpand(card);
+  card.addEventListener("pointerup", e => {
+    if (e.target.closest(".source-expand-btn")) return;
+    clearTimeout(pressTimer);
+    if (!didHold && e.button === 0) {
+      if (e.detail === 2) return; // dblclick handled separately
+      card.classList.toggle("selected");
+      updateSelectionNote();
+    }
   });
+  card.addEventListener("pointerleave", () => { clearTimeout(pressTimer); });
 
-  // Expand button
+  // Expand button still works directly
   card.querySelector(".source-expand-btn")?.addEventListener("click", e => {
     e.stopPropagation();
     toggleCardExpand(card);
@@ -628,6 +614,73 @@ function toggleCardExpand(card) {
   if (short) short.style.display = expanded ? "none" : "";
   if (full) full.style.display = expanded ? "" : "none";
   if (btn) btn.textContent = expanded ? "Show less" : "Show more";
+}
+
+// Extract unique outlets from articles, return { domain, count, faviconUrl }[] sorted by count desc
+function getOutletStats(articles) {
+  const byDomain = {};
+  for (const art of articles) {
+    let domain = "";
+    try { domain = art.link ? new URL(art.link).hostname.replace(/^www\./, "") : ""; } catch {}
+    if (!domain) continue;
+    if (!byDomain[domain]) byDomain[domain] = { domain, count: 0 };
+    byDomain[domain].count++;
+  }
+  return Object.values(byDomain)
+    .sort((a, b) => b.count - a.count)
+    .map(o => ({ ...o, faviconUrl: `https://www.google.com/s2/favicons?domain=${o.domain}&sz=32` }));
+}
+
+// Build the row of small circular favicon indicators for a column header
+function buildOutletIndicators(articles) {
+  const wrap = document.createElement("div");
+  wrap.className = "source-outlets";
+  const outlets = getOutletStats(articles);
+  const MAX_ICONS = 4;
+  const shown = outlets.slice(0, MAX_ICONS);
+  const overflow = outlets.length - MAX_ICONS;
+
+  for (const o of shown) {
+    const img = document.createElement("img");
+    img.className = "source-outlet-icon";
+    img.src = o.faviconUrl;
+    img.alt = o.domain;
+    img.title = `${o.domain} (${o.count})`;
+    img.width = 20;
+    img.height = 20;
+    img.loading = "lazy";
+    img.onerror = function () { this.style.display = "none"; };
+    wrap.appendChild(img);
+  }
+
+  if (overflow > 0) {
+    const badge = document.createElement("span");
+    badge.className = "source-outlet-overflow";
+    badge.textContent = `+${overflow}`;
+    badge.title = `${overflow} more source${overflow > 1 ? "s" : ""}`;
+    wrap.appendChild(badge);
+  }
+
+  return wrap;
+}
+
+// Build the expandable detail panel listing all outlets with counts
+function buildOutletDetailPanel(articles, colColor) {
+  const panel = document.createElement("div");
+  panel.className = "source-outlet-detail";
+  if (colColor) panel.style.borderColor = colColor;
+  const outlets = getOutletStats(articles);
+  if (!outlets.length) {
+    panel.textContent = "No sources detected.";
+    return panel;
+  }
+  for (const o of outlets) {
+    const row = document.createElement("div");
+    row.className = "source-outlet-detail-row";
+    row.innerHTML = `<img src="${escHtml(o.faviconUrl)}" alt="" width="14" height="14" loading="lazy" onerror="this.style.display='none'"/><span>${escHtml(o.domain)}</span><span class="source-outlet-detail-count" style="color:${colColor || 'var(--text)'}">${o.count}</span>`;
+    panel.appendChild(row);
+  }
+  return panel;
 }
 
 function openArticleModal(art, col) {
@@ -653,41 +706,184 @@ function openArticleModal(art, col) {
   modal.style.display = "flex";
 }
 
-function showExpandSearchPrompt(columns, articlesByColumn, topicTokens, entities, effectivePubDate) {
-  // Remove any existing banner
-  document.querySelector('.expand-search-banner')?.remove();
+function showExpandSearchGate(columns, articlesByColumn, topicTokens, entities, effectivePubDate, topicLabel, cfg) {
+  // Remove any existing gate/banner
+  document.querySelector('.expand-search-gate')?.remove();
+  document.querySelector('.expand-search-gate')?.remove();
 
   const container = document.getElementById("source-columns");
+  const useSourcesBtn = document.getElementById("use-sources-btn");
   if (!container) return;
 
-  const banner = document.createElement('div');
-  banner.className = 'expand-search-banner';
-  banner.innerHTML = `<span>Limited matches found. Expand search to include older articles and looser keyword matching?</span>`;
-  const expandBtn = document.createElement('button');
-  expandBtn.className = 'mini-btn accent';
-  expandBtn.textContent = 'EXPAND SEARCH';
-  expandBtn.addEventListener('click', () => {
-    banner.remove();
-    // Re-score with relaxed params: soft matching, no temporal penalty, higher cap, lower threshold
-    const expandedByColumn = {};
-    for (const col of columns) {
-      const articles = articlesByColumn[col.id] || [];
-      const scored = articles.map(a => ({
-        ...a,
-        relevance: Math.max(0, (entities.length
-          ? Math.max(scoreArticleWithSeed(a, topicTokens, entities), softScoreArticle(a, topicTokens))
-          : Math.max(scoreArticle(a, topicTokens), softScoreArticle(a, topicTokens)))),
-        recency: parseRecency(a.pubDate),
-        mentions: crossMentionCount(a, articlesByColumn, col.id, topicTokens)
-      }));
-      scored.sort((a, b) => b.relevance - a.relevance || a.recency.ms - b.recency.ms);
-      expandedByColumn[col.id] = scored.slice(0, 15);
+  // DISABLE use-sources until user resolves the gate
+  if (useSourcesBtn) useSourcesBtn.disabled = true;
+
+  const gate = document.createElement('div');
+  gate.className = 'expand-search-gate';
+  gate.innerHTML = `
+    <div class="expand-gate-icon">!</div>
+    <div class="expand-gate-text">
+      <div class="expand-gate-title">LIMITED COVERAGE DETECTED</div>
+      <div class="expand-gate-desc">Not enough high-relevance articles were found across perspectives.
+        Expanding the search will query Google News and any configured search APIs for additional coverage.</div>
+    </div>
+    <div class="expand-gate-actions">
+      <button class="mini-btn accent expand-gate-expand-btn" type="button">EXPAND SEARCH</button>
+      <button class="mini-btn expand-gate-dismiss-btn" type="button">CONTINUE WITH CURRENT RESULTS</button>
+    </div>`;
+
+  // EXPAND SEARCH triggers Tier 2 dynamic search
+  gate.querySelector('.expand-gate-expand-btn').addEventListener('click', async () => {
+    const expandBtn = gate.querySelector('.expand-gate-expand-btn');
+    expandBtn.disabled = true;
+    expandBtn.textContent = 'SEARCHING\u2026';
+    expandBtn.classList.add('llm-busy');
+
+    try {
+      await performExpandedSearch(columns, articlesByColumn, topicTokens, entities, effectivePubDate, topicLabel, cfg);
+    } finally {
+      gate.remove();
+      if (useSourcesBtn) useSourcesBtn.disabled = false;
     }
-    renderSourceColumns(columns, expandedByColumn, 10); // lower visibility threshold
-    showToast('Search expanded — showing more results with looser matching.');
   });
-  banner.appendChild(expandBtn);
-  container.parentNode.insertBefore(banner, container);
+
+  // CONTINUE dismisses the gate and re-enables use-sources
+  gate.querySelector('.expand-gate-dismiss-btn').addEventListener('click', () => {
+    gate.remove();
+    if (useSourcesBtn) useSourcesBtn.disabled = false;
+  });
+
+  container.parentNode.insertBefore(gate, container);
+}
+
+async function performExpandedSearch(columns, articlesByColumn, topicTokens, entities, effectivePubDate, topicLabel, cfg) {
+  setSourceStatus("Generating targeted search queries\u2026");
+
+  // 1. Check which search APIs are available
+  let capabilities = { brave: false, newsapi: false, googleNews: true };
+  try {
+    const resp = await fetch("/api/news-search/capabilities");
+    if (resp.ok) capabilities = await resp.json();
+  } catch { /* Google News RSS is always available */ }
+
+  // 2. Generate search queries per column via LLM (parallel)
+  const cfgError = validateApiConfig(cfg);
+  let queriesByColumn = {};
+  if (!cfgError) {
+    const queryPromises = columns.map(async col => {
+      const queries = await generateSearchQueries(
+        topicLabel, entities, col.label, col.id,
+        (sys, usr) => callLLMJSON(sys, usr, cfg)
+      );
+      return { colId: col.id, queries };
+    });
+    const results = await Promise.all(queryPromises);
+    for (const { colId, queries } of results) {
+      queriesByColumn[colId] = queries;
+    }
+  } else {
+    // Fallback: simple topic + column label queries
+    for (const col of columns) {
+      queriesByColumn[col.id] = [`${topicLabel} ${col.label}`];
+    }
+  }
+
+  // 3. Fetch Google News RSS for each query (through existing proxy)
+  setSourceStatus("Fetching search results from Google News\u2026");
+  const allSearchUrls = [];
+  const urlToColumn = {};
+  for (const col of columns) {
+    for (const query of (queriesByColumn[col.id] || [])) {
+      const url = buildGoogleNewsRssUrl(query);
+      allSearchUrls.push(url);
+      urlToColumn[url] = col.id;
+    }
+  }
+
+  let searchResults = [];
+  try {
+    searchResults = await postFetchUrl(allSearchUrls);
+  } catch { /* non-fatal — continue with whatever we got */ }
+
+  // Parse and deduplicate against existing articles
+  for (const col of columns) {
+    const existingArticles = articlesByColumn[col.id] || [];
+    let newArticles = [];
+    for (const r of searchResults) {
+      if (urlToColumn[r.url] !== col.id) continue;
+      if (!r?.ok || !r.raw) continue;
+      newArticles.push(...parseFeedItems(r.raw));
+    }
+    const deduped = deduplicateArticles(existingArticles, newArticles);
+    articlesByColumn[col.id] = [...existingArticles, ...deduped];
+  }
+
+  // 4. Optional: Hit Brave Search if available
+  if (capabilities.brave) {
+    setSourceStatus("Querying Brave Search\u2026");
+    for (const col of columns) {
+      const queries = queriesByColumn[col.id] || [];
+      if (!queries.length) continue;
+      try {
+        const resp = await fetch("/api/news-search/brave", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: queries[0], count: 10 })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          const articles = normalizeBraveResults(data);
+          const deduped = deduplicateArticles(articlesByColumn[col.id], articles);
+          articlesByColumn[col.id] = [...articlesByColumn[col.id], ...deduped];
+        }
+      } catch { /* non-fatal */ }
+    }
+  }
+
+  // 5. Optional: Hit NewsAPI if available
+  if (capabilities.newsapi) {
+    setSourceStatus("Querying NewsAPI\u2026");
+    const from = effectivePubDate ? new Date(effectivePubDate.getTime() - 7 * 86400000).toISOString().slice(0, 10) : "";
+    const to = effectivePubDate ? new Date(effectivePubDate.getTime() + 7 * 86400000).toISOString().slice(0, 10) : "";
+    for (const col of columns) {
+      const queries = queriesByColumn[col.id] || [];
+      if (!queries.length) continue;
+      try {
+        const resp = await fetch("/api/news-search/newsapi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: queries[0], pageSize: 10, from, to })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          const articles = normalizeNewsApiResults(data);
+          const deduped = deduplicateArticles(articlesByColumn[col.id], articles);
+          articlesByColumn[col.id] = [...articlesByColumn[col.id], ...deduped];
+        }
+      } catch { /* non-fatal */ }
+    }
+  }
+
+  // 6. Re-score everything and re-render with relaxed params
+  const scoredByColumn = {};
+  for (const col of columns) {
+    const articles = articlesByColumn[col.id] || [];
+    const scored = articles.map(a => ({
+      ...a,
+      relevance: Math.max(0, (entities.length
+        ? Math.max(scoreArticleWithSeed(a, topicTokens, entities), softScoreArticle(a, topicTokens))
+        : Math.max(scoreArticle(a, topicTokens), softScoreArticle(a, topicTokens)))),
+      recency: parseRecency(a.pubDate),
+      mentions: crossMentionCount(a, articlesByColumn, col.id, topicTokens)
+    }));
+    scored.sort((a, b) => b.relevance - a.relevance || a.recency.ms - b.recency.ms);
+    scoredByColumn[col.id] = scored.slice(0, 15);
+  }
+
+  renderSourceColumns(columns, scoredByColumn, 10);
+  const totalResults = Object.values(scoredByColumn).reduce((s, a) => s + a.length, 0);
+  setSourceStatus(`Expanded search complete \u2014 ${totalResults} articles across ${columns.length} perspectives.`, "ok");
+  showToast("Search expanded with dynamic queries.");
 }
 
 function renderSourceColumns(columns, scoredByColumn, visibilityThreshold = 20) {
@@ -696,11 +892,29 @@ function renderSourceColumns(columns, scoredByColumn, visibilityThreshold = 20) 
   container.innerHTML = "";
   container.style.display = "grid";
 
+  // "Expand coverage details" checkbox above columns
+  const expandRow = document.createElement("label");
+  expandRow.className = "expand-coverage-row";
+  expandRow.style.gridColumn = "1 / -1";
+  const expandCb = document.createElement("input");
+  expandCb.type = "checkbox";
+  expandCb.id = "expand-coverage-toggle";
+  const expandLabel = document.createElement("span");
+  expandLabel.textContent = "EXPAND COVERAGE DETAILS";
+  expandRow.append(expandCb, expandLabel);
+  container.appendChild(expandRow);
+  expandCb.addEventListener("change", () => {
+    const panels = container.querySelectorAll(".source-outlet-detail");
+    panels.forEach(p => p.classList.toggle("open", expandCb.checked));
+  });
+
   for (const col of columns) {
     const colDiv = document.createElement("div");
     colDiv.className = "source-column";
+    colDiv.style.borderTopColor = col.color;
+    colDiv.style.borderTopWidth = "3px";
 
-    // Column header with color dot + label + edit button
+    // Column header with color dot + label + edit button + outlet indicators
     const header = document.createElement("div");
     header.className = "source-column-header";
     const colorDot = document.createElement("span");
@@ -712,12 +926,52 @@ function renderSourceColumns(columns, scoredByColumn, visibilityThreshold = 20) 
     const editBtn = document.createElement("button");
     editBtn.className = "source-col-edit-btn";
     editBtn.title = "Edit feeds for this column";
-    editBtn.textContent = "⚙";
+    editBtn.textContent = "\u2699";
     editBtn.addEventListener("click", e => { e.stopPropagation(); openFeedEditPopover(editBtn, col); });
-    header.append(colorDot, lbl, editBtn);
+
+    // Source outlet favicon indicators
+    const colArticles = scoredByColumn[col.id] || [];
+    const outletIcons = buildOutletIndicators(colArticles);
+    header.append(colorDot, lbl, outletIcons, editBtn);
     colDiv.appendChild(header);
 
+    // Expandable outlet detail panel (hidden by default)
+    const outletDetail = buildOutletDetailPanel(colArticles, col.color);
+    colDiv.appendChild(outletDetail);
+    // Clicking the outlet icons row or overflow badge toggles the detail panel
+    outletIcons.addEventListener("click", e => {
+      e.stopPropagation();
+      outletDetail.classList.toggle("open");
+      // Sync the master expand checkbox
+      syncExpandCoverageCheckbox(container);
+    });
+
     const articles = scoredByColumn[col.id] || [];
+
+    // "Select top N" stepper — defaults to total article count, auto-selects top N by relevance
+    if (articles.length) {
+      const topNRow = document.createElement("div");
+      topNRow.className = "source-col-top-n";
+      const topNLabel = document.createElement("span");
+      topNLabel.textContent = "Select top";
+      const topNInput = document.createElement("input");
+      topNInput.type = "number";
+      topNInput.min = 0;
+      topNInput.max = articles.length;
+      topNInput.value = articles.length;
+      topNInput.dataset.col = col.id;
+      topNInput.className = "top-n-input";
+      const topNOf = document.createElement("span");
+      topNOf.textContent = `of ${articles.length}`;
+      topNRow.append(topNLabel, topNInput, topNOf);
+      colDiv.appendChild(topNRow);
+      topNInput.addEventListener("change", () => {
+        const n = clampInt(parseInt(topNInput.value, 10) || 0, 0, articles.length);
+        topNInput.value = n;
+        applyTopNSelection(colDiv, n);
+      });
+    }
+
     if (!articles.length) {
       const empty = document.createElement("div");
       empty.className = "no-stories";
@@ -770,10 +1024,34 @@ function renderSourceColumns(columns, scoredByColumn, visibilityThreshold = 20) 
       }
     }
     container.appendChild(colDiv);
+
+    // Auto-select all articles (top N defaults to max)
+    if (articles.length) applyTopNSelection(colDiv, articles.length);
   }
 
   document.getElementById("source-use-row").style.display = "flex";
   updateSelectionNote();
+}
+
+// Apply top N selection: select first N cards, deselect the rest
+function applyTopNSelection(colDiv, n) {
+  const cards = colDiv.querySelectorAll(".source-pick-card");
+  let i = 0;
+  cards.forEach(card => {
+    card.classList.toggle("selected", i < n);
+    i++;
+  });
+  updateSelectionNote();
+}
+
+// Sync the master "expand coverage details" checkbox with individual panel states
+function syncExpandCoverageCheckbox(container) {
+  const toggle = document.getElementById("expand-coverage-toggle");
+  if (!toggle) return;
+  const panels = container.querySelectorAll(".source-outlet-detail");
+  const openCount = container.querySelectorAll(".source-outlet-detail.open").length;
+  toggle.checked = panels.length > 0 && openCount === panels.length;
+  toggle.indeterminate = openCount > 0 && openCount < panels.length;
 }
 
 function escHtml(str) {
@@ -843,7 +1121,7 @@ export async function findStories() {
   document.getElementById("source-columns").style.display = "none";
   document.getElementById("source-columns").innerHTML = "";
   document.getElementById("source-use-row").style.display = "none";
-  document.querySelector(".expand-search-banner")?.remove();
+  document.querySelector(".expand-search-gate")?.remove();
   resetColumns();
 
   try {
@@ -924,14 +1202,14 @@ export async function findStories() {
     const totalHighRel = Object.values(scoredByColumn)
       .reduce((sum, arts) => sum + arts.filter(a => a.relevance > 20).length, 0);
     if (totalHighRel / columns.length < 2) {
-      showExpandSearchPrompt(columns, articlesByColumn, topicTokens, entities, effectivePubDate);
+      showExpandSearchGate(columns, articlesByColumn, topicTokens, entities, effectivePubDate, topicLabel, cfg);
     }
 
     const totalArticles = Object.values(scoredByColumn).reduce((s, a) => s + a.length, 0);
     const anchorDateStr = effectivePubDate && !isNaN(effectivePubDate.getTime())
       ? effectivePubDate.toLocaleDateString()
       : "seed article";
-    setSourceStatus(`${columns.length} perspectives · ${totalArticles} stories found (anchored to ${anchorDateStr} ±7 days). Check articles to select; double-click to preview.`, "ok");
+    setSourceStatus(`${columns.length} perspectives · ${totalArticles} stories found (anchored to ${anchorDateStr} ±7 days). Click to select/deselect; hold to expand; double-click to preview.`, "ok");
   } catch (err) {
     setSourceStatus(String(err.message || "Fetch failed. Check proxy mode."), "err");
     showToast(String(err.message || "Fetch failed."));
@@ -940,39 +1218,71 @@ export async function findStories() {
   }
 }
 
-function showSummarizeOverlay(total) {
-  removeSummarizeOverlay();
-  const overlay = document.createElement('div');
-  overlay.id = 'summarize-overlay';
-  overlay.className = 'sources-progress-overlay';
-  overlay.innerHTML = `
-    <div class="sources-progress-content">
-      <div class="sources-progress-title">SUMMARIZING ARTICLES</div>
-      <div class="sources-progress-bar-track">
-        <div class="sources-progress-bar-fill" id="summarize-bar-fill"></div>
-      </div>
-      <div class="sources-progress-count" id="summarize-count">0 of ${total}</div>
-      <div class="sources-progress-hint">Analysis can begin once summarization completes</div>
-    </div>`;
-  document.getElementById('workbench-section-sources')?.appendChild(overlay);
+
+// Core summarization logic — reusable by pipeline and standalone
+// Returns { byDisc, activeCols, successful, failed, combined }
+export async function summarizeSourcesForPipeline(selected, cfg, onProgress) {
+  const columns = getLensColumns();
+  const selectedCols = new Set(selected.map(el => el.dataset.col));
+
+  // Build url → {colId, colLabel} map
+  const urlToCol = {};
+  for (const card of selected) {
+    urlToCol[card.dataset.link] = { colId: card.dataset.col, colLabel: card.dataset.colLabel || card.dataset.col };
+  }
+  const urls = selected.map(el => el.dataset.link).filter(Boolean);
+
+  const results = await postFetchUrl(urls);
+  const successful = results.filter(r => r.ok && r.text);
+  const failed = results.filter(r => !r.ok);
+
+  // Pre-summarize each article via LLM (parallel, per-article, falls back to raw on error)
+  let summarized = successful;
+  const cfgError = validateApiConfig(cfg);
+
+  if (!cfgError && successful.length) {
+    let summarizeDone = 0;
+    const total = successful.length;
+    summarized = await Promise.all(successful.map(async r => {
+      try {
+        const rawText = String(r.text || "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+        const snippet = rawText.length > 12000 ? rawText.slice(0, 12000).trimEnd() + "\n...[truncated]" : rawText;
+        const systemPrompt = "You are a research summarizer. Produce a structured summary of the provided article. Be factual and precise.";
+        const userPrompt = `Summarize the following article for use as grounding material in a multi-lens research analysis.\n\nURL: ${r.url}\nTitle: ${r.title || "(untitled)"}\n\nArticle:\n"""\n${snippet}\n"""\n\nProvide a 400–600 word summary covering:\n- Main thesis and key findings\n- Key facts, data points, or statistics\n- Up to 3 notable verbatim quotes (≤25 words each)\n- Framing and perspective of the source\n\nEnd with: Source URL: ${r.url}`;
+        const summaryText = await callLLM(systemPrompt, userPrompt, { ...cfg, __maxTokens: 800 });
+        return { ...r, text: summaryText };
+      } catch {
+        return r; // fall back to raw text on error
+      } finally {
+        summarizeDone++;
+        if (onProgress) onProgress(summarizeDone, total);
+      }
+    }));
+  }
+
+  // Group text by column label for per-probe grounding
+  const byDiscTexts = {};
+  for (const r of summarized) {
+    const { colLabel } = urlToCol[r.url] || { colLabel: "Source" };
+    if (!byDiscTexts[colLabel]) byDiscTexts[colLabel] = [];
+    byDiscTexts[colLabel].push(`--- SOURCE: ${r.title || r.url} ---\n${r.text}`);
+  }
+  const byDisc = {};
+  for (const [label, texts] of Object.entries(byDiscTexts)) {
+    byDisc[label] = texts.join("\n\n");
+  }
+  const combined = summarized.map(r => `--- SOURCE: ${r.title || r.url} ---\n${r.text}`).join("\n\n");
+
+  const activeCols = columns.filter(c => selectedCols.has(c.id));
+  for (const c of activeCols) { if (!byDisc[c.label]) byDisc[c.label] = ''; }
+
+  return { byDisc, activeCols, successful, failed, combined };
 }
 
-function updateSummarizeProgress(done, total) {
-  const fill = document.getElementById('summarize-bar-fill');
-  const count = document.getElementById('summarize-count');
-  if (fill) fill.style.width = `${(done / total) * 100}%`;
-  if (count) count.textContent = `${done} of ${total}`;
-}
-
-function removeSummarizeOverlay() {
-  document.getElementById('summarize-overlay')?.remove();
-}
-
-export async function useSelectedSources() {
-  const selected = [...document.querySelectorAll(".source-pick-card .card-checkbox:checked")]
-    .map(cb => cb.closest(".source-pick-card"))
-    .filter(Boolean);
-  if (!selected.length) { showToast("Check at least one article to use as source."); return; }
+// Lens mode: validate selection, populate discs, then launch the full pipeline
+export function launchLensRun() {
+  const selected = [...document.querySelectorAll(".source-pick-card.selected")];
+  if (!selected.length) { showToast("Select at least one article to use as source."); return; }
 
   const columns = getLensColumns();
   const selectedCols = new Set(selected.map(el => el.dataset.col));
@@ -981,92 +1291,17 @@ export async function useSelectedSources() {
     showToast(`Unrepresented: ${missingCols.join(", ")}. Results may reflect narrower coverage.`);
   }
 
-  // Build url → {colId, colLabel} map before the fetch
-  const urlToCol = {};
-  for (const card of selected) {
-    urlToCol[card.dataset.link] = { colId: card.dataset.col, colLabel: card.dataset.colLabel || card.dataset.col };
+  // Auto-populate probe discipline inputs with selected column labels
+  const activeCols = columns.filter(c => selectedCols.has(c.id));
+  if (activeCols.length >= 2) {
+    renderDisciplineInputs(activeCols.length, activeCols.map(c => c.label), activeCols.map(c => c.color));
+    syncPromptPreviewDiscOptions();
+  } else {
+    showToast("Need articles from at least 2 perspectives."); return;
   }
-  const urls = selected.map(el => el.dataset.link).filter(Boolean);
 
-  const btn = document.getElementById("use-sources-btn");
-  const launchBtn = document.getElementById("launch-btn");
-  const sourcesSection = document.getElementById("workbench-section-sources");
-  const prev = btn?.textContent;
-  if (btn) { btn.disabled = true; btn.classList.add("llm-busy"); }
-  if (launchBtn) launchBtn.disabled = true;
-  if (sourcesSection) sourcesSection.classList.add("sources-loading");
-  showSummarizeOverlay(selected.length);
-  updateSummarizeProgress(0, selected.length);
-
-  try {
-    const results = await postFetchUrl(urls);
-    const successful = results.filter(r => r.ok && r.text);
-    const failed = results.filter(r => !r.ok);
-
-    // Pre-summarize each article via LLM (parallel, per-article, falls back to raw on error)
-    let summarized = successful;
-    const cfg = readApiConfig();
-    const cfgError = validateApiConfig(cfg);
-    // Update overlay: fetching done, now count fetched articles toward progress
-    const fetchedCount = successful.length;
-    updateSummarizeProgress(fetchedCount, selected.length + fetchedCount);
-
-    if (!cfgError && successful.length) {
-      let summarizeDone = 0;
-      const summarizeTotal = successful.length;
-      summarized = await Promise.all(successful.map(async r => {
-        try {
-          const rawText = String(r.text || "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
-          const snippet = rawText.length > 12000 ? rawText.slice(0, 12000).trimEnd() + "\n...[truncated]" : rawText;
-          const systemPrompt = "You are a research summarizer. Produce a structured summary of the provided article. Be factual and precise.";
-          const userPrompt = `Summarize the following article for use as grounding material in a multi-lens research analysis.\n\nURL: ${r.url}\nTitle: ${r.title || "(untitled)"}\n\nArticle:\n"""\n${snippet}\n"""\n\nProvide a 400–600 word summary covering:\n- Main thesis and key findings\n- Key facts, data points, or statistics\n- Up to 3 notable verbatim quotes (≤25 words each)\n- Framing and perspective of the source\n\nEnd with: Source URL: ${r.url}`;
-          const summaryText = await callLLM(systemPrompt, userPrompt, { ...cfg, __maxTokens: 800 });
-          return { ...r, text: summaryText };
-        } catch {
-          return r; // fall back to raw text on error
-        } finally {
-          summarizeDone++;
-          updateSummarizeProgress(summarizeDone, summarizeTotal);
-        }
-      }));
-    }
-
-    // Group text by column label for per-probe grounding
-    const byDiscTexts = {};
-    for (const r of summarized) {
-      const { colLabel } = urlToCol[r.url] || { colLabel: "Source" };
-      if (!byDiscTexts[colLabel]) byDiscTexts[colLabel] = [];
-      byDiscTexts[colLabel].push(`--- SOURCE: ${r.title || r.url} ---\n${r.text}`);
-    }
-    const byDisc = {};
-    for (const [label, texts] of Object.entries(byDiscTexts)) {
-      byDisc[label] = texts.join("\n\n");
-    }
-
-    const combined = summarized.map(r => `--- SOURCE: ${r.title || r.url} ---\n${r.text}`).join("\n\n");
-    setSourceMaterial({ urls: successful.map(r => r.url), text: combined, byDisc, titles: successful.map(r => r.title || r.url) });
-
-    // Auto-populate probe discipline inputs with column labels (ordered by lens config)
-    // Use selectedCols (user's checkbox selections) — not byDisc — so columns with failed fetches still get probes
-    const activeCols = columns.filter(c => selectedCols.has(c.id));
-    for (const c of activeCols) { if (!byDisc[c.label]) byDisc[c.label] = ''; }
-    if (activeCols.length >= 2) {
-      renderDisciplineInputs(activeCols.length, activeCols.map(c => c.label), activeCols.map(c => c.color));
-      syncPromptPreviewDiscOptions();
-    }
-
-    const wasSummarized = !cfgError && successful.length;
-    const msg = `${successful.length} article(s) ${wasSummarized ? "summarized and loaded" : "loaded"}${failed.length ? ` · ${failed.length} failed` : ""}. Probes set to lens columns. Ready to run.`;
-    setSourceStatus(msg, "ok");
-  } catch (err) {
-    setSourceStatus(String(err.message || "Fetch failed."), "err");
-    showToast(String(err.message || "Fetch failed."));
-  } finally {
-    removeSummarizeOverlay();
-    if (btn) { btn.disabled = false; btn.textContent = prev; btn.classList.remove("llm-busy"); }
-    if (launchBtn) launchBtn.disabled = false;
-    if (sourcesSection) sourcesSection.classList.remove("sources-loading");
-  }
+  // Import and call launchExpedition dynamically to avoid circular imports
+  import('../pipeline/launch-expedition.js').then(mod => mod.launchExpedition());
 }
 
 export function clearSources() {
@@ -1081,8 +1316,6 @@ export function clearSources() {
   if (cols) { cols.innerHTML = ""; cols.style.display = "none"; }
   const useRow = document.getElementById("source-use-row");
   if (useRow) useRow.style.display = "none";
-  const balBar = document.getElementById("source-balance-bar");
-  if (balBar) balBar.style.display = "none";
   setSourceStatus("");
 }
 

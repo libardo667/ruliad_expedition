@@ -4,7 +4,7 @@ import { toggleGallery } from '../plot/gallery.js';
 import { discInputsEl, themeSelectGlobalEl } from '../core/refs.js';
 import { initTabAccessibility, switchMainTab, toggleZenMode } from './tabs.js';
 import { applyTheme } from './theme.js';
-import { addProbeSpec, clearApiKey, clearSources, findStories, generateOrthogonalLenses, initGenerationPanelQol, initProgressiveDisclosure, initSourcesPanel, initWorkbenchJumpNav, onProbeActionClick, renderDisciplineInputs, syncApiModeNote, syncCAOverrideUI, toggleApiKey, useSelectedSources } from './setup-panel.js';
+import { addProbeSpec, clearApiKey, clearSources, findStories, generateOrthogonalLenses, initGenerationPanelQol, initProgressiveDisclosure, initSourcesPanel, initWorkbenchJumpNav, launchLensRun, onProbeActionClick, renderDisciplineInputs, syncApiModeNote, syncCAOverrideUI, toggleApiKey } from './setup-panel.js';
 import { applyGenerationWorkbenchLeftWidth, initGenerationWorkbenchResizer } from './resizers.js';
 import { closeModal, handleModalKeyboard } from './modals.js';
 import { applyPromptPreviewOverride, refreshPromptPreview, resetPromptPreviewOverride, syncPromptPreviewDiscOptions } from './prompt-preview.js';
@@ -52,7 +52,7 @@ document.getElementById("source-article-close-btn")?.addEventListener("click",()
 
 document.getElementById("source-article-modal")?.addEventListener("click",e=>{if(e.target.id==="source-article-modal"){const m=e.target;m.classList.remove("open");m.style.display="";}});
 
-document.getElementById("use-sources-btn")?.addEventListener("click",useSelectedSources);
+document.getElementById("use-sources-btn")?.addEventListener("click",launchLensRun);
 
 document.getElementById("clear-sources-btn")?.addEventListener("click",clearSources);
 

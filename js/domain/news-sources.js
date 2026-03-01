@@ -24,7 +24,11 @@ export const LENS_CONFIGS = {
         color: "#3b82f6",
         feeds: [
           "https://www.theguardian.com/world/rss",
-          "https://www.motherjones.com/feed/"
+          "https://www.motherjones.com/feed/",
+          "https://theintercept.com/feed/",
+          "https://www.thenation.com/feed/",
+          "https://www.commondreams.org/feeds/news",
+          "https://www.democracynow.org/democracynow.rss"
         ]
       },
       {
@@ -33,7 +37,11 @@ export const LENS_CONFIGS = {
         color: "#6792d7",
         feeds: [
           "https://feeds.npr.org/1001/rss.xml",
-          "https://feeds.washingtonpost.com/rss/world"
+          "https://feeds.washingtonpost.com/rss/world",
+          "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+          "https://www.vox.com/rss/index.xml",
+          "https://www.pbs.org/newshour/feeds/rss/headlines",
+          "https://slate.com/feeds/all.rss"
         ]
       },
       {
@@ -42,7 +50,11 @@ export const LENS_CONFIGS = {
         color: "#94a3b8",
         feeds: [
           "https://feeds.bbci.co.uk/news/world/rss.xml",
-          "https://feeds.reuters.com/reuters/topNews"
+          "https://feeds.reuters.com/reuters/topNews",
+          "https://rsshub.app/apnews/topics/apf-topnews",
+          "https://www.csmonitor.com/layout/set/rss/World",
+          "https://abcnews.go.com/abcnews/internationalheadlines",
+          "https://feeds.skynews.com/feeds/rss/world.xml"
         ]
       },
       {
@@ -51,7 +63,10 @@ export const LENS_CONFIGS = {
         color: "#c1737e",
         feeds: [
           "https://www.economist.com/sections/briefing/rss.xml",
-          "https://feeds.a.dj.com/rss/RSSWorldNews.xml"
+          "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+          "https://reason.com/feed/",
+          "https://thehill.com/feed/",
+          "https://www.realclearpolitics.com/index.xml"
         ]
       },
       {
@@ -60,7 +75,10 @@ export const LENS_CONFIGS = {
         color: "#ef4444",
         feeds: [
           "https://moxie.foxnews.com/google-publisher/world.xml",
-          "https://www.nationalreview.com/feed/"
+          "https://www.nationalreview.com/feed/",
+          "https://www.washingtontimes.com/rss/headlines/news/",
+          "https://nypost.com/feed/",
+          "https://feeds.feedburner.com/breitbart"
         ]
       }
     ]
@@ -74,7 +92,11 @@ export const LENS_CONFIGS = {
         color: "#3b82f6",
         feeds: [
           "https://feeds.npr.org/1001/rss.xml",
-          "https://feeds.a.dj.com/rss/RSSWorldNews.xml"
+          "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+          "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+          "https://www.cbc.ca/cmlink/rss-world",
+          "https://rsshub.app/apnews/topics/apf-topnews",
+          "https://globalnews.ca/feed/"
         ]
       },
       {
@@ -83,7 +105,11 @@ export const LENS_CONFIGS = {
         color: "#8b5cf6",
         feeds: [
           "https://feeds.bbci.co.uk/news/world/rss.xml",
-          "https://www.theguardian.com/world/rss"
+          "https://www.theguardian.com/world/rss",
+          "https://www.france24.com/en/rss",
+          "https://rss.dw.com/rdf/rss-en-top",
+          "https://www.euronews.com/rss",
+          "https://feeds.elpais.com/mrss-s/pages/ep/site/english.elpais.com/portada"
         ]
       },
       {
@@ -92,7 +118,11 @@ export const LENS_CONFIGS = {
         color: "#06b6d4",
         feeds: [
           "https://www.scmp.com/rss/91/feed",
-          "https://www3.nhk.or.jp/nhkworld/en/news/rss/"
+          "https://www3.nhk.or.jp/nhkworld/en/news/rss/",
+          "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+          "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
+          "https://www.abc.net.au/news/feed/51120/rss.xml",
+          "https://english.kyodonews.net/rss/all.xml"
         ]
       },
       {
@@ -100,7 +130,11 @@ export const LENS_CONFIGS = {
         label: "Mid East & Africa",
         color: "#f59e0b",
         feeds: [
-          "https://www.aljazeera.com/xml/rss/all.xml"
+          "https://www.aljazeera.com/xml/rss/all.xml",
+          "https://www.middleeasteye.net/rss",
+          "https://www.dailymaverick.co.za/feed/",
+          "https://www.arabnews.com/rss.xml",
+          "https://www.timesofisrael.com/feed/"
         ]
       },
       {
@@ -109,7 +143,11 @@ export const LENS_CONFIGS = {
         color: "#10b981",
         feeds: [
           "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
-          "https://feeds.reuters.com/reuters/topNews"
+          "https://feeds.reuters.com/reuters/topNews",
+          "https://rsshub.app/apnews/topics/apf-topnews",
+          "https://www.france24.com/en/rss",
+          "https://foreignpolicy.com/feed/",
+          "https://www.project-syndicate.org/rss"
         ]
       }
     ]
@@ -123,7 +161,11 @@ export const LENS_CONFIGS = {
         color: "#06b6d4",
         feeds: [
           "https://www.nature.com/news.rss",
-          "https://feeds.sciencedaily.com/sciencedaily/top_news"
+          "https://feeds.sciencedaily.com/sciencedaily/top_news",
+          "https://www.newscientist.com/section/news/feed/",
+          "https://phys.org/rss-feed/",
+          "https://www.livescience.com/feeds/all",
+          "https://www.sciencenews.org/feed"
         ]
       },
       {
@@ -132,7 +174,11 @@ export const LENS_CONFIGS = {
         color: "#8b5cf6",
         feeds: [
           "https://feeds.wired.com/wired/index",
-          "https://feeds.arstechnica.com/arstechnica/index"
+          "https://feeds.arstechnica.com/arstechnica/index",
+          "https://www.theverge.com/rss/index.xml",
+          "https://techcrunch.com/feed/",
+          "https://www.technologyreview.com/feed/",
+          "https://www.zdnet.com/news/rss.xml"
         ]
       },
       {
@@ -140,7 +186,12 @@ export const LENS_CONFIGS = {
         label: "Policy / Gov",
         color: "#f59e0b",
         feeds: [
-          "https://news.un.org/feed/subscribe/en/news/all/rss.xml"
+          "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+          "https://thehill.com/feed/",
+          "https://www.brookings.edu/feed/",
+          "https://www.politico.com/rss/politicopicks.xml",
+          "https://www.cfr.org/rss/",
+          "https://foreignpolicy.com/feed/"
         ]
       },
       {
@@ -149,7 +200,10 @@ export const LENS_CONFIGS = {
         color: "#10b981",
         feeds: [
           "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
-          "https://feeds.reuters.com/reuters/businessNews"
+          "https://feeds.reuters.com/reuters/businessNews",
+          "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+          "https://feeds.bloomberg.com/markets/news.rss",
+          "https://www.marketwatch.com/rss/topstories"
         ]
       },
       {
@@ -158,7 +212,10 @@ export const LENS_CONFIGS = {
         color: "#ec4899",
         feeds: [
           "https://www.theatlantic.com/feed/all/",
-          "https://www.newyorker.com/feed/everything"
+          "https://www.newyorker.com/feed/everything",
+          "https://www.theguardian.com/culture/rss",
+          "https://www.salon.com/feed/",
+          "https://lithub.com/feed/"
         ]
       }
     ]
@@ -303,4 +360,100 @@ export function softScoreArticle(article, topicTokens) {
     if (haystack.some(h => h === t || h.startsWith(prefix))) { matches++; }
   }
   return Math.round((matches / topicTokens.length) * 100);
+}
+
+// ── Tier 2: Dynamic Search Utilities ──────────────────────────────────
+
+// Build a Google News RSS search URL. Returns standard RSS XML that parseFeedItems() handles.
+export function buildGoogleNewsRssUrl(query, lang = "en", country = "US") {
+  const encoded = encodeURIComponent(query);
+  return `https://news.google.com/rss/search?q=${encoded}&hl=${lang}-${country}&gl=${country}&ceid=${country}:${lang}`;
+}
+
+// Generate 2-3 targeted search queries per column via LLM.
+// `llmCall` is injected to avoid circular imports — signature: (systemPrompt, userPrompt) => parsed JSON.
+export async function generateSearchQueries(topicLabel, entities, columnLabel, columnPerspective, llmCall) {
+  const entityStr = entities.length ? entities.slice(0, 6).join(", ") : "none";
+  const systemPrompt = "You generate news search queries. Return only strict JSON.";
+  const userPrompt = `Given this topic and perspective, generate 2-3 Google News search queries that would find relevant articles.
+
+Topic: "${topicLabel}"
+Key entities: ${entityStr}
+Perspective/column: "${columnLabel}" (${columnPerspective || columnLabel})
+
+Return JSON only:
+{ "queries": ["query 1", "query 2", "query 3"] }
+
+Rules:
+- Each query should be 4-8 words
+- Include the perspective's angle (e.g. for "Asia-Pacific" column, include regional terms)
+- Include at least one entity name per query when possible
+- Don't use quotation marks within queries`;
+
+  try {
+    const raw = await llmCall(systemPrompt, userPrompt);
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return Array.isArray(parsed.queries) ? parsed.queries.map(q => String(q).trim()).filter(Boolean).slice(0, 3) : [];
+  } catch {
+    return [`${topicLabel} ${columnLabel}`];
+  }
+}
+
+// Normalize Brave News API results to standard article format
+export function normalizeBraveResults(braveJson) {
+  const results = braveJson?.results || [];
+  return results.map(r => ({
+    title: r.title || "",
+    link: r.url || "",
+    description: (r.description || "").slice(0, 300),
+    pubDate: r.age || r.meta_url?.last_crawled || ""
+  }));
+}
+
+// Normalize NewsAPI.org results to standard article format
+export function normalizeNewsApiResults(newsApiJson) {
+  const articles = newsApiJson?.articles || [];
+  return articles.map(a => ({
+    title: a.title || "",
+    link: a.url || "",
+    description: (a.description || "").slice(0, 300),
+    pubDate: a.publishedAt || ""
+  }));
+}
+
+// Deduplicate articles by normalized URL and fuzzy title similarity
+export function deduplicateArticles(existing, newArticles) {
+  const seenUrls = new Set(existing.map(a => normalizeUrl(a.link)));
+  const seenTitles = existing.map(a => (a.title || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const unique = [];
+  for (const art of newArticles) {
+    const normUrl = normalizeUrl(art.link);
+    if (seenUrls.has(normUrl)) continue;
+    const normTitle = (art.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!normTitle) continue;
+    if (seenTitles.some(t => titleSimilarity(t, normTitle) > 0.8)) continue;
+    seenUrls.add(normUrl);
+    seenTitles.push(normTitle);
+    unique.push(art);
+  }
+  return unique;
+}
+
+function normalizeUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, "") + u.pathname.replace(/\/$/, "");
+  } catch { return url; }
+}
+
+function titleSimilarity(a, b) {
+  if (!a || !b) return 0;
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  if (longer.length === 0) return 1;
+  if (longer.includes(shorter)) return shorter.length / longer.length;
+  const set = new Set(shorter.split(""));
+  let match = 0;
+  for (const c of longer) { if (set.has(c)) match++; }
+  return match / longer.length;
 }

@@ -1,5 +1,5 @@
-import { TERMS, activeTab, isGenerating, plotInited, setActiveTab, setZenModeEnabled, zenModeEnabled } from '../core/state.js';
-import { TAB_ORDER, generatorTabBtn, plotPanelEl, plotTabBtn, progressEl, setupEl, vizEl } from '../core/refs.js';
+import { LAST_RUN, TERMS, activeTab, isGenerating, plotInited, setActiveTab, setZenModeEnabled, zenModeEnabled } from '../core/state.js';
+import { TAB_ORDER, dashboardPanelEl, dashboardTabBtn, generatorTabBtn, plotPanelEl, plotTabBtn, progressEl, setupEl, vizEl } from '../core/refs.js';
 import { showToast } from './notifications.js';
 import { refreshArtifactList, setArtifactDrawer, setExportMenu } from './artifact-drawer-ui.js';
 import { renderPlot } from '../plot/plot-render.js';
@@ -11,9 +11,9 @@ export function updateZenModeUI(){const zenActive=Boolean(zenModeEnabled&&active
 
 export function toggleZenMode(){setZenModeEnabled(!zenModeEnabled);updateZenModeUI();if(plotInited&&activeTab==="plot"&&!isGenerating){requestAnimationFrame(()=>{try{Plotly.Plots.resize(document.getElementById("plot"));}catch{}});}}
 
-export function tabNameForButton(btn){if(!btn) return "generator";return btn.id==="tab-plot-btn"?"plot":"generator";}
+export function tabNameForButton(btn){if(!btn) return "generator";if(btn.id==="tab-plot-btn") return "plot";if(btn.id==="tab-dashboard-btn") return "dashboard";return "generator";}
 
-export function buttonForTabName(name){return name==="plot"?plotTabBtn:generatorTabBtn;}
+export function buttonForTabName(name){if(name==="plot") return plotTabBtn;if(name==="dashboard") return dashboardTabBtn;return generatorTabBtn;}
 
 export function setPanelVisibility(el,visible,displayStyle){if(!el) return;el.hidden=!visible;el.setAttribute("aria-hidden",visible?"false":"true");el.style.display=visible?displayStyle:"none";}
 
@@ -25,4 +25,30 @@ export function moveTabFocus(currentBtn,delta){const idx=TAB_ORDER.indexOf(curre
 
 export function initTabAccessibility(){for(const btn of TAB_ORDER){btn.addEventListener("click",()=>switchMainTab(tabNameForButton(btn),{focusTarget:true}));btn.addEventListener("keydown",e=>{if(e.key==="ArrowRight"){e.preventDefault();moveTabFocus(btn,1);return;}if(e.key==="ArrowLeft"){e.preventDefault();moveTabFocus(btn,-1);return;}if(e.key==="Home"){e.preventDefault();TAB_ORDER[0]?.focus();return;}if(e.key==="End"){e.preventDefault();TAB_ORDER[TAB_ORDER.length-1]?.focus();return;}if(e.key==="Enter"||e.key===" "){e.preventDefault();switchMainTab(tabNameForButton(btn),{focusTarget:true});}});}}
 
-export function switchMainTab(tab,{silent=false,focusTarget=true}={}){const target=tab==="plot"?"plot":"generator";if(target==="plot"&&!isGenerating&&!plotInited&&!TERMS.length){if(!silent) showToast("No plot yet. Run an analysis first.");return;}setActiveTab(target);updateTabState(activeTab);if(activeTab==="generator"){setPanelVisibility(setupEl,true,"flex");setPanelVisibility(plotPanelEl,false,"block");setPanelVisibility(progressEl,false,"flex");setPanelVisibility(vizEl,false,"flex");setArtifactDrawer(false);setExportMenu(false);updateZenModeUI();if(focusTarget) focusTabTarget("generator");return;}setPanelVisibility(setupEl,false,"flex");setPanelVisibility(plotPanelEl,true,"flex");if(isGenerating){setPanelVisibility(progressEl,true,"flex");setPanelVisibility(vizEl,false,"flex");setArtifactDrawer(false);}else{setPanelVisibility(progressEl,false,"flex");setPanelVisibility(vizEl,true,"flex");refreshArtifactList();if(plotInited){requestAnimationFrame(()=>{try{Plotly.Plots.resize(document.getElementById("plot"));renderPlot();}catch(err){console.warn("Plot resize failed:",err);}});}}updateZenModeUI();if(focusTarget) focusTabTarget("plot");}
+export function switchMainTab(tab,{silent=false,focusTarget=true}={}){
+  const target=tab==="plot"?"plot":tab==="dashboard"?"dashboard":"generator";
+  if(target==="plot"&&!isGenerating&&!plotInited&&!TERMS.length){if(!silent) showToast("No plot yet. Run an analysis first.");return;}
+  if(target==="dashboard"&&!LAST_RUN&&!isGenerating){if(!silent) showToast("No results yet. Run an analysis first.");return;}
+  setActiveTab(target);updateTabState(activeTab);
+  // Hide all panels first
+  setPanelVisibility(setupEl,false,"flex");
+  setPanelVisibility(plotPanelEl,false,"flex");
+  setPanelVisibility(progressEl,false,"flex");
+  setPanelVisibility(vizEl,false,"flex");
+  setPanelVisibility(dashboardPanelEl,false,"flex");
+  setArtifactDrawer(false);setExportMenu(false);
+  if(activeTab==="generator"){
+    setPanelVisibility(setupEl,true,"flex");
+    updateZenModeUI();if(focusTarget) focusTabTarget("generator");return;
+  }
+  if(activeTab==="dashboard"){
+    setPanelVisibility(dashboardPanelEl,true,"flex");
+    updateZenModeUI();return;
+  }
+  // plot tab
+  setPanelVisibility(plotPanelEl,true,"flex");
+  if(isGenerating){setPanelVisibility(progressEl,true,"flex");}
+  else{setPanelVisibility(vizEl,true,"flex");refreshArtifactList();
+    if(plotInited){requestAnimationFrame(()=>{try{Plotly.Plots.resize(document.getElementById("plot"));renderPlot();}catch(err){console.warn("Plot resize failed:",err);}});}}
+  updateZenModeUI();if(focusTarget) focusTabTarget("plot");
+}

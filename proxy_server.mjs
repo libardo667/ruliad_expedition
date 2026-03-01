@@ -9,6 +9,8 @@ const __dirname = path.dirname(__filename);
 const ROOT = process.cwd();
 const PORT = Number(process.env.PORT || 8787);
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const BRAVE_SEARCH_API_KEY = process.env.BRAVE_SEARCH_API_KEY || "";
+const NEWSAPI_KEY = process.env.NEWSAPI_KEY || "";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -120,7 +122,7 @@ function extractArticlePubDate(raw, url) {
 
 async function fetchUrlHandler(req, res) {
   const body = await readJsonBody(req);
-  const urls = Array.isArray(body.urls) ? body.urls.slice(0, 10) : [];
+  const urls = Array.isArray(body.urls) ? body.urls.slice(0, 50) : [];
   const results = await Promise.all(urls.map(async (url) => {
     try {
       const resp = await fetch(String(url), {
@@ -147,6 +149,61 @@ async function fetchUrlHandler(req, res) {
     }
   }));
   send(res, 200, JSON.stringify({ results }), { "Content-Type": MIME[".json"] });
+}
+
+// ── Tier 2 News Search Proxy Routes (optional, key-gated) ─────────────
+
+async function braveNewsSearchHandler(req, res) {
+  if (!BRAVE_SEARCH_API_KEY) {
+    send(res, 501, JSON.stringify({ error: "BRAVE_SEARCH_API_KEY not configured" }), { "Content-Type": MIME[".json"] });
+    return;
+  }
+  const body = await readJsonBody(req);
+  const query = String(body.query || "").trim();
+  if (!query) { send(res, 400, JSON.stringify({ error: "Missing query" }), { "Content-Type": MIME[".json"] }); return; }
+  const count = Math.min(Number(body.count) || 10, 20);
+  const url = `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(query)}&count=${count}`;
+  try {
+    const upstream = await fetch(url, {
+      headers: { "Accept": "application/json", "Accept-Encoding": "gzip", "X-Subscription-Token": BRAVE_SEARCH_API_KEY },
+      signal: AbortSignal.timeout(10000)
+    });
+    const text = await upstream.text();
+    send(res, upstream.status, text, { "Content-Type": "application/json" });
+  } catch (err) {
+    send(res, 502, JSON.stringify({ error: String(err?.message || err) }), { "Content-Type": MIME[".json"] });
+  }
+}
+
+async function newsApiSearchHandler(req, res) {
+  if (!NEWSAPI_KEY) {
+    send(res, 501, JSON.stringify({ error: "NEWSAPI_KEY not configured" }), { "Content-Type": MIME[".json"] });
+    return;
+  }
+  const body = await readJsonBody(req);
+  const query = String(body.query || "").trim();
+  if (!query) { send(res, 400, JSON.stringify({ error: "Missing query" }), { "Content-Type": MIME[".json"] }); return; }
+  const pageSize = Math.min(Number(body.pageSize) || 10, 20);
+  const from = body.from || "";
+  const to = body.to || "";
+  let url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&pageSize=${pageSize}&sortBy=relevancy&apiKey=${NEWSAPI_KEY}`;
+  if (from) url += `&from=${encodeURIComponent(from)}`;
+  if (to) url += `&to=${encodeURIComponent(to)}`;
+  try {
+    const upstream = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const text = await upstream.text();
+    send(res, upstream.status, text, { "Content-Type": "application/json" });
+  } catch (err) {
+    send(res, 502, JSON.stringify({ error: String(err?.message || err) }), { "Content-Type": MIME[".json"] });
+  }
+}
+
+function newsSearchCapabilities(req, res) {
+  send(res, 200, JSON.stringify({
+    brave: !!BRAVE_SEARCH_API_KEY,
+    newsapi: !!NEWSAPI_KEY,
+    googleNews: true
+  }), { "Content-Type": MIME[".json"] });
 }
 
 function safeJoin(root, requestPath) {
@@ -209,6 +266,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && pathname === "/api/llm/chat/completions") return await proxyOpenRouter(req, res, "chat");
     if (req.method === "POST" && pathname === "/api/llm/embeddings") return await proxyOpenRouter(req, res, "embeddings");
     if (req.method === "POST" && pathname === "/api/fetch-url") return await fetchUrlHandler(req, res);
+    if (req.method === "POST" && pathname === "/api/news-search/brave") return await braveNewsSearchHandler(req, res);
+    if (req.method === "POST" && pathname === "/api/news-search/newsapi") return await newsApiSearchHandler(req, res);
+    if (req.method === "GET" && pathname === "/api/news-search/capabilities") return newsSearchCapabilities(req, res);
     if (req.method === "GET" && pathname === "/api/sample-runs") return await listSampleRuns(req, res);
     if (req.method === "GET" || req.method === "HEAD") return await serveStatic(req, res);
     send(res, 405, "Method not allowed", { "Content-Type": MIME[".txt"] });
@@ -221,5 +281,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`[proxy] serving ${ROOT}`);
   console.log(`[proxy] http://localhost:${PORT}`);
-  console.log("[proxy] endpoints: /api/llm/chat/completions, /api/llm/embeddings, /api/fetch-url");
+  console.log("[proxy] endpoints: /api/llm/*, /api/fetch-url, /api/news-search/*");
+  if (BRAVE_SEARCH_API_KEY) console.log("[proxy] Brave Search API key configured");
+  if (NEWSAPI_KEY) console.log("[proxy] NewsAPI key configured");
 });

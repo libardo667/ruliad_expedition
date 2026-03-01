@@ -1,10 +1,10 @@
 import { COLORS, PROJECTION_BASE_SEED, PROJECTION_STABILITY_RUNS } from '../core/constants.js';
-import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, MODE_STATE, PROJECTION_STABILITY, RUN_STATE, SEMANTIC_EDGES, TERMS, activeSetupMode, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSemanticEdges, setSessionConfig, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
+import { ACTIVE_ARTIFACT_KEY, CALL_LOGS, CA_PROBE_OUTPUT, CITATIONS, CITATION_UNMAPPED_SUPPORTING_TERMS, CURRENT_RUN_ID, DISCS, DISC_SIM_MATRIX, EVIDENCE_FILTER_STATE, LAST_RUN, MODE_STATE, PROJECTION_STABILITY, RUN_STATE, SEMANTIC_EDGES, SOURCE_MATERIAL, TERMS, activeSetupMode, activeSlices, activeTypes, isGenerating, lastClaimsText, lastCritiqueText, lastMarkdownText, lastOutlineText, lastReportText, plotInited, sessionConfig, setActiveArtifactKey, setCallLogs, setCAProbeOutput, setCitations, setCitationUnmappedSupportingTerms, setCurrentRunId, setDiscs, setDiscSimMatrix, setEvidenceFilterState, setIsGenerating, setLastRun, setProjectionStability, setRunState, setSemanticEdges, setSessionConfig, setSourceMaterial, setTerms, setActiveSlices, setActiveTypes, setLastClaimsText, setLastCritiqueText, setLastMarkdownText, setLastOutlineText, setLastReportText, setPlotInited } from '../core/state.js';
 import { progressEl } from '../core/refs.js';
 import { clampInt } from '../core/utils.js';
 import { setProbeState, showToast } from '../ui/notifications.js';
 import { switchMainTab } from '../ui/tabs.js';
-import { getCurrentProbeSpecs, renderDisciplineInputs } from '../ui/setup-panel.js';
+import { getCurrentProbeSpecs, renderDisciplineInputs, summarizeSourcesForPipeline } from '../ui/setup-panel.js';
 import { closeModal } from '../ui/modals.js';
 import { setArtifactDrawer, setExportMenu } from '../ui/artifact-drawer-ui.js';
 import { getProbeResultWithRecovery } from './probes.js';
@@ -80,6 +80,24 @@ export async function launchExpedition(){
   overallBar.className="overall-progress";
   overallBar.innerHTML=`<div class="overall-progress-label" id="overall-progress-label">0 of ${DISCS.length} probes complete</div><div class="overall-progress-track"><div class="overall-progress-fill" id="overall-progress-fill"></div></div>`;
   probeListEl.after(overallBar);
+  // Lens mode: summarize sources inline if not yet done
+  const isLensMode = activeSetupMode === "sources";
+  if(isLensMode && (!SOURCE_MATERIAL.byDisc || !Object.keys(SOURCE_MATERIAL.byDisc).length)){
+    const synthBarEarly=document.getElementById("synth-bar");
+    synthBarEarly.className="synth-bar running";
+    synthBarEarly.textContent="SUMMARIZING SOURCES...";
+    const selectedCards=[...document.querySelectorAll(".source-pick-card.selected")];
+    const sumResult=await summarizeSourcesForPipeline(selectedCards,cfg,(done,total)=>{
+      synthBarEarly.textContent=`SUMMARIZING SOURCES - ${done} of ${total} articles...`;
+    });
+    setSourceMaterial({urls:sumResult.successful.map(r=>r.url),text:sumResult.combined,byDisc:sumResult.byDisc,titles:sumResult.successful.map(r=>r.title||r.url)});
+    // Refresh cfg with new source material
+    cfg.sourceText=sumResult.combined;
+    cfg.sourceUrls=sumResult.successful.map(r=>r.url);
+    cfg.sourceByDisc=sumResult.byDisc;
+    synthBarEarly.className="synth-bar done";
+    synthBarEarly.textContent=`${sumResult.successful.length} ARTICLES SUMMARIZED${sumResult.failed.length?` · ${sumResult.failed.length} failed`:""}`;
+  }
   function updateOverallProgress(){
     const done=document.querySelectorAll(".probe-item.done, .probe-item.error").length;
     const fill=document.getElementById("overall-progress-fill");
@@ -131,79 +149,90 @@ export async function launchExpedition(){
   }
   buildTerms(probeResults,synthResult);
   collectCitations();
-  if(TERMS.length){
-    synthBar.className="synth-bar running";
-    try{
-      await assignSemanticPositions(target,cfg,msg=>{synthBar.textContent=msg;});
-      synthBar.className="synth-bar done";
-      synthBar.textContent=`VECTOR LAYOUT COMPLETE - ${TERMS.length} terms positioned by semantic distance`;
-    }catch(err){
-      console.error("Embedding layout failed:",err);
+  // Embedding, semantic edges, and CA — skip for Lens mode (deferred to EXPLORE IN 3D)
+  if(!isLensMode){
+    if(TERMS.length){
+      synthBar.className="synth-bar running";
+      try{
+        await assignSemanticPositions(target,cfg,msg=>{synthBar.textContent=msg;});
+        synthBar.className="synth-bar done";
+        synthBar.textContent=`VECTOR LAYOUT COMPLETE - ${TERMS.length} terms positioned by semantic distance`;
+      }catch(err){
+        console.error("Embedding layout failed:",err);
+        applyFallbackPositions();
+        setDiscSimMatrix(null);
+        setProjectionStability(null);
+        synthBar.className="synth-bar error";
+        synthBar.textContent="VECTOR LAYOUT ERROR - using fallback geometry";
+        showToast("Embedding layout failed. Fallback geometry was applied.");
+      }
+    }else{
       applyFallbackPositions();
       setDiscSimMatrix(null);
       setProjectionStability(null);
-      synthBar.className="synth-bar error";
-      synthBar.textContent="VECTOR LAYOUT ERROR - using fallback geometry";
-      showToast("Embedding layout failed. Fallback geometry was applied.");
     }
-  }else{
+    setSemanticEdges(null);
+    if(TERMS.length>=4){
+      synthBar.className="synth-bar running";
+      synthBar.textContent="SEMANTIC EDGES - analyzing relationships between terms...";
+      try{
+        const edgeResult=await extractSemanticEdges(target,cfg,quality);
+        if(edgeResult&&edgeResult.relationships.length>0){
+          setSemanticEdges(edgeResult);
+          if(quality.id==="rigor"){
+            synthBar.textContent="SEMANTIC EDGES - refining positions with force layout...";
+            const termIndex=new Map();
+            for(let i=0;i<TERMS.length;i++) termIndex.set(TERMS[i].label.toLowerCase().trim(),i);
+            const currentPositions=TERMS.map(t=>[...t.pos]);
+            const refined=refinePositionsWithEdges(currentPositions,edgeResult.relationships,termIndex);
+            for(let i=0;i<TERMS.length;i++) TERMS[i].pos=refined[i]||TERMS[i].pos;
+          }
+          synthBar.className="synth-bar done";
+          synthBar.textContent=`SEMANTIC EDGES COMPLETE - ${edgeResult.relationships.length} relationships identified`;
+        }else{
+          synthBar.className="synth-bar done";
+          synthBar.textContent="SEMANTIC EDGES - no relationships extracted";
+        }
+      }catch(err){
+        console.warn("Semantic edge extraction failed:",err);
+        setSemanticEdges(null);
+        synthBar.className="synth-bar error";
+        synthBar.textContent="SEMANTIC EDGES SKIPPED - proceeding without relationship graph";
+      }
+    }
+    if(cfg.enableComputationalIrreducibility){
+      synthBar.className="synth-bar running";
+      synthBar.textContent="COMPUTATIONAL IRREDUCIBILITY - deriving CA from run topology...";
+      try{
+        const caResult=await deriveCAFromRun(target,cfg,probeResults,synthResult,{
+          discSimilarityMatrix:DISC_SIM_MATRIX,
+          projectionStability:PROJECTION_STABILITY
+        });
+        setCAProbeOutput(caResult);
+        appendDerivedCATermsToTerms(buildCATermsFromMetrics(caResult));
+        RUN_STATE.caProbe=caResult;
+        const densityPct=(Number((caResult?.metrics?.densityFinal??caResult?.metrics?.density)||0)*100).toFixed(1);
+        const volatilityPct=(Number((caResult?.metrics?.volatilityFinal??caResult?.metrics?.volatility)||0)*100).toFixed(1);
+        synthBar.className="synth-bar done";
+        synthBar.textContent=`CA DIAGNOSTIC COMPLETE - Rule ${caResult?.rule??"n/a"} | ${densityPct}% density | ${volatilityPct}% volatility`;
+      }catch(err){
+        console.error("CA diagnostic failed:",err);
+        setCAProbeOutput(null);
+        RUN_STATE.caProbe=null;
+        synthBar.className="synth-bar error";
+        synthBar.textContent="CA DIAGNOSTIC SKIPPED - error in derivation";
+        showToast("CA diagnostic derivation failed. Output is otherwise available.");
+      }
+    }else{
+      setCAProbeOutput(null);
+      RUN_STATE.caProbe=null;
+    }
+  } else {
+    // Lens mode: skip embedding/edges/CA for now
     applyFallbackPositions();
     setDiscSimMatrix(null);
     setProjectionStability(null);
-  }
-  setSemanticEdges(null);
-  if(TERMS.length>=4){
-    synthBar.className="synth-bar running";
-    synthBar.textContent="SEMANTIC EDGES - analyzing relationships between terms...";
-    try{
-      const edgeResult=await extractSemanticEdges(target,cfg,quality);
-      if(edgeResult&&edgeResult.relationships.length>0){
-        setSemanticEdges(edgeResult);
-        if(quality.id==="rigor"){
-          synthBar.textContent="SEMANTIC EDGES - refining positions with force layout...";
-          const termIndex=new Map();
-          for(let i=0;i<TERMS.length;i++) termIndex.set(TERMS[i].label.toLowerCase().trim(),i);
-          const currentPositions=TERMS.map(t=>[...t.pos]);
-          const refined=refinePositionsWithEdges(currentPositions,edgeResult.relationships,termIndex);
-          for(let i=0;i<TERMS.length;i++) TERMS[i].pos=refined[i]||TERMS[i].pos;
-        }
-        synthBar.className="synth-bar done";
-        synthBar.textContent=`SEMANTIC EDGES COMPLETE - ${edgeResult.relationships.length} relationships identified`;
-      }else{
-        synthBar.className="synth-bar done";
-        synthBar.textContent="SEMANTIC EDGES - no relationships extracted";
-      }
-    }catch(err){
-      console.warn("Semantic edge extraction failed:",err);
-      setSemanticEdges(null);
-      synthBar.className="synth-bar error";
-      synthBar.textContent="SEMANTIC EDGES SKIPPED - proceeding without relationship graph";
-    }
-  }
-  if(cfg.enableComputationalIrreducibility){
-    synthBar.className="synth-bar running";
-    synthBar.textContent="COMPUTATIONAL IRREDUCIBILITY - deriving CA from run topology...";
-    try{
-      const caResult=await deriveCAFromRun(target,cfg,probeResults,synthResult,{
-        discSimilarityMatrix:DISC_SIM_MATRIX,
-        projectionStability:PROJECTION_STABILITY
-      });
-      setCAProbeOutput(caResult);
-      appendDerivedCATermsToTerms(buildCATermsFromMetrics(caResult));
-      RUN_STATE.caProbe=caResult;
-      const densityPct=(Number((caResult?.metrics?.densityFinal??caResult?.metrics?.density)||0)*100).toFixed(1);
-      const volatilityPct=(Number((caResult?.metrics?.volatilityFinal??caResult?.metrics?.volatility)||0)*100).toFixed(1);
-      synthBar.className="synth-bar done";
-      synthBar.textContent=`CA DIAGNOSTIC COMPLETE - Rule ${caResult?.rule??"n/a"} | ${densityPct}% density | ${volatilityPct}% volatility`;
-    }catch(err){
-      console.error("CA diagnostic failed:",err);
-      setCAProbeOutput(null);
-      RUN_STATE.caProbe=null;
-      synthBar.className="synth-bar error";
-      synthBar.textContent="CA DIAGNOSTIC SKIPPED - error in derivation";
-      showToast("CA diagnostic derivation failed. Output is otherwise available.");
-    }
-  }else{
+    setSemanticEdges(null);
     setCAProbeOutput(null);
     RUN_STATE.caProbe=null;
   }
@@ -211,8 +240,17 @@ export async function launchExpedition(){
   setLastRun(buildRunSnapshot(target,probeResults,synthResult,cfg));
   saveRunToHistory(LAST_RUN).catch(()=>{});
   syncArtifactStoreFromRun();
+  setIsGenerating(false);
   await new Promise(resolve=>setTimeout(resolve,500));
-  showViz(target);
+  if(isLensMode){
+    // Lens mode: land on dashboard, auto-generate artifacts
+    const { renderDashboard, autoGenerateLensArtifacts } = await import('../ui/lens-dashboard.js');
+    switchMainTab("dashboard",{silent:true});
+    renderDashboard(target);
+    autoGenerateLensArtifacts(target,cfg);
+  }else{
+    showViz(target);
+  }
 }
 
 export async function assignSemanticPositions(target,cfg,setStatus){const notify=(msg)=>{if(typeof setStatus==="function") setStatus(msg);};setDiscSimMatrix(null);setProjectionStability(null);const embeddingInputs=TERMS.map(term=>buildEmbeddingText(term,target));const embedModel=String(cfg?.embeddingModel||"").trim()||"(unspecified embedding model)";const vectors=await callEmbeddings(embeddingInputs,cfg,(batchNo,total)=>{notify(`VECTOR LAYOUT - ${embedModel} batch ${batchNo}/${total}...`);});const normalizedVectors=vectors.map(normalizeEmbeddingVector);setDiscSimMatrix(computeDiscSimilarityMatrix(normalizedVectors));notify("VECTOR LAYOUT - projecting semantic manifold to 3D...");const basePoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,PROJECTION_BASE_SEED),1.45);for(let i=0;i<TERMS.length;i++){TERMS[i].pos=basePoints[i]||[0,0,0];}const rerunCount=Math.max(0,Math.min(4,PROJECTION_STABILITY_RUNS-1));const reruns=[];for(let idx=0;idx<rerunCount;idx++){const seed=PROJECTION_BASE_SEED+idx+1;notify(`VECTOR LAYOUT - projection stability check ${idx+1}/${rerunCount}...`);const runPoints=normalizePointCloud(await projectVectorsTo3D(normalizedVectors,seed),1.45);reruns.push({seed,points:runPoints});}setProjectionStability(computeProjectionStability(basePoints,reruns));renderEmbeddingDiagnostics();}

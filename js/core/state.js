@@ -77,6 +77,8 @@ export let MODE_STATE={simple:null,sources:null,advanced:null};
 
 export let activeSetupMode="landing";
 
+export let isGeneratingArtifacts=false;
+
 // Setters — the only way to reassign these bindings from outside this module.
 // ES modules create read-only live bindings for importers; reassignment must
 // happen inside the defining module via these closures.
@@ -118,3 +120,4 @@ export const setSourceMaterial = v => { SOURCE_MATERIAL = v; };
 export const setGalleryActive = v => { galleryActive = v; };
 export const setModeState = v => { MODE_STATE = v; };
 export const setActiveSetupMode = v => { activeSetupMode = v; };
+export const setIsGeneratingArtifacts = v => { isGeneratingArtifacts = v; };

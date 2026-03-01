@@ -55,6 +55,21 @@ A sister mode to Parallax Lens but for documents. The user uploads a PDF (a cont
 ~~DONE. The topic-string entry point for News Lens mode has been replaced with a seed URL input ("Article URL to explore"). Clicking FIND STORIES now: (1) fetches the seed article, (2) runs an LLM call to extract publication date, 5–8 named entities, and a topic label, (3) auto-fills the Focus Concept field with the extracted topic, (4) renders a locked "ANCHOR" card showing date, detected entities, and a note about the ±7-day filter, (5) fetches all RSS feeds and applies `filterByTemporalProximity()` to keep only articles within ±7 days of the seed's pubDate, (6) scores with `scoreArticleWithSeed()` — 60% topic-keyword overlap + 40% named-entity string match (using `.includes()` so proper nouns survive). Graceful degradation: if no API key is configured, metadata extraction is skipped, anchor card shows title + "date unknown", temporal filter is skipped, and scoring falls back to keyword-only. CLEAR resets the seed URL input and removes the anchor card. New exports in `js/domain/news-sources.js`: `filterByTemporalProximity`, `scoreArticleWithSeed`. New internal helpers in `js/ui/setup-panel.js`: `extractSeedMetadata`, `renderAnchorCard`. New CSS in `css/styles.css`: `.seed-url-row`, `.seed-anchor-row`, `.anchor-card`, `.anchor-card-*`.~~
 
 
+15. Hybrid RSS + LLM-Augmented News Search (Tier 2 Source Discovery) ⚠️ IN PROGRESS
+Parallax Lens's article discovery pipeline only has ~2 RSS feeds per column (~29 total), severely limiting coverage compared to aggregators like Ground News (50K+ sources). This major adds a two-tier search system:
+
+**Tier 1 — Expanded Static RSS:** Grow `LENS_CONFIGS` from ~2 feeds/column to 5-6 (~80 total). More diverse outlets per column for better baseline coverage. Free, no API cost.
+
+**Tier 2 — Dynamic Search (triggered by Expand Search or sparse results):** When primary RSS results are thin (< 2 high-relevance articles per column avg), a **blocking gate** appears — USE SELECTED SOURCES is disabled until the user clicks EXPAND SEARCH or CONTINUE WITH CURRENT RESULTS. Expand Search triggers:
+1. LLM generates 2-3 targeted search queries per column based on seed topic + entities + column perspective (`generateSearchQueries()`)
+2. Google News RSS (free, no API key) — `buildGoogleNewsRssUrl()` constructs search URLs, fetched through existing `/api/fetch-url` proxy, parsed by existing `parseFeedItems()`
+3. Brave Search News API (optional, `BRAVE_SEARCH_API_KEY` env var) — new proxy route `/api/news-search/brave`
+4. NewsAPI.org (optional, `NEWSAPI_KEY` env var) — new proxy route `/api/news-search/newsapi`
+5. Results normalized to `{title, link, description, pubDate}` and deduplicated by URL + fuzzy title similarity
+6. `/api/news-search/capabilities` endpoint lets frontend discover which APIs are available
+
+Also fixes: URL batch cap raised from 10→50 in proxy, client-side batching in `postFetchUrl()` for >10 URLs. Google News RSS is the guaranteed free baseline; Brave and NewsAPI are optional additive layers.
+
 10 Minor Things
 
 1. Model Selector Dropdown

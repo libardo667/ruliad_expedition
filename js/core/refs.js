@@ -15,7 +15,11 @@ export const generatorTabBtn=document.getElementById("tab-generator-btn");
 
 export const plotTabBtn=document.getElementById("tab-plot-btn");
 
-export const TAB_ORDER=[generatorTabBtn,plotTabBtn].filter(Boolean);
+export const dashboardPanelEl=document.getElementById("dashboard-panel");
+
+export const dashboardTabBtn=document.getElementById("tab-dashboard-btn");
+
+export const TAB_ORDER=[generatorTabBtn,plotTabBtn,dashboardTabBtn].filter(Boolean);
 
 export const themeSelectGlobalEl=document.getElementById("theme-select-global");
 
